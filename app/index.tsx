@@ -1,19 +1,20 @@
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import { useFonts as usePlayfair, PlayfairDisplay_700Bold, PlayfairDisplay_600SemiBold } from '@expo-google-fonts/playfair-display';
-import { useFonts as useInterFonts, Inter_400Regular, Inter_600SemiBold } from '@expo-google-fonts/inter';
-import { useLocalSearchParams, useFocusEffect } from "expo-router";
-import React, { useState, useRef, useEffect } from "react";
-import { View, FlatList, Modal, ActivityIndicator, StatusBar, RefreshControl } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Header } from "@/components/Header";
-import { PostCard } from "@/components/PostCard";
 import { ModalScreen } from "@/components/ModalScreen";
-import { Post } from "@/models/Event";
-import { usePosts } from "@/components/NewsScreen/hooks/usePorts";
 import { EmptyState } from "@/components/NewsScreen/components/EmptyState";
 import { ErrorState } from "@/components/NewsScreen/components/ErrorState";
 import { LoadingScreen } from "@/components/NewsScreen/components/LoadingScreen";
 import { styles } from "@/components/NewsScreen/components/styles";
+import { usePosts } from "@/components/NewsScreen/hooks/usePorts";
+import { PostCard } from "@/components/PostCard";
+import { Post } from "@/models/Event";
+import { Inter_400Regular, Inter_600SemiBold, useFonts as useInterFonts } from '@expo-google-fonts/inter';
+import { PlayfairDisplay_600SemiBold, PlayfairDisplay_700Bold, useFonts as usePlayfair } from '@expo-google-fonts/playfair-display';
+import { useFocusEffect, useLocalSearchParams } from "expo-router";
+import React, { useEffect, useRef, useState } from "react";
+import { ActivityIndicator, FlatList, Modal, RefreshControl, StatusBar, View } from "react-native";
+import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
+
+import { NotificationProvider } from "@/components/connection";
 
 export const NewsScreen: React.FC = () => {
     const insets = useSafeAreaInsets();
@@ -103,9 +104,11 @@ const App: React.FC = () => {
 
 
     return (
-        <SafeAreaProvider>
+        <NotificationProvider>
+                    <SafeAreaProvider>
             <NewsScreen />
         </SafeAreaProvider>
+        </NotificationProvider>
     );
 };
 
