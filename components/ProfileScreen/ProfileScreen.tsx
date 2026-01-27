@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Profile } from '@/models/ProfileModel';
 import { Post } from '@/models/Event';
 import { AuthTokenManager } from '@/components/LoginScreen/LoginScreen';
-import { ModalScreen } from '@/components/ModalScreen';
+import { ModalScreen } from '@/components/ProfileScreen/ModalScreen';
 import {router} from "expo-router";
 import {apiUrl} from "@/api/api";
 import { styles } from './style';
