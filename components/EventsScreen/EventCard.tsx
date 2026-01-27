@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
     dateBadge: {
         width: 56,
         height: 56,
-        backgroundColor: '#0a58ff',
+        backgroundColor: '#0f6319',
         borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
     location: {
         fontSize: 12,
         fontFamily: 'Inter_400Regular',
-        color: '#0a58ff',
+        color: '#0f6219',
     },
 
     // MODAL
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
     metaLabel: {
         fontSize: 14,
         fontFamily: 'Inter_600SemiBold',
-        color: '#0a58ff',
+        color: '#0f6319',
         marginBottom: 4,
     },
     metaValue: {
@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     mapText: {
-        color: '#0a58ff',
+        color: '#0f6119',
         fontSize: 16,
         fontFamily: 'Inter_600SemiBold',
     },
@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
         bottom: 20,
         left: 16,
         right: 16,
-        backgroundColor: '#0a58ff',
+        backgroundColor: '#0f6219',
         borderRadius: 14,
         paddingVertical: 14,
         alignItems: 'center',

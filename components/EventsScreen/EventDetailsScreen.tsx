@@ -5,7 +5,7 @@ import { Event } from '@/models/Event';
 
 type EventDetailsRouteProp = RouteProp<{ EventDetails: { event: Event } }, 'EventDetails'>;
 
-export const EventDetailsScreen: React.FC = () => {
+const EventDetailsScreen: React.FC = () => {
     const route = useRoute<EventDetailsRouteProp>();
     const { event } = route.params;
 
@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
     metaLabel: {
         fontSize: 14,
         fontFamily: 'Inter_600SemiBold',
-        color: '#0a58ff',
+        color: '#0f6219',
         marginBottom: 2,
     },
     metaValue: {
@@ -77,3 +77,5 @@ const styles = StyleSheet.create({
         lineHeight: 20,
     },
 });
+
+export default EventDetailsScreen;

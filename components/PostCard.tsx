@@ -126,14 +126,14 @@ const styles = StyleSheet.create({
     },
     date: {
         fontSize: 12,
-        color: '#0a58ff',
+        color: '#28954a',
         fontFamily: 'Inter_600SemiBold',
         marginBottom: 6,
     },
     title: {
         fontSize: 20,
         fontFamily: 'PlayfairDisplay_700Bold',
-        color: '#0b2140',
+        color: '#09400f',
         marginBottom: 8,
     },
     summary: {
@@ -154,5 +154,5 @@ const styles = StyleSheet.create({
     },
     emoji: { fontSize: 18, marginRight: 8, color: '#333' },
     actionText: { fontSize: 13, color: '#4b5563', fontFamily: 'Inter_400Regular' },
-    active: { color: '#0a58ff' },
+    active: { color: '#0f6319' },
 });

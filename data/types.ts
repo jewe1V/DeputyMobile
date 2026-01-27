@@ -1,0 +1,81 @@
+export interface Role {
+    id: string;
+    name: string;
+}
+
+export interface Profile {
+    id: string;
+    fullName: string;
+    email: string;
+    jobTitle: string;
+    userRoles: Role[];
+}
+
+export interface Post {
+    id: string;
+    title: string;
+    summary: string;
+    body: string;
+    thumbnailUrl: string;
+    publishedAt: string;
+    authorId: string;
+    author?: Profile;
+    attachments?: (Document | Attachment)[];
+}
+
+export interface Event {
+    id: string;
+    title: string;
+    description: string;
+    startAt: string;
+    endAt: string;
+    location: string;
+    organizerFullName: string;
+    isPublic: boolean;
+    organizerId: string;
+}
+
+export interface Document {
+    id: string;
+    fileName: string;
+    url: string;
+    uploadedAt: string;
+    uploadedBy: string;
+    catalogId: string;
+}
+
+export interface Attachment {
+    id: string;
+    fileName: string;
+    url: string;
+    uploadedAt: string;
+}
+
+export interface Catalog {
+    id: string;
+    name: string;
+    parentId: string | null;
+    children?: Catalog[];
+    documents?: Document[];
+}
+
+export type TaskStatus = 'created' | 'in_progress' | 'approval' | 'completed';
+
+export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
+
+export interface Task {
+    id: string;
+    title: string;
+    description: string;
+    status: TaskStatus;
+    priority: TaskPriority;
+    assignedTo: string;
+    assignedToProfile?: Profile;
+    createdBy: string;
+    createdByProfile?: Profile;
+    createdAt: string;
+    dueDate: string;
+    completedAt?: string;
+    attachments?: Attachment[];
+    tags?: string[];
+}

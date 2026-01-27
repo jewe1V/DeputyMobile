@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
     },
     calendarNav: {
         fontSize: 22,
-        color: '#0a58ff',
+        color: '#0f6319',
     },
     calendarGrid: {
         flexDirection: 'row',
@@ -204,12 +204,12 @@ const styles = StyleSheet.create({
         marginBottom: 0, // Убираем отступ снизу для последней строки
     },
     calendarDateSelected: {
-        backgroundColor: '#0a58ff',
+        backgroundColor: '#0f6219',
         borderRadius: 8,
     },
     calendarDateWithEvents: {
         borderBottomWidth: 2,
-        borderBottomColor: '#0a58ff',
+        borderBottomColor: '#0f6319',
     },
     calendarDateText: {
         fontSize: 14,

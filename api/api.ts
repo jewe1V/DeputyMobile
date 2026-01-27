@@ -1,4 +1,3 @@
-const apiUrl = 'https://irit-rtf-ep.ru'
-const dumaApiUrl = ''
+const apiUrl = 'http://localhost:5000'
 
-export {apiUrl, dumaApiUrl}
+export {apiUrl}

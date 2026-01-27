@@ -1,4 +1,4 @@
-import { AuthTokenManager } from "@/components/LoginScreen";
+import { AuthTokenManager } from "@/components/LoginScreen/LoginScreen";
 import * as SignalR from "@microsoft/signalr";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";

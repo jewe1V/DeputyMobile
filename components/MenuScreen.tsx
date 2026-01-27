@@ -15,12 +15,12 @@ const MenuScreen = () => {
                     style={styles.menuButton}
                     onPress={() => router.push('/(screens)/CreateEventScreen')}
                 >
-                    <Ionicons name="calendar-outline" size={22} color="#0a57fd" />
+                    <Ionicons name="calendar-outline" size={22} color="#0f6219" />
                     <Text style={styles.menuButtonText}>Планирование</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                    style={[styles.menuButton, { backgroundColor: '#0a57fd' }]}
+                    style={[styles.menuButton, { backgroundColor: '#0f6219' }]}
                     onPress={() => router.push('/(screens)/CreatePostScreen')}
                 >
                     <Ionicons name="create-outline" size={22} color="#fff" />
@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderWidth: 2,
         backgroundColor: '#fff',
-        borderColor: '#0a56fb',
+        borderColor: '#0f6219',
         borderRadius: 12,
         paddingVertical: 14,
         paddingHorizontal: 20,
@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     menuButtonText: {
-        color: '#0a56fb',
+        color: '#0f6319',
         fontSize: 16,
         fontWeight: '600',
         marginLeft: 10,

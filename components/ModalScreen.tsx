@@ -12,7 +12,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ModalScreenProps } from "@/models/Event";
 import { getDisplayDate } from "@/utils";
-import { AuthTokenManager } from '@/components/LoginScreen';
+import { AuthTokenManager } from '@/components/LoginScreen/LoginScreen';
 import { Ionicons } from '@expo/vector-icons';
 import {apiUrl} from "@/api/api";
 
@@ -212,11 +212,11 @@ const styles = StyleSheet.create({
     },
     modalClose: {
         fontSize: 22,
-        color: '#0a58ff'
+        color: '#0f6319'
     },
     modalShare: {
         fontSize: 20,
-        color: '#0a58ff'
+        color: '#0f6219'
     },
     modalImage: {
         width: '100%',
@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
     },
     modalCate: {
         fontSize: 13,
-        color: '#0a58ff',
+        color: '#0f6018',
         marginBottom: 8,
         fontFamily: 'Inter_600SemiBold'
     },
@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter_400Regular'
     },
     navActive: {
-        color: '#0a58ff',
+        color: '#28954a',
         fontFamily: 'Inter_600SemiBold'
     },
 });

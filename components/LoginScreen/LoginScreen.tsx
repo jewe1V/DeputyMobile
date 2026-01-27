@@ -7,7 +7,6 @@ import {
     TouchableOpacity,
     KeyboardAvoidingView,
     Platform,
-    StyleSheet,
     Modal,
     Alert,
     ActivityIndicator
@@ -17,6 +16,8 @@ import { useFonts, PlayfairDisplay_700Bold } from '@expo-google-fonts/playfair-d
 import { Inter_400Regular, Inter_600SemiBold } from '@expo-google-fonts/inter';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {apiUrl} from "@/api/api";
+import { styles } from './style';
+import {router} from "expo-router";
 
 class AuthTokenManager {
     private static token: string | null = null;
@@ -47,7 +48,7 @@ class AuthTokenManager {
         return this.token;
     }
 
-    static async setToken(token: string, expiresInMs: number = 60 * 60 * 1000) { // 1 час по умолчанию
+    static async setToken(token: string, expiresInMs: number = 60 * 60 * 1000) {
         this.token = token;
 
         const expiryTime = Date.now() + expiresInMs;
@@ -59,10 +60,8 @@ class AuthTokenManager {
             console.error('Error saving auth token:', error);
         }
 
-        // Планируем очистку токена
         this.scheduleTokenCleanup(expiresInMs);
 
-        // Уведомляем слушателей
         this.notifyListeners();
     }
 
@@ -120,10 +119,8 @@ class AuthTokenManager {
     }
 }
 
-// Инициализируем менеджер при загрузке модуля
 AuthTokenManager.initialize();
 
-// Типы для ответа сервера
 interface User {
     id: string;
     email: string;
@@ -143,21 +140,10 @@ interface AuthResponse {
     user: User;
 }
 
-interface LoginModalScreenProps {
-    visible: boolean;
-    onClose: () => void;
-    onLoginSuccess: () => void;
-}
-
-const LoginScreen: React.FC<LoginModalScreenProps> = ({
-                                                          visible,
-                                                          onClose,
-                                                          onLoginSuccess
-                                                      }) => {
+const LoginScreen = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const navigation = useNavigation<any>();
 
     const [fontsLoaded] = useFonts({
         PlayfairDisplay_700Bold,
@@ -207,9 +193,7 @@ const LoginScreen: React.FC<LoginModalScreenProps> = ({
             await AsyncStorage.setItem('userData', JSON.stringify(data.user));
 
             console.log('Успешная авторизация, токен сохранен в глобальное хранилище');
-            onLoginSuccess();
-            onClose();
-
+            router.push('/(screens)/DashboardScreen');
         } catch (error) {
             console.error('Ошибка авторизации:', error);
             Alert.alert('Ошибка', 'Не удалось войти. Проверьте логин и пароль');
@@ -218,140 +202,55 @@ const LoginScreen: React.FC<LoginModalScreenProps> = ({
         }
     };
 
-    const handleGuestLogin = () => {
-        onClose();
-        navigation.navigate('MainTabs');
-    };
-
     return (
-        <Modal
-            visible={visible}
-            animationType="slide"
-            presentationStyle="pageSheet"
-            onRequestClose={onClose}
+        <KeyboardAvoidingView
+            style={styles.container}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-            <KeyboardAvoidingView
-                style={styles.container}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            >
-                <View style={styles.header}>
-                    <Image
-                        style={styles.emblem}
-                        resizeMode="contain"
-                        source={require('@/assets/images/ekb-emblem.png')}
-                    />
-                    <Text style={styles.title}>Цифровой кабинет депутата</Text>
-                </View>
+            <View style={styles.header}>
+                <Image
+                    style={styles.emblem}
+                    resizeMode="contain"
+                    source={require('@/assets/images/ekb-emblem.png')}
+                />
+                <Text style={styles.title}>Цифровой кабинет депутата</Text>
+            </View>
 
-                <View style={styles.form}>
-                    <TextInput
-                        placeholder="Email"
-                        placeholderTextColor="#9CA3AF"
-                        style={styles.input}
-                        value={email}
-                        onChangeText={setEmail}
-                        autoCapitalize="none"
-                        keyboardType="email-address"
-                        autoComplete="email"
-                    />
-                    <TextInput
-                        placeholder="Пароль"
-                        placeholderTextColor="#9CA3AF"
-                        secureTextEntry
-                        style={styles.input}
-                        value={password}
-                        onChangeText={setPassword}
-                        autoComplete="password"
-                    />
+            <View style={styles.form}>
+                <TextInput
+                    placeholder="Email"
+                    placeholderTextColor="#9CA3AF"
+                    style={styles.input}
+                    value={email}
+                    onChangeText={setEmail}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    autoComplete="email"
+                />
+                <TextInput
+                    placeholder="Пароль"
+                    placeholderTextColor="#9CA3AF"
+                    secureTextEntry
+                    style={styles.input}
+                    value={password}
+                    onChangeText={setPassword}
+                    autoComplete="password"
+                />
 
-                    <TouchableOpacity
-                        style={[styles.loginButton, isLoading && styles.disabledButton]}
-                        onPress={handleLogin}
-                        disabled={isLoading}
-                    >
-                        {isLoading ? (
-                            <ActivityIndicator color="#fff" />
-                        ) : (
-                            <Text style={styles.loginButtonText}>Войти</Text>
-                        )}
-                    </TouchableOpacity>
-                </View>
-            </KeyboardAvoidingView>
-        </Modal>
+                <TouchableOpacity
+                    style={[styles.loginButton, isLoading && styles.disabledButton]}
+                    onPress={handleLogin}
+                    disabled={isLoading}
+                >
+                    {isLoading ? (
+                        <ActivityIndicator color="#fff" />
+                    ) : (
+                        <Text style={styles.loginButtonText}>Войти</Text>
+                    )}
+                </TouchableOpacity>
+            </View>
+        </KeyboardAvoidingView>
     );
 };
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#fff',
-    },
-    loadingContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#fff',
-    },
-    header: {
-        alignItems: 'center',
-        paddingTop: 60,
-        paddingBottom: 40,
-    },
-    emblem: {
-        width: 80,
-        height: 80,
-        marginBottom: 16,
-    },
-    title: {
-        fontSize: 24,
-        fontFamily: 'PlayfairDisplay_700Bold',
-        color: '#1F2937',
-        textAlign: 'center',
-    },
-    form: {
-        paddingHorizontal: 24,
-    },
-    input: {
-        backgroundColor: '#F9FAFB',
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
-        borderRadius: 12,
-        paddingHorizontal: 16,
-        paddingVertical: 14,
-        fontSize: 16,
-        fontFamily: 'Inter_400Regular',
-        marginBottom: 16,
-        color: '#1F2937',
-    },
-    loginButton: {
-        backgroundColor: '#2563EB',
-        borderRadius: 12,
-        paddingVertical: 16,
-        alignItems: 'center',
-        marginBottom: 12,
-    },
-    disabledButton: {
-        backgroundColor: '#9CA3AF',
-    },
-    loginButtonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontFamily: 'Inter_600SemiBold',
-    },
-    guestButton: {
-        backgroundColor: 'transparent',
-        borderRadius: 12,
-        paddingVertical: 16,
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: '#D1D5DB',
-    },
-    guestButtonText: {
-        color: '#6B7280',
-        fontSize: 16,
-        fontFamily: 'Inter_600SemiBold',
-    },
-});
-
-export default LoginScreen;
-export { AuthTokenManager };
+export { AuthTokenManager,  LoginScreen };

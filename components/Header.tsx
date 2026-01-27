@@ -2,7 +2,7 @@ import {Image, StyleSheet, Text, TouchableOpacity, View, Alert} from "react-nati
 import React, { useState, useEffect } from "react";
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import LoginScreen, {AuthTokenManager} from './LoginScreen';
+import { LoginScreen, AuthTokenManager} from './LoginScreen/LoginScreen';
 
 interface HeaderProps {
     title?: string;
@@ -109,13 +109,6 @@ export const Header: React.FC<HeaderProps> = ({
                     />
                 </TouchableOpacity>)}
             </View>
-
-            {/* Модальное окно авторизации */}
-            <LoginScreen
-                visible={isLoginModalVisible}
-                onClose={handleCloseModal}
-                onLoginSuccess={handleLoginSuccess}
-            />
         </>
     );
 };
@@ -138,9 +131,9 @@ const styles = StyleSheet.create({
         marginRight: 12
     },
     hTitle: {
-        fontSize: 22,
-        fontFamily: 'PlayfairDisplay_700Bold',
-        color: '#0b2340'
+        fontSize: 20,
+        fontFamily: 'Inter_600SemiBold',
+        color: '#000000'
     },
     hSub: {
         fontSize: 12,
