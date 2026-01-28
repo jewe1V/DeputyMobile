@@ -3,9 +3,8 @@ import {NotificationProvider} from "../components/connection";
 import {SafeAreaProvider} from "react-native-safe-area-context";
 import {AuthTokenManager} from "@/components/LoginScreen/LoginScreen";
 import { useRouter, useSegments } from 'expo-router';
-import {LoadingScreen} from "@/components/NewsScreen/components/LoadingScreen";
 
-function useProtectedRoute(isAuthenticated: boolean) {
+function useProtectedRoute(isAuthenticated: boolean | null) {
     const router = useRouter();
     const segments = useSegments();
 
@@ -35,11 +34,6 @@ const App: React.FC = () => {
     }, []);
 
     useProtectedRoute(isAuthenticated);
-
-    // Пока проверяем аутентификацию, показываем загрузку
-    if (isAuthenticated === null) {
-        return <LoadingScreen />;
-    }
 
     return (
         <NotificationProvider>
