@@ -1,85 +1,19 @@
 import {Image, StyleSheet, Text, TouchableOpacity, View, Alert} from "react-native";
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { LoginScreen, AuthTokenManager} from './LoginScreen/LoginScreen';
+import {router} from "expo-router";
 
 interface HeaderProps {
     title?: string;
     subTitle?: string;
-    isUserButton?: boolean;
-}
-
-interface UserData {
-    id: string;
-    email: string;
-    fullName: string;
-    jobTitle: string;
+    button?: [string, string];
 }
 
 export const Header: React.FC<HeaderProps> = ({
                                                   title = "Деятельность депутата",
                                                   subTitle = "Екатеринбургская городская Дума",
-                                                    isUserButton = true,
+                                                  button = [],
                                               }) => {
-    const [isLoginModalVisible, setIsLoginModalVisible] = useState(false);
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [userData, setUserData] = useState<UserData | null>(null);
-
-    // Проверяем статус авторизации при загрузке компонента
-    useEffect(() => {
-        checkAuthStatus();
-    }, []);
-
-    const checkAuthStatus = async () => {
-        try {
-            const token = await AsyncStorage.getItem('authToken');
-            const userDataString = await AsyncStorage.getItem('userData');
-
-            if (token && userDataString) {
-                const user: UserData = JSON.parse(userDataString);
-                setIsAuthenticated(true);
-                setUserData(user);
-            } else {
-                setIsAuthenticated(false);
-                setUserData(null);
-            }
-        } catch (error) {
-            console.error('Ошибка проверки статуса авторизации:', error);
-            setIsAuthenticated(false);
-            setUserData(null);
-        }
-    };
-
-    const handleAuthButtonPress = () => {
-        if (isAuthenticated) {
-            // Если авторизован - показываем меню выхода
-            showLogoutAlert();
-        } else {
-            // Если не авторизован - открываем модалку входа
-            setIsLoginModalVisible(true);
-        }
-    };
-
-    const showLogoutAlert = () => {
-        handleLogout();
-    };
-
-    const handleLogout = async () => {
-        await AuthTokenManager.clearToken();
-        setIsAuthenticated(false);
-        setUserData(null);
-    };
-
-    const handleLoginSuccess = () => {
-        checkAuthStatus(); // Обновляем статус авторизации
-        setIsLoginModalVisible(false);
-    };
-
-    const handleCloseModal = () => {
-        setIsLoginModalVisible(false);
-    };
-
     return (
         <>
             <View style={styles.header}>
@@ -95,17 +29,16 @@ export const Header: React.FC<HeaderProps> = ({
                     </View>
                 </View>
 
-                {isUserButton && (<TouchableOpacity
+                {button.length !== 0 && (<TouchableOpacity
                     style={[
-                        styles.headerDot,
-                        isAuthenticated && styles.authenticatedButton
+                        styles.headerDot
                     ]}
-                    onPress={handleAuthButtonPress}
+                    onPress={() => router.push(button[1])}
                 >
                     <Ionicons
-                        name={isAuthenticated ? "log-in-outline" : "person-outline"}
+                        name={button[0]}
                         size={20}
-                        color={isAuthenticated ? "#f64252" : "#6b7280"}
+                        color={"#6b7280"}
                     />
                 </TouchableOpacity>)}
             </View>

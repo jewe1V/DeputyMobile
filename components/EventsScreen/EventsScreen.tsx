@@ -101,7 +101,7 @@ const EventsScreen: React.FC = () => {
 
     return (
         <View style={[styles.container, { paddingTop: insets.top }]}>
-            <Header title="Предстоящие события" />
+            <Header title="Предстоящие события" button={["add-outline", "/CreateEventScreen"]} />
             <Calendar
                 selectedDate={selectedDate}
                 onSelectDate={setSelectedDate}

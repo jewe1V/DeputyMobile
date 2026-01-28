@@ -78,7 +78,7 @@ export default function CreateEventScreen() {
             }
 
             clearForm();
-            router.push({ pathname: "/(screens)/EventsScreen", params: { refresh: "true" } });
+            router.push({ pathname: "/EventsScreen", params: { refresh: "true" } });
             Alert.alert("Событие успешно создано!");
         } catch (error: any) {
             console.error(error);
@@ -117,7 +117,7 @@ export default function CreateEventScreen() {
                     <TouchableOpacity
                         onPress={() => {
                             clearForm();
-                            router.push("/(screens)/MenuScreen");
+                            router.push("/EventsScreen");
                         }}
                         style={styles.backButton}
                         disabled={isLoading}

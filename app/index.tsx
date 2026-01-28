@@ -1,8 +1,8 @@
 import React, {useEffect, useState} from 'react';
-import {NotificationProvider} from "../components/connection";
+import {NotificationProvider} from "@/components/connection";
 import {SafeAreaProvider} from "react-native-safe-area-context";
 import {AuthTokenManager} from "@/components/LoginScreen/LoginScreen";
-import { useRouter, useSegments } from 'expo-router';
+import {useRouter, useSegments} from 'expo-router';
 
 function useProtectedRoute(isAuthenticated: boolean | null) {
     const router = useRouter();
@@ -26,11 +26,9 @@ const App: React.FC = () => {
         const token = AuthTokenManager.getToken();
         setIsAuthenticated(!!token);
 
-        const unsubscribe = AuthTokenManager.addListener((token) => {
+        return AuthTokenManager.addListener((token) => {
             setIsAuthenticated(!!token);
         });
-
-        return unsubscribe;
     }, []);
 
     useProtectedRoute(isAuthenticated);

@@ -32,10 +32,6 @@ export default () => {
             <Tabs.Screen
                 name="EventDetailsScreen"
                 options={{
-                    tabBarLabel: "",
-                    tabBarIcon: ({ color, size }) => (
-                        <Ionicons name="calendar-outline" size={size} color={color} />
-                    ),
                     href : null,
                 }}
             />
@@ -43,10 +39,7 @@ export default () => {
             <Tabs.Screen
                 name="CreateEventScreen"
                 options={{
-                    tabBarLabel: "",
-                    tabBarIcon: ({ color, size }) => (
-                        <Ionicons name="megaphone-outline" size={size} color={color} />
-                    ),
+                    href : null,
                 }}
             />
 
