@@ -1,31 +1,58 @@
 import { Tabs } from "expo-router";
-import { Ionicons } from '@expo/vector-icons';
+import {Calendar,Folder, House, ListTodo} from "lucide-react-native";
+
 
 export default () => {
     return (
         <Tabs
             screenOptions={{
                 headerShown: false,
-                tabBarActiveTintColor: "#1e90ff",
+                tabBarActiveTintColor: "#11631b",
                 tabBarInactiveTintColor: "gray",
+                tabBarIconStyle: {
+                    width: 24,
+                    height: 24,
+                },
+                tabBarLabelStyle: {
+                    fontSize: 11,
+                },
             }}
         >
             <Tabs.Screen
                 name="DashboardScreen"
                 options={{
-                    tabBarLabel: "",
+                    tabBarLabel: "главная",
                     tabBarIcon: ({ color, size }) => (
-                        <Ionicons name="list-circle-outline" size={size} color={color} />
+                        <House size={size} color={color}/>
                     ),
                 }}
             />
             <Tabs.Screen
                 name="EventsScreen"
                 options={{
-                    tabBarLabel: "",
+                    tabBarLabel: "мероприятия",
                     tabBarIcon: ({ color, size }) => (
-                        <Ionicons name="calendar-outline" size={size} color={color} />
+                        <Calendar size={size} color={color} />
                     ),
+                }}
+            />
+            <Tabs.Screen
+                name="TaskBoardScreen"
+                options={{
+                    tabBarLabel: "задачи",
+                    tabBarIcon: ({ color, size }) => (
+                        <ListTodo size={size} color={color}/>
+                    ),
+                }}
+            />
+            <Tabs.Screen
+                name="CatalogScreen"
+                options={{
+                    tabBarLabel: "каталог",
+                    tabBarIcon: ({ color, size }) => (
+                        <Folder size={size} color={color}/>
+                    ),
+
                 }}
             />
 
@@ -42,44 +69,16 @@ export default () => {
                     href : null,
                 }}
             />
-
-            <Tabs.Screen
-                name="TaskBoardScreen"
-                options={{
-                    tabBarLabel: "",
-                    tabBarIcon: ({ color, size }) => (
-                        <Ionicons name="create-outline" size={size} color={color} />
-                    ),
-                }}
-            />
             <Tabs.Screen
                 name="TaskDetailScreen"
                 options={{
-                    tabBarLabel: "",
-                    tabBarIcon: ({ color, size }) => (
-                        <Ionicons name="file-outline" size={size} color={color} />
-                    ),
                     href: null
                 }}
             />
             <Tabs.Screen
                 name="ProfileScreen"
                 options={{
-                    tabBarLabel: "",
-                    tabBarIcon: ({ color, size }) => (
-                        <Ionicons name="person-outline" size={size} color={color} />
-                    ),
-
-                }}
-            />
-            <Tabs.Screen
-                name="CatalogScreen"
-                options={{
-                    tabBarLabel: "",
-                    tabBarIcon: ({ color, size }) => (
-                        <Ionicons name="document-attach-outline" size={size} color={color} />
-                    ),
-
+                    href: null
                 }}
             />
         </Tabs>

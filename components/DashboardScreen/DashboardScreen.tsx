@@ -13,17 +13,18 @@ import {
     Clock,
     FileText,
     ChevronRight,
-    CheckCircle2,
+    CheckCircle2, Bell,
 } from 'lucide-react-native';
 import { currentUser, mockTasks, mockEvents, mockDocuments } from '@/data/mockData';
 import { styles } from './style';
+import { router } from 'expo-router';
 
 // Типы для навигации
 type RootStackParamList = {
     Tasks: undefined;
-    TaskDetail: { id: string };
+    TaskBoardScreen: { taskId: string };
     Calendar: undefined;
-    EventDetail: { id: string };
+    EventsScreen: { id: string };
     Files: undefined;
 };
 
@@ -116,20 +117,25 @@ export function Dashboard() {
             >
                 {/* Header with User Info */}
                 <View style={styles.header}>
-                    <View style={styles.userInfo}>
+                    <TouchableOpacity style={styles.userInfo} onPress={() => router.push('/ProfileScreen')}>
                         <View style={styles.avatar}>
                             <Text style={styles.avatarText}>
                                 {getInitials(currentUser.fullName)}
                             </Text>
                         </View>
                         <View style={styles.userDetails}>
-                            <Text style={styles.welcomeText}>Добро пожаловать,</Text>
                             <Text style={styles.userName}>
-                                {currentUser.fullName.split(' ')[0]}
+                                {currentUser.fullName.split(' ')[1]}
                             </Text>
-                            <Text style={styles.userJob}>{currentUser.jobTitle}</Text>
+
+                            <View style={styles.userButton}>
+                                <ChevronRight color="white" size={"18"}/>
+                            </View>
                         </View>
-                    </View>
+                        <TouchableOpacity style={styles.userPush} onPress={() => router.push('/DashboardScreen')}>
+                            <Bell color="white" size={"18"}/>
+                        </TouchableOpacity>
+                    </TouchableOpacity>
                 </View>
 
                 <View style={styles.content}>
@@ -160,177 +166,138 @@ export function Dashboard() {
                         </View>
                     </View>
 
-                    {/* Upcoming Tasks */}
-                    <View style={styles.section}>
-                        <View style={styles.sectionHeader}>
-                            <Text style={styles.sectionTitle}>Грядущие задачи</Text>
-                            <TouchableOpacity
-                                style={styles.seeAllButton}
-                                onPress={() => navigation.navigate('Tasks')}
-                            >
-                                <Text style={styles.seeAllText}>Все задачи</Text>
-                                <ChevronRight size={16} color="#0f6319" />
-                            </TouchableOpacity>
+                    <View style={styles.sectionContainer}>
+                        {/* Upcoming Tasks */}
+                        <View style={styles.section}>
+                            <View style={styles.sectionHeader}>
+                                <Text style={styles.sectionTitle}>Грядущие задачи</Text>
+                                <TouchableOpacity
+                                    style={styles.seeAllButton}
+                                    onPress={() => navigation.navigate('TaskBoardScreen')}
+                                >
+                                    <Text style={styles.seeAllText}>Все задачи</Text>
+                                    <ChevronRight size={16} color="#0f6319" />
+                                </TouchableOpacity>
+                            </View>
+
+                            <View style={styles.cardsContainer}>
+                                {upcomingTasks.length > 0 ? (
+                                    upcomingTasks.map((task) => {
+                                        const daysLeft = getDaysUntilDue(task.dueDate);
+                                        const isUrgent = daysLeft <= 2 && daysLeft >= 0;
+                                        const isOverdue = daysLeft < 0;
+                                        const statusColors = getTaskStatusColor(task.status);
+
+                                        return (
+                                            <TouchableOpacity
+                                                key={task.id}
+                                                style={styles.card}
+                                                onPress={() => navigation.navigate('TaskDetailScreen', { taskId: task.id })}
+                                            >
+                                                <View style={styles.cardContent}>
+                                                    <View style={styles.cardMain}>
+                                                        <Text style={styles.cardTitle} numberOfLines={1}>
+                                                            {task.title}
+                                                        </Text>
+                                                        <View style={styles.cardTags}>
+                                                            <View style={[styles.badge, { backgroundColor: statusColors.bg }]}>
+                                                                <Text style={[styles.badgeText, { color: statusColors.text }]}>
+                                                                    {getTaskStatusLabel(task.status)}
+                                                                </Text>
+                                                            </View>
+                                                            <View style={styles.timeContainer}>
+                                                                <Clock size={12} color={isOverdue ? '#dc2626' : isUrgent ? '#ea580c' : '#6b7280'} />
+                                                                <Text style={[
+                                                                    styles.timeText,
+                                                                    isOverdue && styles.overdueText,
+                                                                    isUrgent && styles.urgentText
+                                                                ]}>
+                                                                    {isOverdue
+                                                                        ? `Просрочено ${Math.abs(daysLeft)} дн.`
+                                                                        : daysLeft === 0
+                                                                            ? 'Сегодня'
+                                                                            : `${daysLeft} дн.`}
+                                                                </Text>
+                                                            </View>
+                                                        </View>
+                                                    </View>
+                                                    <ChevronRight size={20} color="#9ca3af" />
+                                                </View>
+                                            </TouchableOpacity>
+                                        );
+                                    })
+                                ) : (
+                                    <View style={styles.emptyCard}>
+                                        <CheckCircle2 size={48} color="#d1d5db" />
+                                        <Text style={styles.emptyText}>Нет активных задач</Text>
+                                    </View>
+                                )}
+                            </View>
                         </View>
 
-                        <View style={styles.cardsContainer}>
-                            {upcomingTasks.length > 0 ? (
-                                upcomingTasks.map((task) => {
-                                    const daysLeft = getDaysUntilDue(task.dueDate);
-                                    const isUrgent = daysLeft <= 2 && daysLeft >= 0;
-                                    const isOverdue = daysLeft < 0;
-                                    const statusColors = getTaskStatusColor(task.status);
+                        {/* Upcoming Events */}
+                        <View style={styles.section}>
+                            <View style={styles.sectionHeader}>
+                                <Text style={styles.sectionTitle}>Предстоящие мероприятия</Text>
+                                <TouchableOpacity
+                                    style={styles.seeAllButton}
+                                    onPress={() => navigation.navigate('EventsScreen')}
+                                >
+                                    <Text style={styles.seeAllText}>Календарь</Text>
+                                    <ChevronRight size={16} color="#0f6319" />
+                                </TouchableOpacity>
+                            </View>
 
-                                    return (
+                            <View style={styles.cardsContainer}>
+                                {upcomingEvents.length > 0 ? (
+                                    upcomingEvents.map((event) => (
                                         <TouchableOpacity
-                                            key={task.id}
+                                            key={event.id}
                                             style={styles.card}
-                                            onPress={() => navigation.navigate('TaskDetail', { id: task.id })}
+                                            onPress={() => navigation.navigate('EventDetail', { id: event.id })}
                                         >
                                             <View style={styles.cardContent}>
+                                                <View style={styles.eventDate}>
+                                                    <Text style={styles.eventDateDay}>
+                                                        {new Date(event.startAt).getDate()}
+                                                    </Text>
+                                                    <Text style={styles.eventDateMonth}>
+                                                        {new Date(event.startAt).toLocaleDateString('ru-RU', { month: 'short' })}
+                                                    </Text>
+                                                </View>
                                                 <View style={styles.cardMain}>
                                                     <Text style={styles.cardTitle} numberOfLines={1}>
-                                                        {task.title}
+                                                        {event.title}
                                                     </Text>
                                                     <View style={styles.cardTags}>
-                                                        <View style={[styles.badge, { backgroundColor: statusColors.bg }]}>
-                                                            <Text style={[styles.badgeText, { color: statusColors.text }]}>
-                                                                {getTaskStatusLabel(task.status)}
-                                                            </Text>
-                                                        </View>
                                                         <View style={styles.timeContainer}>
-                                                            <Clock size={12} color={isOverdue ? '#dc2626' : isUrgent ? '#ea580c' : '#6b7280'} />
-                                                            <Text style={[
-                                                                styles.timeText,
-                                                                isOverdue && styles.overdueText,
-                                                                isUrgent && styles.urgentText
-                                                            ]}>
-                                                                {isOverdue
-                                                                    ? `Просрочено ${Math.abs(daysLeft)} дн.`
-                                                                    : daysLeft === 0
-                                                                        ? 'Сегодня'
-                                                                        : `${daysLeft} дн.`}
+                                                            <Clock size={12} color="#6b7280" />
+                                                            <Text style={styles.timeText}>
+                                                                {formatDate(event.startAt)}
                                                             </Text>
                                                         </View>
+                                                        {event.isPublic && (
+                                                            <View style={[styles.badge, { backgroundColor: '#d1fae5' }]}>
+                                                                <Text style={[styles.badgeText, { color: '#065f46' }]}>
+                                                                    Публичное
+                                                                </Text>
+                                                            </View>
+                                                        )}
                                                     </View>
                                                 </View>
                                                 <ChevronRight size={20} color="#9ca3af" />
                                             </View>
                                         </TouchableOpacity>
-                                    );
-                                })
-                            ) : (
-                                <View style={styles.emptyCard}>
-                                    <CheckCircle2 size={48} color="#d1d5db" />
-                                    <Text style={styles.emptyText}>Нет активных задач</Text>
-                                </View>
-                            )}
-                        </View>
-                    </View>
-
-                    {/* Upcoming Events */}
-                    <View style={styles.section}>
-                        <View style={styles.sectionHeader}>
-                            <Text style={styles.sectionTitle}>Предстоящие мероприятия</Text>
-                            <TouchableOpacity
-                                style={styles.seeAllButton}
-                                onPress={() => navigation.navigate('Calendar')}
-                            >
-                                <Text style={styles.seeAllText}>Календарь</Text>
-                                <ChevronRight size={16} color="#0f6319" />
-                            </TouchableOpacity>
-                        </View>
-
-                        <View style={styles.cardsContainer}>
-                            {upcomingEvents.length > 0 ? (
-                                upcomingEvents.map((event) => (
-                                    <TouchableOpacity
-                                        key={event.id}
-                                        style={styles.card}
-                                        onPress={() => navigation.navigate('EventDetail', { id: event.id })}
-                                    >
-                                        <View style={styles.cardContent}>
-                                            <View style={styles.eventDate}>
-                                                <Text style={styles.eventDateDay}>
-                                                    {new Date(event.startAt).getDate()}
-                                                </Text>
-                                                <Text style={styles.eventDateMonth}>
-                                                    {new Date(event.startAt).toLocaleDateString('ru-RU', { month: 'short' })}
-                                                </Text>
-                                            </View>
-                                            <View style={styles.cardMain}>
-                                                <Text style={styles.cardTitle} numberOfLines={1}>
-                                                    {event.title}
-                                                </Text>
-                                                <View style={styles.cardTags}>
-                                                    <View style={styles.timeContainer}>
-                                                        <Clock size={12} color="#6b7280" />
-                                                        <Text style={styles.timeText}>
-                                                            {formatDate(event.startAt)}
-                                                        </Text>
-                                                    </View>
-                                                    {event.isPublic && (
-                                                        <View style={[styles.badge, { backgroundColor: '#d1fae5' }]}>
-                                                            <Text style={[styles.badgeText, { color: '#065f46' }]}>
-                                                                Публичное
-                                                            </Text>
-                                                        </View>
-                                                    )}
-                                                </View>
-                                            </View>
-                                            <ChevronRight size={20} color="#9ca3af" />
-                                        </View>
-                                    </TouchableOpacity>
-                                ))
-                            ) : (
-                                <View style={styles.emptyCard}>
-                                    <Calendar size={48} color="#d1d5db" />
-                                    <Text style={styles.emptyText}>Нет предстоящих мероприятий</Text>
-                                </View>
-                            )}
-                        </View>
-                    </View>
-
-                    {/* Recent Documents */}
-                    <View style={styles.section}>
-                        <View style={styles.sectionHeader}>
-                            <Text style={styles.sectionTitle}>Последние документы</Text>
-                            <TouchableOpacity
-                                style={styles.seeAllButton}
-                                onPress={() => navigation.navigate('Files')}
-                            >
-                                <Text style={styles.seeAllText}>Все файлы</Text>
-                                <ChevronRight size={16} color="#0f6319" />
-                            </TouchableOpacity>
-                        </View>
-
-                        <View style={styles.cardsContainer}>
-                            {recentDocuments.map((doc) => (
-                                <TouchableOpacity key={doc.id} style={styles.card}>
-                                    <View style={styles.cardContent}>
-                                        <View style={[styles.docIcon, { backgroundColor: '#dbeafe' }]}>
-                                            <FileText size={20} color="#2563eb" />
-                                        </View>
-                                        <View style={styles.cardMain}>
-                                            <Text style={styles.cardTitle} numberOfLines={1}>
-                                                {doc.fileName}
-                                            </Text>
-                                            <Text style={styles.docInfo}>
-                                                {doc.uploadedBy} • {new Date(doc.uploadedAt).toLocaleDateString('ru-RU', {
-                                                day: 'numeric',
-                                                month: 'short',
-                                            })}
-                                            </Text>
-                                        </View>
-                                        <ChevronRight size={20} color="#9ca3af" />
+                                    ))
+                                ) : (
+                                    <View style={styles.emptyCard}>
+                                        <Calendar size={48} color="#d1d5db" />
+                                        <Text style={styles.emptyText}>Нет предстоящих мероприятий</Text>
                                     </View>
-                                </TouchableOpacity>
-                            ))}
+                                )}
+                            </View>
                         </View>
                     </View>
-
-                    {/* Bottom spacing */}
-                    <View style={styles.bottomSpacing} />
                 </View>
             </ScrollView>
         </SafeAreaProvider>

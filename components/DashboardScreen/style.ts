@@ -4,12 +4,14 @@ export const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#f9fafb',
+
     },
     scrollView: {
         flex: 1,
+        backgroundColor: '#0f6319',
+        backgroundImage: 'linear-gradient(to bottom, #0f6319, #ffffff)',
     },
     header: {
-        backgroundColor: '#0f6319',
         paddingHorizontal: 16,
         paddingTop: 16,
         paddingBottom: 32,
@@ -17,25 +19,31 @@ export const styles = StyleSheet.create({
     userInfo: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 16,
+        gap: 8,
     },
     avatar: {
-        width: 64,
-        height: 64,
-        borderRadius: 32,
+        width: 36,
+        height: 36,
+        borderRadius: "50%",
         backgroundColor: 'white',
         justifyContent: 'center',
         alignItems: 'center',
-        borderWidth: 2,
-        borderColor: 'white',
     },
     avatarText: {
-        fontSize: 20,
+        fontSize: 14,
         fontWeight: '600',
         color: '#0f6319',
     },
     userDetails: {
         flex: 1,
+        flexDirection: 'row',
+    },
+    userButton: {
+        marginLeft: 10,
+        marginTop: 2,
+    },
+    userPush: {
+      marginRight: 10
     },
     welcomeText: {
         fontSize: 16,
@@ -43,7 +51,8 @@ export const styles = StyleSheet.create({
         fontWeight: '500',
     },
     userName: {
-        fontSize: 18,
+        fontSize: 16,
+        textTransform: 'uppercase',
         color: 'white',
         fontWeight: '600',
     },
@@ -59,7 +68,7 @@ export const styles = StyleSheet.create({
     statsContainer: {
         flexDirection: 'row',
         gap: 8,
-        marginBottom: 24,
+        marginBottom: 8,
     },
     statCard: {
         flex: 1,
@@ -74,12 +83,12 @@ export const styles = StyleSheet.create({
         elevation: 2,
     },
     statIcon: {
-        width: 40,
-        height: 40,
+        width: 30,
+        height: 30,
         borderRadius: 20,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 8,
+        marginBottom: 4,
     },
     statNumber: {
         fontSize: 24,
@@ -91,8 +100,15 @@ export const styles = StyleSheet.create({
         color: '#6b7280',
         textAlign: 'center',
     },
+    sectionContainer: {
+
+    },
     section: {
-        marginBottom: 24,
+        marginBottom: 8,
+        backgroundColor: '#f9fafb',
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 16,
     },
     sectionHeader: {
         flexDirection: 'row',
