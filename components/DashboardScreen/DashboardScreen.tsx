@@ -171,24 +171,6 @@ export function Dashboard() {
 
                 </View>
 
-                {/* Информационный баннер */}
-                {urgentTasks > 0 && (
-                    <View style={styles.warningBanner}>
-                        <View style={styles.warningContent}>
-                            <View style={styles.warningIconContainer}>
-                                <AlertCircle size={20} color="#F57C00" />
-                            </View>
-                            <View style={styles.warningTextContainer}>
-                                <Text style={styles.warningTitle}>Внимание</Text>
-                                <Text style={styles.warningMessage}>
-                                    У вас {urgentTasks} {urgentTasks === 1 ? 'задача требует' : 'задачи требуют'} внимания.
-                                    Срок выполнения истекает в ближайшие дни.
-                                </Text>
-                            </View>
-                        </View>
-                    </View>
-                )}
-
                 {/* --- СЕКЦИЯ: МОИ ЗАДАЧИ --- */}
                 <Animated.View
                     entering={FadeInDown.delay(700).duration(600)}
@@ -258,10 +240,6 @@ export function Dashboard() {
                 >
                     <View style={styles.sectionHeader}>
                         <Text style={styles.sectionTitle}>Предстоящие мероприятия</Text>
-                        <TouchableOpacity style={styles.sectionLink}>
-                            <Text style={styles.linkText}>Календарь</Text>
-                            <ChevronRight size={16} color="#2A6E3F" />
-                        </TouchableOpacity>
                     </View>
 
                     <View style={styles.cardsContainer}>
