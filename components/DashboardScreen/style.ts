@@ -1,114 +1,188 @@
-import { StyleSheet } from 'react-native';
+import {Platform, StyleSheet} from 'react-native';
 
 export const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f9fafb',
-
+        backgroundColor: '#F5F5F5',
     },
     scrollView: {
         flex: 1,
-        backgroundColor: '#0f6319',
-        backgroundImage: 'linear-gradient(to bottom, #0f6319, #ffffff)',
     },
     header: {
-        paddingHorizontal: 16,
-        paddingTop: 16,
+        borderBottomLeftRadius: 24,
+        borderBottomRightRadius: 24,
         paddingBottom: 32,
     },
-    userInfo: {
+    headerContent: {
+        paddingHorizontal: 20,
+        paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    },
+    userInfoRow: {
         flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
+        marginBottom: 10,
+    },
+    userProfileButton: {
+        flexDirection: 'row',
+    },
+    avatarContainer: {
+        marginRight: 12,
     },
     avatar: {
-        width: 36,
-        height: 36,
-        borderRadius: "50%",
+        width: 56,
+        height: 56,
+        borderRadius: 28,
         backgroundColor: 'white',
+        borderWidth: 3,
+        borderColor: 'rgba(255, 255, 255, 0.3)',
         justifyContent: 'center',
         alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
     avatarText: {
-        fontSize: 14,
+        color: '#2A6E3F',
+        fontSize: 18,
         fontWeight: '600',
-        color: '#0f6319',
     },
-    userDetails: {
-        flex: 1,
-        flexDirection: 'row',
+    userInfo: {
+        justifyContent: 'center',
     },
-    userButton: {
-        marginLeft: 10,
-        marginTop: 2,
-    },
-    userPush: {
-      marginRight: 10
-    },
-    welcomeText: {
-        fontSize: 16,
-        color: 'white',
-        fontWeight: '500',
+    greeting: {
+        color: 'rgba(255, 255, 255, 0.8)',
+        fontSize: 14,
     },
     userName: {
-        fontSize: 16,
-        textTransform: 'uppercase',
         color: 'white',
+        fontSize: 18,
         fontWeight: '600',
     },
-    userJob: {
+    notificationButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        alignSelf: 'center',
+        marginLeft: "auto"
+    },
+    jobTitle: {
+        color: 'rgba(255, 255, 255, 0.9)',
         fontSize: 14,
-        color: 'rgba(255, 255, 255, 0.8)',
-        marginTop: 4,
+        marginLeft: 8,
+    },
+    organization: {
+        color: 'rgba(255, 255, 255, 0.7)',
+        fontSize: 12,
+        marginLeft: 8,
+        marginBottom: 8
     },
     content: {
-        paddingHorizontal: 16,
-        marginTop: -16,
+        paddingHorizontal: 15,
+        marginTop: -24,
+        paddingBottom: 40,
     },
-    statsContainer: {
+    statsGrid: {
         flexDirection: 'row',
-        gap: 8,
-        marginBottom: 8,
+        gap: 6,
+        marginBottom: 16,
+    },
+    statCardContainer: {
+        flex: 1,
     },
     statCard: {
         flex: 1,
-        backgroundColor: 'white',
-        borderRadius: 12,
+        borderRadius: 20,
         padding: 12,
         alignItems: 'center',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
+        shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
-        shadowRadius: 2,
+        shadowRadius: 12,
         elevation: 2,
+        backgroundColor: '#ffffff',
+
     },
     statIcon: {
-        width: 30,
-        height: 30,
-        borderRadius: 20,
+        width: 40,
+        height: 40,
+        borderRadius: 12,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 4,
+        marginBottom: 6,
+
+        // Обязательно для iOS:
+        backgroundColor: '#fff',
+        overflow: 'visible', // Тень не будет обрезаться
+
+        // Настройки тени для iOS
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 }, // Смещение чуть больше для объема
+        shadowOpacity: 0.15, // Немного увеличили для видимости
+        shadowRadius: 8,     // Сделали тень мягче (размытее)
+
+        // Настройки для Android
+        elevation: 4,
+
+        // Фишка для Liquid Glass: тонкий блик по краю
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.5)',
     },
     statNumber: {
-        fontSize: 24,
+        fontSize: 22,
         fontWeight: '700',
-        color: '#111827',
+        marginBottom: 4,
+        color: '#000000',
     },
     statLabel: {
         fontSize: 12,
         color: '#6b7280',
-        textAlign: 'center',
     },
-    sectionContainer: {
-
+    warningBanner: {
+        backgroundColor: '#FFF3E0',
+        borderRadius: 20,
+        marginBottom: 24,
+        borderLeftWidth: 4,
+        borderLeftColor: '#FF9800',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 2,
+    },
+    warningContent: {
+        flexDirection: 'row',
+        padding: 16,
+        alignItems: 'flex-start',
+    },
+    warningIconContainer: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        backgroundColor: 'white',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
+    },
+    warningTextContainer: {
+        flex: 1,
+    },
+    warningTitle: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#E65100',
+        marginBottom: 4,
+    },
+    warningMessage: {
+        fontSize: 12,
+        color: '#374151',
+        lineHeight: 16,
     },
     section: {
-        marginBottom: 8,
-        backgroundColor: '#f9fafb',
-        borderRadius: 12,
-        paddingHorizontal: 16,
-        paddingVertical: 16,
+        marginBottom: 24,
     },
     sectionHeader: {
         flexDirection: 'row',
@@ -117,40 +191,68 @@ export const styles = StyleSheet.create({
         marginBottom: 12,
     },
     sectionTitle: {
-        fontSize: 16,
+        fontSize: 20,
         fontWeight: '600',
         color: '#111827',
     },
-    seeAllButton: {
+    sectionLink: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 4,
     },
-    seeAllText: {
+    linkText: {
         fontSize: 14,
-        color: '#0f6319',
+        color: '#2A6E3F',
         fontWeight: '500',
+        marginRight: 4,
     },
     cardsContainer: {
-        gap: 8,
+        gap: 12,
     },
     card: {
         backgroundColor: 'white',
-        borderRadius: 12,
-        padding: 12,
+        borderRadius: 20,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
+        shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
-        shadowRadius: 2,
+        shadowRadius: 8,
         elevation: 2,
     },
     cardContent: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 12,
+        paddingLeft: 20,
+        paddingRight: 16,
+        paddingVertical: 18,
     },
-    cardMain: {
+    taskIcon: {
+        width: 48,
+        height: 48,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    documentIcon: {
+        width: 48,
+        height: 48,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    cardTextContainer: {
         flex: 1,
+        marginRight: 8,
     },
     cardTitle: {
         fontSize: 14,
@@ -160,83 +262,109 @@ export const styles = StyleSheet.create({
     },
     cardTags: {
         flexDirection: 'row',
-        flexWrap: 'wrap',
         alignItems: 'center',
+        flexWrap: 'wrap',
         gap: 8,
     },
-    badge: {
+    tag: {
         paddingHorizontal: 8,
         paddingVertical: 4,
         borderRadius: 6,
-        alignSelf: 'flex-start',
     },
-    badgeText: {
+    tagText: {
         fontSize: 12,
         fontWeight: '500',
     },
-    timeContainer: {
+    timeTag: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 4,
     },
     timeText: {
+
+        fontSize: 12,
+    },
+    eventDateContainer: {
+        width: 56,
+        height: 56,
+        borderRadius: 12,
+        backgroundColor: '#81C784',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    eventDay: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: 'white',
+    },
+    eventMonth: {
+        fontSize: 10,
+        color: 'white',
+        opacity: 0.9,
+        marginTop: 2,
+    },
+    eventTime: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        marginBottom: 8,
+    },
+    eventTimeText: {
         fontSize: 12,
         color: '#6b7280',
     },
-    overdueText: {
-        color: '#dc2626',
-        fontWeight: '500',
+    publicBadge: {
+        alignSelf: 'flex-start',
+        backgroundColor: '#E8F5E9',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 6,
+        borderWidth: 1,
+        borderColor: '#A5D6A7',
     },
-    urgentText: {
-        color: '#ea580c',
-        fontWeight: '500',
-    },
-    eventDate: {
-        width: 48,
-        height: 48,
-        borderRadius: 8,
-        backgroundColor: 'rgba(15, 99, 25, 0.1)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    eventDateDay: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#0f6319',
-    },
-    eventDateMonth: {
+    publicBadgeText: {
         fontSize: 12,
-        color: '#0f6319',
-        textTransform: 'lowercase',
+        color: '#2E7D32',
+        fontWeight: '500',
     },
-    docIcon: {
-        width: 40,
-        height: 40,
-        borderRadius: 8,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    docInfo: {
+    documentInfo: {
         fontSize: 12,
         color: '#6b7280',
     },
     emptyCard: {
-        backgroundColor: 'white',
-        borderRadius: 12,
+        backgroundColor: '#F8FFF9',
+        borderRadius: 20,
         padding: 32,
         alignItems: 'center',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
+        shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
-        shadowRadius: 2,
+        shadowRadius: 8,
         elevation: 2,
     },
-    emptyText: {
-        fontSize: 14,
-        color: '#6b7280',
-        marginTop: 8,
+    emptyIconContainer: {
+        width: 64,
+        height: 64,
+        borderRadius: 20,
+        backgroundColor: '#E8F5E9',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 16,
     },
-    bottomSpacing: {
-        height: 16,
+    emptyTitle: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: '#374151',
+        marginBottom: 4,
+    },
+    emptySubtitle: {
+        fontSize: 12,
+        color: '#6b7280',
     },
 });

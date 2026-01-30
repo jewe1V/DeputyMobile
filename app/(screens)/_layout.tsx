@@ -1,6 +1,7 @@
 import { Tabs } from "expo-router";
-import {Calendar,Folder, House, ListTodo} from "lucide-react-native";
-
+import { Calendar, Folder, House, ListTodo } from "lucide-react-native";
+import { BlurView } from "expo-blur";
+import { StyleSheet, Platform, View, Text } from "react-native";
 
 export default () => {
     return (
@@ -8,79 +9,116 @@ export default () => {
             screenOptions={{
                 headerShown: false,
                 tabBarActiveTintColor: "#11631b",
-                tabBarInactiveTintColor: "gray",
+                tabBarInactiveTintColor: "#484f56",
+                tabBarShowLabel: false,
+
+                tabBarStyle: {
+                    bottom: 25,
+                    left: 15,
+                    right: 15,
+                    elevation: 0,
+                    backgroundColor: "transparent",
+                    borderRadius: 25,
+                    borderTopWidth: 0,
+                    overflow: 'hidden',
+                    height: 60,
+                    paddingBottom: 0,
+                    marginHorizontal: 15,
+                },
+
+                // Убираем ограничения контейнера иконки
                 tabBarIconStyle: {
-                    width: 24,
-                    height: 24,
+                    width: '100%',
+                    height: '100%',
                 },
-                tabBarLabelStyle: {
-                    fontSize: 11,
+
+                // Центрируем элементы внутри таба
+                tabBarItemStyle: {
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    paddingVertical: 10,
                 },
+
+                tabBarBackground: () => (
+                    <BlurView
+                        intensity={60} // Больше блюра для эффекта Liquid Glass
+                        tint="light"
+                        style={StyleSheet.absoluteFill}
+                    />
+                ),
             }}
         >
             <Tabs.Screen
                 name="DashboardScreen"
                 options={{
-                    tabBarLabel: "главная",
-                    tabBarIcon: ({ color, size }) => (
-                        <House size={size} color={color}/>
+                    tabBarIcon: ({ color, focused }) => (
+                        <View style={[styles.fullTabWrapper, focused && styles.activeWrapper]}>
+                            <House size={22} color={color}/>
+                            <Text style={[styles.labelStyle, { color }]}>главная</Text>
+                        </View>
                     ),
                 }}
             />
+
             <Tabs.Screen
                 name="EventsScreen"
                 options={{
-                    tabBarLabel: "мероприятия",
-                    tabBarIcon: ({ color, size }) => (
-                        <Calendar size={size} color={color} />
+                    tabBarIcon: ({ color, focused }) => (
+                        <View style={[styles.fullTabWrapper, focused && styles.activeWrapper]}>
+                            <Calendar size={22} color={color}/>
+                            <Text style={[styles.labelStyle, { color }]}>события</Text>
+                        </View>
                     ),
                 }}
             />
+
             <Tabs.Screen
                 name="TaskBoardScreen"
                 options={{
-                    tabBarLabel: "задачи",
-                    tabBarIcon: ({ color, size }) => (
-                        <ListTodo size={size} color={color}/>
+                    tabBarIcon: ({ color, focused }) => (
+                        <View style={[styles.fullTabWrapper, focused && styles.activeWrapper]}>
+                            <ListTodo size={22} color={color}/>
+                            <Text style={[styles.labelStyle, { color }]}>задачи</Text>
+                        </View>
                     ),
                 }}
             />
+
             <Tabs.Screen
                 name="CatalogScreen"
                 options={{
-                    tabBarLabel: "каталог",
-                    tabBarIcon: ({ color, size }) => (
-                        <Folder size={size} color={color}/>
+                    tabBarIcon: ({ color, focused }) => (
+                        <View style={[styles.fullTabWrapper, focused && styles.activeWrapper]}>
+                            <Folder size={22} color={color}/>
+                            <Text style={[styles.labelStyle, { color }]}>каталог</Text>
+                        </View>
                     ),
-
                 }}
             />
 
-            <Tabs.Screen
-                name="EventDetailsScreen"
-                options={{
-                    href : null,
-                }}
-            />
-
-            <Tabs.Screen
-                name="CreateEventScreen"
-                options={{
-                    href : null,
-                }}
-            />
-            <Tabs.Screen
-                name="TaskDetailScreen"
-                options={{
-                    href: null
-                }}
-            />
-            <Tabs.Screen
-                name="ProfileScreen"
-                options={{
-                    href: null
-                }}
-            />
+            <Tabs.Screen name="EventDetailsScreen" options={{ href: null }} />
+            <Tabs.Screen name="CreateEventScreen" options={{ href: null }} />
+            <Tabs.Screen name="TaskDetailScreen" options={{ href: null }} />
+            <Tabs.Screen name="ProfileScreen" options={{ href: null }} />
         </Tabs>
     );
 };
+
+const styles = StyleSheet.create({
+    fullTabWrapper: {
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 6,
+        paddingHorizontal: 15,
+        borderRadius: 18,
+    },
+    activeWrapper: {
+        backgroundColor: 'rgba(255, 255, 255, 0.1)', // На тёмном фоне лучше светлая подсветка
+    },
+    labelStyle: {
+        fontSize: 10,
+        marginTop: 4,
+        fontWeight: '600',
+    },
+});

@@ -12,7 +12,7 @@ export const currentUser: Profile = {
     id: '1',
     fullName: 'Иванов Иван Иванович',
     email: 'ivanov@ekb-duma.ru',
-    jobTitle: 'Депутат Городской Думы',
+    jobTitle: 'Админ',
     userRoles: [mockRoles[0]],
 };
 
