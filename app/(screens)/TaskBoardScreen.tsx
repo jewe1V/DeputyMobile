@@ -1,2 +1,2 @@
-import {TaskBoardScreen} from "@/components/TaskBoard/TaskBoardScreen";
-export default TaskBoardScreen;
+import {TaskBoard} from "@/components/TaskBoard/TaskBoard";
+export default TaskBoard;

@@ -4,8 +4,6 @@ import {
     Text,
     ScrollView,
     TouchableOpacity,
-    SafeAreaView,
-    StatusBar,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
@@ -18,9 +16,8 @@ import {
 } from 'lucide-react-native';
 import { currentUser, mockTasks, mockEvents, mockDocuments } from '@/data/mockData';
 import {styles} from './style';
-import Animated, {FadeInUp, FadeInDown, Layout, FadeInRight, ZoomIn} from 'react-native-reanimated';
+import Animated, {FadeInUp, FadeInDown, FadeInRight, ZoomIn} from 'react-native-reanimated';
 
-import {router} from "expo-router";
 export function Dashboard() {
     const upcomingTasks = mockTasks
         .filter(task => task.status !== 'completed')

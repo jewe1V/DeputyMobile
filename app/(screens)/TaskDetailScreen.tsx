@@ -1,2 +1,2 @@
-import TaskDetailScreen from "@/components/TaskBoard/TaskDetailScreen";
-export default TaskDetailScreen;
+import { TaskDetail } from "@/components/TaskBoard/TaskDetail";
+export default TaskDetail;

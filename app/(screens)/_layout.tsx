@@ -1,106 +1,109 @@
 import { Tabs } from "expo-router";
 import { Calendar, Folder, House, ListTodo } from "lucide-react-native";
 import { BlurView } from "expo-blur";
-import { StyleSheet, Platform, View, Text } from "react-native";
+import { StyleSheet, View, Text } from "react-native";
+import {Toast} from "expo-router/build/views/Toast";
 
 export default () => {
     return (
-        <Tabs
-            screenOptions={{
-                headerShown: false,
-                tabBarActiveTintColor: "#11631b",
-                tabBarInactiveTintColor: "#484f56",
-                tabBarShowLabel: false,
+        <>
+            <Tabs
+                screenOptions={{
+                    headerShown: false,
+                    tabBarActiveTintColor: "#11631b",
+                    tabBarInactiveTintColor: "#484f56",
+                    tabBarShowLabel: false,
 
-                tabBarStyle: {
-                    bottom: 25,
-                    left: 15,
-                    right: 15,
-                    elevation: 0,
-                    backgroundColor: "transparent",
-                    borderRadius: 25,
-                    borderTopWidth: 0,
-                    overflow: 'hidden',
-                    height: 60,
-                    paddingBottom: 0,
-                    marginHorizontal: 15,
-                },
+                    tabBarStyle: {
+                        bottom: 25,
+                        left: 15,
+                        right: 15,
+                        elevation: 0,
+                        backgroundColor: "transparent",
+                        borderRadius: 25,
+                        borderTopWidth: 0,
+                        overflow: 'hidden',
+                        height: 60,
+                        paddingBottom: 0,
+                        marginHorizontal: 15,
+                    },
 
-                // Убираем ограничения контейнера иконки
-                tabBarIconStyle: {
-                    width: '100%',
-                    height: '100%',
-                },
+                    // Убираем ограничения контейнера иконки
+                    tabBarIconStyle: {
+                        width: '100%',
+                        height: '100%',
+                    },
 
-                // Центрируем элементы внутри таба
-                tabBarItemStyle: {
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    paddingVertical: 10,
-                },
+                    // Центрируем элементы внутри таба
+                    tabBarItemStyle: {
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        paddingVertical: 10,
+                    },
 
-                tabBarBackground: () => (
-                    <BlurView
-                        intensity={60} // Больше блюра для эффекта Liquid Glass
-                        tint="light"
-                        style={StyleSheet.absoluteFill}
-                    />
-                ),
-            }}
-        >
-            <Tabs.Screen
-                name="DashboardScreen"
-                options={{
-                    tabBarIcon: ({ color, focused }) => (
-                        <View style={[styles.fullTabWrapper, focused && styles.activeWrapper]}>
-                            <House size={22} color={color}/>
-                            <Text style={[styles.labelStyle, { color }]}>главная</Text>
-                        </View>
+                    tabBarBackground: () => (
+                        <BlurView
+                            intensity={60} // Больше блюра для эффекта Liquid Glass
+                            tint="light"
+                            style={StyleSheet.absoluteFill}
+                        />
                     ),
                 }}
-            />
+            >
+                <Tabs.Screen
+                    name="DashboardScreen"
+                    options={{
+                        tabBarIcon: ({ color, focused }) => (
+                            <View style={[styles.fullTabWrapper, focused && styles.activeWrapper]}>
+                                <House size={22} color={color}/>
+                                <Text style={[styles.labelStyle, { color }]}>главная</Text>
+                            </View>
+                        ),
+                    }}
+                />
 
-            <Tabs.Screen
-                name="EventsScreen"
-                options={{
-                    tabBarIcon: ({ color, focused }) => (
-                        <View style={[styles.fullTabWrapper, focused && styles.activeWrapper]}>
-                            <Calendar size={22} color={color}/>
-                            <Text style={[styles.labelStyle, { color }]}>события</Text>
-                        </View>
-                    ),
-                }}
-            />
+                <Tabs.Screen
+                    name="EventsScreen"
+                    options={{
+                        tabBarIcon: ({ color, focused }) => (
+                            <View style={[styles.fullTabWrapper, focused && styles.activeWrapper]}>
+                                <Calendar size={22} color={color}/>
+                                <Text style={[styles.labelStyle, { color }]}>события</Text>
+                            </View>
+                        ),
+                    }}
+                />
 
-            <Tabs.Screen
-                name="TaskBoardScreen"
-                options={{
-                    tabBarIcon: ({ color, focused }) => (
-                        <View style={[styles.fullTabWrapper, focused && styles.activeWrapper]}>
-                            <ListTodo size={22} color={color}/>
-                            <Text style={[styles.labelStyle, { color }]}>задачи</Text>
-                        </View>
-                    ),
-                }}
-            />
+                <Tabs.Screen
+                    name="TaskBoardScreen"
+                    options={{
+                        tabBarIcon: ({ color, focused }) => (
+                            <View style={[styles.fullTabWrapper, focused && styles.activeWrapper]}>
+                                <ListTodo size={22} color={color}/>
+                                <Text style={[styles.labelStyle, { color }]}>задачи</Text>
+                            </View>
+                        ),
+                    }}
+                />
 
-            <Tabs.Screen
-                name="CatalogScreen"
-                options={{
-                    tabBarIcon: ({ color, focused }) => (
-                        <View style={[styles.fullTabWrapper, focused && styles.activeWrapper]}>
-                            <Folder size={22} color={color}/>
-                            <Text style={[styles.labelStyle, { color }]}>каталог</Text>
-                        </View>
-                    ),
-                }}
-            />
+                <Tabs.Screen
+                    name="CatalogScreen"
+                    options={{
+                        tabBarIcon: ({ color, focused }) => (
+                            <View style={[styles.fullTabWrapper, focused && styles.activeWrapper]}>
+                                <Folder size={22} color={color}/>
+                                <Text style={[styles.labelStyle, { color }]}>каталог</Text>
+                            </View>
+                        ),
+                    }}
+                />
 
-            <Tabs.Screen name="EventDetailsScreen" options={{ href: null }} />
-            <Tabs.Screen name="CreateEventScreen" options={{ href: null }} />
-            <Tabs.Screen name="TaskDetailScreen" options={{ href: null }} />
-            <Tabs.Screen name="ProfileScreen" options={{ href: null }} />
-        </Tabs>
+                <Tabs.Screen name="EventDetailsScreen" options={{ href: null }} />
+                <Tabs.Screen name="CreateEventScreen" options={{ href: null }} />
+                <Tabs.Screen name="TaskDetailScreen" options={{ href: null }} />
+                <Tabs.Screen name="ProfileScreen" options={{ href: null }} />
+            </Tabs>
+        </>
     );
 };
 
