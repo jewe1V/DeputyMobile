@@ -19,22 +19,14 @@ import {
     Edit,
     Trash2,
     MessageSquare,
-    ChevronLeft,
+    ChevronLeft, Plus, Bell,
 } from 'lucide-react-native';
-import { mockTasks } from '@/data/mockData';
+import {currentUser, mockTasks} from '@/data/mockData';
 import { TaskStatus, TaskPriority } from '@/data/types';
 import Toast from 'react-native-toast-message';
 import { styles } from './task-detail-style';
-
-// Типы для навигации
-type RootStackParamList = {
-    TaskBoard: undefined;
-    TaskDetail: { id: string };
-    TaskEdit: { id: string };
-};
-
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
-type TaskDetailRouteProp = RouteProp<RootStackParamList, 'TaskDetail'>;
+import {router, useLocalSearchParams} from "expo-router";
+import {LinearGradient} from "expo-linear-gradient";
 
 const priorityConfig: Record<TaskPriority, { label: string; dotColor: string; textColor: string }> = {
     low: {
@@ -82,7 +74,7 @@ const statusConfig: Record<TaskStatus, { label: string; bgColor: string; textCol
         label: 'Завершена',
         bgColor: '#D1FAE5', // green-100
         textColor: '#065F46', // green-700
-        borderColor: '#34D399', // green-300
+        borderColor: '#53c161', // green-300
     },
 };
 
@@ -130,10 +122,7 @@ const StatusButton = ({
 };
 
 export function TaskDetail() {
-    const navigation = useNavigation<NavigationProp>();
-    const route = useRoute<TaskDetailRouteProp>();
-    const { id } = route.params;
-
+    const { id } = useLocalSearchParams<{ id: string }>();
     const task = mockTasks.find((t) => t.id === id);
     const [currentStatus, setCurrentStatus] = useState<TaskStatus>(task?.status || 'created');
 
@@ -142,7 +131,7 @@ export function TaskDetail() {
             <SafeAreaView style={styles.container}>
                 <StatusBar backgroundColor="#2A6E3F" barStyle="light-content" />
                 <View style={[styles.header, { backgroundColor: '#2A6E3F' }]}>
-                    <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+                    <TouchableOpacity  onPress={() => router.push("/TaskBoardScreen")}>
                         <ChevronLeft size={24} color="#FFFFFF" />
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>Задача не найдена</Text>
@@ -182,7 +171,7 @@ export function TaskDetail() {
     };
 
     const handleEdit = () => {
-        navigation.navigate('TaskEdit', { id: task.id });
+        router.push({pathname: '/TaskEditScreen', params: { id: task.id }});
     };
 
     const handleDelete = () => {
@@ -210,76 +199,56 @@ export function TaskDetail() {
         <SafeAreaView style={styles.container}>
             <StatusBar backgroundColor="#2A6E3F" barStyle="light-content" />
 
-            {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-                    <ArrowLeft size={20} color="#FFFFFF" />
-                </TouchableOpacity>
+            <LinearGradient
+                style={styles.header}
+                colors={['#2A6E3F', '#349339']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+            >
                 <View style={styles.headerContent}>
-                    <Text style={styles.headerTitle}>Детали задачи</Text>
+                    {/* Кнопка назад (слева) */}
+                    <TouchableOpacity
+                        onPress={() => router.push("/TaskBoardScreen")}
+                    >
+                        <ArrowLeft size={24} color="#FFFFFF" />
+                    </TouchableOpacity>
+
+                    {/* Заголовок и статус (центр) */}
+                    <View style={styles.headerTitleContainer}>
+                        <Text
+                            style={styles.taskTitle}
+                            numberOfLines={5}
+                            ellipsizeMode="tail"  // Троеточие в конце
+                        >
+                            {task.title}
+                        </Text>
+                        <View style={styles.statusBadge}>
+                            <Text style={styles.statusBadgeText}>
+                                {statusConfig[currentStatus].label}
+                            </Text>
+                        </View>
+                    </View>
+
+                    {/* Кнопка редактирования (справа) */}
+                    <TouchableOpacity
+                        style={styles.headerButton}
+                        onPress={handleEdit}
+                    >
+                        <Edit size={20} color="#FFFFFF" />
+                    </TouchableOpacity>
                 </View>
-                <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
-                    <Edit size={20} color="#FFFFFF" />
-                </TouchableOpacity>
-            </View>
+            </LinearGradient>
+
 
             <ScrollView
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
-                {/* Title */}
+                {/* Описание */}
                 <View style={styles.section}>
-                    <Text style={styles.taskTitle}>{task.title}</Text>
-
-                    {/* Текущий статус как бейдж */}
-                    <View style={styles.statusBadgeContainer}>
-                        <View
-                            style={[
-                                styles.statusBadge,
-                                {
-                                    backgroundColor: statusConfig[currentStatus].bgColor,
-                                    borderColor: statusConfig[currentStatus].borderColor,
-                                },
-                            ]}
-                        >
-                            <Text
-                                style={[
-                                    styles.statusBadgeText,
-                                    { color: statusConfig[currentStatus].textColor },
-                                ]}
-                            >
-                                {statusConfig[currentStatus].label}
-                            </Text>
-                        </View>
-                    </View>
-                </View>
-
-                {/* Сегментированный контрол для смены статуса */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Изменить статус задачи</Text>
-                    <View style={styles.statusGrid}>
-                        <StatusButton
-                            status="created"
-                            isActive={currentStatus === 'created'}
-                            onPress={() => handleStatusChange('created')}
-                        />
-                        <StatusButton
-                            status="in_progress"
-                            isActive={currentStatus === 'in_progress'}
-                            onPress={() => handleStatusChange('in_progress')}
-                        />
-                        <StatusButton
-                            status="approval"
-                            isActive={currentStatus === 'approval'}
-                            onPress={() => handleStatusChange('approval')}
-                        />
-                        <StatusButton
-                            status="completed"
-                            isActive={currentStatus === 'completed'}
-                            onPress={() => handleStatusChange('completed')}
-                        />
-                    </View>
+                    <Text style={styles.sectionTitle}>Описание</Text>
+                    <Text style={styles.descriptionText}>{task.description}</Text>
                 </View>
 
                 {/* Блок метаданных */}
@@ -348,10 +317,31 @@ export function TaskDetail() {
                     </View>
                 </View>
 
-                {/* Описание */}
+                {/* Сегментированный контрол для смены статуса */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Описание</Text>
-                    <Text style={styles.descriptionText}>{task.description}</Text>
+                    <Text style={styles.sectionTitle}>Изменить статус задачи</Text>
+                    <View style={styles.statusGrid}>
+                        <StatusButton
+                            status="created"
+                            isActive={currentStatus === 'created'}
+                            onPress={() => handleStatusChange('created')}
+                        />
+                        <StatusButton
+                            status="in_progress"
+                            isActive={currentStatus === 'in_progress'}
+                            onPress={() => handleStatusChange('in_progress')}
+                        />
+                        <StatusButton
+                            status="approval"
+                            isActive={currentStatus === 'approval'}
+                            onPress={() => handleStatusChange('approval')}
+                        />
+                        <StatusButton
+                            status="completed"
+                            isActive={currentStatus === 'completed'}
+                            onPress={() => handleStatusChange('completed')}
+                        />
+                    </View>
                 </View>
 
                 {/* Участники */}
@@ -388,39 +378,6 @@ export function TaskDetail() {
                         </View>
                     </View>
                 </View>
-
-                {/* Теги */}
-                {task.tags && task.tags.length > 0 && (
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Теги</Text>
-                        <View style={styles.tagsContainer}>
-                            {task.tags.map((tag) => (
-                                <View key={tag} style={styles.tagItem}>
-                                    <Tag size={12} color="#6B7280" />
-                                    <Text style={styles.tagText}>{tag}</Text>
-                                </View>
-                            ))}
-                        </View>
-                    </View>
-                )}
-
-                {/* Комментарии (заглушка) */}
-                <View style={styles.section}>
-                    <View style={styles.commentsHeader}>
-                        <MessageSquare size={16} color="#374151" />
-                        <Text style={styles.sectionTitle}>Комментарии</Text>
-                    </View>
-                    <View style={styles.commentsPlaceholder}>
-                        <MessageSquare size={32} color="#D1D5DB" />
-                        <Text style={styles.commentsPlaceholderTitle}>Комментариев пока нет</Text>
-                        <Text style={styles.commentsPlaceholderSubtitle}>
-                            Обсуждение задачи появится здесь
-                        </Text>
-                    </View>
-                </View>
-
-                {/* Отступ для кнопок */}
-                <View style={styles.bottomSpacer} />
             </ScrollView>
 
             {/* Действия */}

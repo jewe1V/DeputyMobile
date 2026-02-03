@@ -289,7 +289,7 @@ export const styles = StyleSheet.create({
         borderRadius: 12,
         borderWidth: 1,
         borderColor: '#2a6f3d',
-        backgroundColor: 'rgba(42,111,61,0.1)',
+        backgroundColor: 'rgb(224,232,226)',
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 12,

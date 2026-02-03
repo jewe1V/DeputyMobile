@@ -4,19 +4,11 @@ const StackLayout = () => {
     return (
         <Stack>
             <Stack.Screen
-                name="(forms)"
+                name="NewTaskScreen"
                 options={{ headerShown: false }}
             />
             <Stack.Screen
-                name="(screens)"
-                options={{ headerShown: false }}
-            />
-            <Stack.Screen
-                name="index"
-                options={{ headerShown: false }}
-            />
-            <Stack.Screen
-                name="login"
+                name="TaskDetailScreen"
                 options={{ headerShown: false }}
             />
         </Stack>

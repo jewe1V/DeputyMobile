@@ -1,4 +1,4 @@
-import {StyleSheet} from "react-native";
+import {Platform, StyleSheet} from "react-native";
 
 export const styles = StyleSheet.create({
     container: {
@@ -7,28 +7,55 @@ export const styles = StyleSheet.create({
     },
     header: {
         backgroundColor: '#2A6E3F',
-        flexDirection: 'row',
-        alignItems: 'center',
+        borderBottomLeftRadius: 24,
+        borderBottomRightRadius: 24,
+        paddingBottom: 32,
         paddingHorizontal: 16,
-        paddingVertical: 12,
-    },
-    backButton: {
-        padding: 8,
-        marginRight: 8,
-    },
-    editButton: {
-        padding: 8,
-        marginLeft: 8,
+        paddingTop: Platform.OS === 'ios' ? 80 : 60,
     },
     headerContent: {
-        flex: 1,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
     },
-    headerTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        color: '#FFFFFF',
-        textAlign: 'center',
+    headerButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        flexShrink: 0,  // Не сжимается
     },
+    headerTitleContainer: {
+        flex: 1,  // Занимает доступное пространство
+        marginRight: 12,
+        marginLeft: 24,// Отступы от кнопок
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: 40,  // Минимальная высота как у кнопок
+    },
+    taskTitle: {
+        color: '#FFF',
+        fontSize: 20,
+        fontWeight: 600,
+        lineHeight: 24,
+        maxWidth: '100%',
+    },
+    statusBadge: {
+        marginTop: 8,
+        alignSelf: 'flex-start',
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        backgroundColor: '#fdfffe',
+    },
+    statusBadgeText: {
+        fontSize: 12,
+        color: '#30823a',
+    },
+
     scrollView: {
         flex: 1,
     },
@@ -37,41 +64,20 @@ export const styles = StyleSheet.create({
     },
     section: {
         backgroundColor: '#FFFFFF',
-        borderBottomWidth: 1,
-        borderBottomColor: '#E5E7EB',
         padding: 16,
     },
-    taskTitle: {
-        fontSize: 20,
-        fontWeight: '600',
-        color: '#111827',
-        marginBottom: 12,
-        lineHeight: 24,
-    },
-    statusBadgeContainer: {
-        marginTop: 8,
-    },
-    statusBadge: {
-        alignSelf: 'flex-start',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 16,
-        borderWidth: 1,
-    },
-    statusBadgeText: {
-        fontSize: 12,
-        fontWeight: '500',
-    },
     sectionTitle: {
-        fontSize: 14,
+        fontSize: 16,
         fontWeight: '500',
-        color: '#374151',
+        color: '#272c33',
         marginBottom: 12,
     },
     statusGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: 8,
+        justifyContent: 'space-between',
+        alignItems: 'center',
     },
     statusButton: {
         flex: 1,

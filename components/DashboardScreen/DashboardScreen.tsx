@@ -94,7 +94,6 @@ export function Dashboard() {
         return diffDays;
     };
 
-    // Подсчет статистики
     const activeTasks = mockTasks.filter(task => task.status !== 'completed').length;
     const urgentTasks = upcomingTasks.filter(task => {
         const days = getDaysUntilDue(task.dueDate);
@@ -141,7 +140,7 @@ export function Dashboard() {
 
                     {/* --- КАРТОЧКА 1 --- */}
                     <Animated.View style={styles.statCardContainer} entering={FadeInDown.delay(200).duration(600).springify()}>
-                        <LinearGradient colors={['#ffffff','#f7fbf7']} style={styles.statCard}>
+                        <LinearGradient colors={['#ffffff','#f3fdf3']} style={styles.statCard}>
                             <View style={styles.statIcon}><Calendar size={20} color="black" /></View>
                             <Text style={styles.statNumber}>{upcomingEvents?.length || 0}</Text>
                             <Text style={styles.statLabel}>Мероприятий</Text>

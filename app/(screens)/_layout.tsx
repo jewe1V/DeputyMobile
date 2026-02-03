@@ -1,7 +1,7 @@
 import { Tabs } from "expo-router";
 import { Calendar, Folder, House, ListTodo } from "lucide-react-native";
 import { BlurView } from "expo-blur";
-import { StyleSheet, View, Text } from "react-native";
+import {StyleSheet, View, Text, Platform} from "react-native";
 import {Toast} from "expo-router/build/views/Toast";
 
 export default () => {
@@ -15,11 +15,11 @@ export default () => {
                     tabBarShowLabel: false,
 
                     tabBarStyle: {
-                        bottom: 25,
+                        bottom: Platform.OS === 'ios' ? 25 : 30,
                         left: 15,
                         right: 15,
                         elevation: 0,
-                        backgroundColor: "transparent",
+                        backgroundColor: Platform.OS === 'ios' ? "transparent" : "rgba(255,255,255,0.8)",
                         borderRadius: 25,
                         borderTopWidth: 0,
                         overflow: 'hidden',
@@ -43,7 +43,7 @@ export default () => {
 
                     tabBarBackground: () => (
                         <BlurView
-                            intensity={60} // Больше блюра для эффекта Liquid Glass
+                            intensity={60}
                             tint="light"
                             style={StyleSheet.absoluteFill}
                         />

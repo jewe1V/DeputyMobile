@@ -1,10 +1,6 @@
 import {Platform, StyleSheet} from "react-native";
 
 export const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#F9FAFB', // gray-50
-    },
     header: {
         backgroundColor: '#2A6E3F',
         flexDirection: 'row',
@@ -38,11 +34,11 @@ export const styles = StyleSheet.create({
         marginLeft: "auto"
     },
     filtersSection: {
-        backgroundColor: '#FFFFFF',
         padding: 12,
         marginTop: -24,
         borderRadius: 20,
-        marginHorizontal: 15
+        marginHorizontal: 15,
+        backgroundColor: "transparent"
     },
     filtersHeader: {
         flexDirection: 'row',
@@ -90,7 +86,7 @@ export const styles = StyleSheet.create({
         borderColor: '#D1D5DB',
         borderRadius: 8,
         marginTop: 4,
-
+        zIndex: 10,
         elevation: 5,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
@@ -110,20 +106,18 @@ export const styles = StyleSheet.create({
     },
     taskList: {
         padding: 16,
-        paddingBottom: 100, // Для FAB кнопки
+        paddingBottom: 100,
+        marginTop: -12,
     },
     taskCard: {
         backgroundColor: '#FFFFFF',
         borderWidth: 1,
         borderColor: '#E5E7EB',
-        borderRadius: 8,
         padding: 16,
         marginBottom: 12,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-        elevation: 2,
+        borderLeftColor: "#46b574",
+        borderLeftWidth: 4,
+        borderRadius: 20,
     },
     taskTitle: {
         fontSize: 16,
