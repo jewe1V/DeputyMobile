@@ -1,2 +1,2 @@
-import CatalogScreen from "@/components/CatalogScreen/CatalogScreen";
-export default CatalogScreen;
+import {FileManager} from "@/components/FileManagerScreen/FileManagerScreen";
+export default FileManager;

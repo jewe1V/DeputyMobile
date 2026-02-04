@@ -3,7 +3,7 @@ import {Platform, StyleSheet} from "react-native";
 export const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F9FAFB',
+        backgroundColor: '#ffffff',
     },
     header: {
         backgroundColor: '#2A6E3F',
@@ -231,9 +231,7 @@ export const styles = StyleSheet.create({
     },
     actionsContainer: {
         backgroundColor: '#FFFFFF',
-        borderTopWidth: 1,
-        borderTopColor: '#E5E7EB',
-        padding: 16,
+        paddingHorizontal: 16,
         paddingBottom: 24,
     },
     actionButton: {

@@ -196,7 +196,7 @@ export function TaskDetail() {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
+        <View style={styles.container}>
             <StatusBar backgroundColor="#2A6E3F" barStyle="light-content" />
 
             <LinearGradient
@@ -390,6 +390,6 @@ export function TaskDetail() {
                     <Text style={styles.deleteButtonText}>Удалить задачу</Text>
                 </TouchableOpacity>
             </View>
-        </SafeAreaView>
+        </View>
     );
 }
