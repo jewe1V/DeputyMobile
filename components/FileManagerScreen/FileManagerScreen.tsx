@@ -28,11 +28,13 @@ import { mockCatalogs } from '@/data/mockData';
 import { Catalog } from '@/data/types';
 import { styles } from './file-manager-screen';
 import {LinearGradient} from "expo-linear-gradient";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export function FileManager() {
     const navigation = useNavigation();
     const [currentCatalog, setCurrentCatalog] = useState<Catalog | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const insets = useSafeAreaInsets();
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
@@ -82,8 +84,8 @@ export function FileManager() {
                 colors={['#2A6E3F', '#349339']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
-                style={styles.header}
-            >
+                style={[styles.header, {paddingTop: insets.top}]}>
+
                 <View style={styles.headerContent}>
                     <Text style={styles.headerTitle}>Документы</Text>
                     <Text style={styles.headerSubtitle}>{currentCatalog ? currentCatalog.name : 'Все каталоги'}</Text>

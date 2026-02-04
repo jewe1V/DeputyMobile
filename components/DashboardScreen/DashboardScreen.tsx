@@ -18,8 +18,10 @@ import { currentUser, mockTasks, mockEvents, mockDocuments } from '@/data/mockDa
 import {styles} from './style';
 import Animated, {FadeInUp, FadeInDown, FadeInRight, ZoomIn} from 'react-native-reanimated';
 import {router} from "expo-router";
+import {useSafeAreaInsets} from "react-native-safe-area-context";
 
 export function Dashboard() {
+    const insets = useSafeAreaInsets();
     const upcomingTasks = mockTasks
         .filter(task => task.status !== 'completed')
         .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
@@ -108,10 +110,9 @@ export function Dashboard() {
                     colors={['#2A6E3F', '#349339']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
-                    style={styles.header}
+                    style={[styles.header, {paddingTop: insets.top}]}
                 >
-                    <View
-                        entering={FadeInUp.duration(800).springify().damping(80)} style={styles.headerContent}>
+                    <View style={styles.headerContent}>
                         <View style={styles.userInfoRow}>
                             <TouchableOpacity style={styles.userProfileButton} onPress={() => router.push("/ProfileScreen")}>
                                 <View style={styles.avatarContainer}>

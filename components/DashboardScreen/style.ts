@@ -15,7 +15,6 @@ export const styles = StyleSheet.create({
     },
     headerContent: {
         paddingHorizontal: 20,
-        paddingTop: Platform.OS === 'ios' ? 60 : 40,
     },
     userInfoRow: {
         flexDirection: 'row',

@@ -5,7 +5,7 @@ import {
     StyleSheet,
     FlatList,
     ActivityIndicator,
-    RefreshControl
+    RefreshControl, TouchableOpacity, Platform
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Calendar } from '@/components/EventsScreen/Calendar';
@@ -14,6 +14,9 @@ import { Event } from '@/models/Event';
 import { Header } from "@/components/ui/Header";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { apiUrl } from "@/api/api";
+import {CirclePlus, Plus} from "lucide-react-native";
+import {LinearGradient} from "expo-linear-gradient";
+import {router} from "expo-router";
 
 type RouteParams = {
     params?: {
@@ -100,66 +103,117 @@ const EventsScreen: React.FC = () => {
     }, [filteredEvents]);
 
     return (
-        <View style={[styles.container, { paddingTop: insets.top }]}>
-            <Header title="Предстоящие события" button={["add-outline", "/CreateEventScreen"]} />
-            <Calendar
-                selectedDate={selectedDate}
-                onSelectDate={setSelectedDate}
-                events={events}
-                onMonthChange={loadEvents}
-            />
+        <View>
+            <LinearGradient
+                colors={['#2A6E3F', '#349339']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[styles.header, { paddingTop: insets.top }]}
+            >
+                <View style={styles.headerContent}>
+                    <Text style={styles.headerTitle}>Cобытия</Text>
+                    <Text style={styles.headerSubtitle}>Запланировано 0</Text>
+                </View>
+                <TouchableOpacity style={styles.newTaskButton} onPress={() => router.push("/CreateEventScreen")}>
+                    <Plus size={20} color="white" />
+                </TouchableOpacity>
+            </LinearGradient>
 
-            {loading ? (
-                <ActivityIndicator size="large" color="#0a58ff" style={{ marginTop: 20 }} />
-            ) : grouped.length === 0 ? (
-                <Text style={styles.emptyText}>
-                    {selectedDate
-                        ? 'На выбранную дату пока ничего не запланировано.'
-                        : 'В этом месяце пока ничего не запланировано.'}
-                </Text>
-            ) : (
-                <FlatList
-                    data={grouped}
-                    keyExtractor={([date]) => date}
-                    renderItem={({ item }) => {
-                        const [date, dayEvents] = item;
-                        const formattedDate = new Date(date + 'T00:00:00').toLocaleDateString('ru-RU', {
-                            day: '2-digit',
-                            month: 'long',
-                            year: 'numeric',
-                        });
-                        return (
-                            <View style={styles.groupBlock}>
-                                <View style={styles.dateBadge}>
-                                    <Text style={styles.dateBadgeText}>{formattedDate}</Text>
-                                </View>
-                                {dayEvents.map(ev => (
-                                    <EventCard key={ev.id} event={ev} />
-                                ))}
-                            </View>
-                        );
-                    }}
-                    contentContainerStyle={styles.listContent}
-                    showsVerticalScrollIndicator={false}
-                    refreshControl={
-                        <RefreshControl
-                            refreshing={refreshing}
-                            onRefresh={onRefresh}
-                            colors={['#0f6219']}
-                            tintColor="#0a58ff"
-                        />
-                    }
+            <View style={styles.calendarContainer}>
+                <Calendar
+                    selectedDate={selectedDate}
+                    onSelectDate={setSelectedDate}
+                    events={events}
+                    onMonthChange={loadEvents}
                 />
-            )}
+            </View>
+            <View style={styles.contentSection}>
+                {loading ? (
+                    <ActivityIndicator size="large" color="#0a58ff" style={{ marginTop: 20 }} />
+                ) : grouped.length === 0 ? (
+                    <Text style={styles.emptyText}>
+                        {selectedDate
+                            ? 'На выбранную дату пока ничего не запланировано.'
+                            : 'В этом месяце пока ничего не запланировано.'}
+                    </Text>
+                ) : (
+                    <FlatList
+                        data={grouped}
+                        keyExtractor={([date]) => date}
+                        renderItem={({ item }) => {
+                            const [date, dayEvents] = item;
+                            const formattedDate = new Date(date + 'T00:00:00').toLocaleDateString('ru-RU', {
+                                day: '2-digit',
+                                month: 'long',
+                                year: 'numeric',
+                            });
+                            return (
+                                <View style={styles.groupBlock}>
+                                    <View style={styles.dateBadge}>
+                                        <Text style={styles.dateBadgeText}>{formattedDate}</Text>
+                                    </View>
+                                    {dayEvents.map(ev => (
+                                        <EventCard key={ev.id} event={ev} />
+                                    ))}
+                                </View>
+                            );
+                        }}
+                        contentContainerStyle={styles.listContent}
+                        showsVerticalScrollIndicator={false}
+                        refreshControl={
+                            <RefreshControl
+                                refreshing={refreshing}
+                                onRefresh={onRefresh}
+                                colors={['#0f6219']}
+                                tintColor="#0a58ff"
+                            />
+                        }
+                    />
+                )}
+            </View>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#f3f4f6',
-        padding: 16,
+    header: {
+        backgroundColor: '#2A6E3F',
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderBottomLeftRadius: 24,
+        borderBottomRightRadius: 24,
+        paddingBottom: 32,
+        paddingHorizontal: 20,
+        paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    },
+    headerContent: {
+        marginLeft: 10
+    },
+    headerTitle: {
+        fontSize: 24,
+        fontWeight: '600',
+        color: '#FFFFFF',
+    },
+    headerSubtitle: {
+        fontSize: 14,
+        color: 'rgba(255, 255, 255, 0.8)',
+        marginTop: 1,
+    },
+    newTaskButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginLeft: "auto"
+    },
+    calendarContainer: {
+        marginTop: -20,
+        paddingHorizontal: 16,
+    },
+    contentSection: {
+        paddingHorizontal: 16,
     },
     emptyText: {
         fontSize: 15,

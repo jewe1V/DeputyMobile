@@ -5,6 +5,7 @@ import { useFonts as useInterFonts, Inter_400Regular, Inter_600SemiBold } from '
 import {useFonts as usePlayfair} from "@expo-google-fonts/playfair-display/useFonts";
 import {PlayfairDisplay_600SemiBold, PlayfairDisplay_700Bold} from "@expo-google-fonts/playfair-display";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
+import { MoveLeft, MoveRight } from 'lucide-react-native';
 interface CalendarProps {
     selectedDate: string | undefined;
     onSelectDate: (date: string) => void;
@@ -101,11 +102,11 @@ export const Calendar: React.FC<CalendarProps> = ({ selectedDate, onSelectDate, 
         <View style={styles.calendarContainer}>
             <View style={styles.calendarHeader}>
                 <TouchableOpacity onPress={prevMonth}>
-                    <Text style={styles.calendarNav}>←</Text>
+                    <MoveLeft size={18} color={"#0f6319"}/>
                 </TouchableOpacity>
                 <Text style={styles.calendarTitle}>{`${months[currentMonth]} ${currentYear}`}</Text>
                 <TouchableOpacity onPress={nextMonth}>
-                    <Text style={styles.calendarNav}>→</Text>
+                    <MoveRight size={18} color={"#0f6319"}/>
                 </TouchableOpacity>
             </View>
             <View style={styles.calendarGrid}>
@@ -155,31 +156,22 @@ export const Calendar: React.FC<CalendarProps> = ({ selectedDate, onSelectDate, 
 const styles = StyleSheet.create({
     calendarContainer: {
         backgroundColor: '#fff',
-        borderRadius: 12,
+        borderRadius: 20,
         padding: 16,
         paddingBottom: 0,
         marginBottom: 16,
-        elevation: 4,
-        shadowColor: '#000',
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        shadowOffset: { width: 0, height: 4 },
-        marginTop: 5,
     },
     calendarHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 16,
+        marginBottom: 26,
+        paddingHorizontal: 6
     },
     calendarTitle: {
         fontSize: 20,
         fontFamily: 'PlayfairDisplay_600SemiBold',
         color: '#0b2340',
-    },
-    calendarNav: {
-        fontSize: 22,
-        color: '#0f6319',
     },
     calendarGrid: {
         flexDirection: 'row',
@@ -195,13 +187,12 @@ const styles = StyleSheet.create({
     },
     calendarDate: {
         width: `${100 / 7}%`,
-        aspectRatio: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 8,
+        marginBottom: 32,
     },
     calendarDateLastRow: {
-        marginBottom: 0, // Убираем отступ снизу для последней строки
+        marginBottom: 0,
     },
     calendarDateSelected: {
         backgroundColor: '#0f6219',

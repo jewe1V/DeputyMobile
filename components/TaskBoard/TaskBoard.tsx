@@ -18,6 +18,7 @@ import {router} from "expo-router";
 import {LinearGradient} from "expo-linear-gradient";
 import {TaskCard} from "@/components/TaskBoard/TaskCard";
 import {Select} from "@/components/ui/Select";
+import {useSafeAreaInsets} from "react-native-safe-area-context";
 
 type RootStackParamList = {
     Home: undefined;
@@ -32,7 +33,7 @@ export function TaskBoard() {
     const navigation = useNavigation<NavigationProp>();
     const [filterStatus, setFilterStatus] = useState<TaskStatus | 'all'>('all');
     const [sortBy, setSortBy] = useState<'date' | 'priority'>('date');
-
+    const insets = useSafeAreaInsets();
     // Фильтрация
     let filteredTasks = filterStatus === 'all'
         ? [...mockTasks]
@@ -76,7 +77,7 @@ export function TaskBoard() {
                 colors={['#2A6E3F', '#349339']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
-                style={styles.header}
+                style={[styles.header, { paddingTop: insets.top }]}
             >
                 <View style={styles.headerContent}>
                     <Text style={styles.headerTitle}>Задачи</Text>
