@@ -89,11 +89,9 @@ export function FileManager() {
                     <Text style={styles.headerSubtitle}>{currentCatalog ? currentCatalog.name : 'Все каталоги'}</Text>
                 </View>
                 <View style={styles.headerButtonsContainer}>
-                    {!currentCatalog && (
-                        <TouchableOpacity style={styles.headerButton}>
-                            <FolderPlus size={24} color="#ffffff" />
-                        </TouchableOpacity>
-                    )}
+                    <TouchableOpacity style={styles.headerButton}>
+                        <FolderPlus size={24} color="#ffffff" />
+                    </TouchableOpacity>
                     <TouchableOpacity style={styles.headerButton}>
                         <Upload size={20} color="#ffffff" />
                     </TouchableOpacity>

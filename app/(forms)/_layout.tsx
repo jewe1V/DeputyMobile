@@ -11,6 +11,10 @@ const StackLayout = () => {
                 name="TaskDetailScreen"
                 options={{ headerShown: false }}
             />
+            <Stack.Screen
+                name="CreateEventScreen"
+                options={{ headerShown: false }}
+            />
         </Stack>
     );
 }

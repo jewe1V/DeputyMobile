@@ -17,6 +17,7 @@ import {
 import { currentUser, mockTasks, mockEvents, mockDocuments } from '@/data/mockData';
 import {styles} from './style';
 import Animated, {FadeInUp, FadeInDown, FadeInRight, ZoomIn} from 'react-native-reanimated';
+import {router} from "expo-router";
 
 export function Dashboard() {
     const upcomingTasks = mockTasks
@@ -112,7 +113,7 @@ export function Dashboard() {
                     <Animated.View
                         entering={FadeInUp.duration(800).springify().damping(80)} style={styles.headerContent}>
                         <View style={styles.userInfoRow}>
-                            <TouchableOpacity style={styles.userProfileButton}>
+                            <TouchableOpacity style={styles.userProfileButton} onPress={() => router.push("/ProfileScreen")}>
                                 <View style={styles.avatarContainer}>
                                     <View style={styles.avatar}>
                                         <Text style={styles.avatarText}>
