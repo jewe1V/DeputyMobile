@@ -9,7 +9,7 @@ import {
     Modal, Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Header } from "@/components/Header";
+import { Header } from "@/components/ui/Header";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Profile } from '@/models/ProfileModel';
 import { Post } from '@/models/Event';

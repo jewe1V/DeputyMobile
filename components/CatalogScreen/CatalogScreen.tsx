@@ -13,7 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Header } from "@/components/Header";
+import { Header } from "@/components/ui/Header";
 import {apiUrl} from "@/api/api";
 import { styles } from './style';
 

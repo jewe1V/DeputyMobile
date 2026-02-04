@@ -17,6 +17,7 @@ import { styles } from './task-board-style';
 import {router} from "expo-router";
 import {LinearGradient} from "expo-linear-gradient";
 import {TaskCard} from "@/components/TaskBoard/TaskCard";
+import {Select} from "@/components/ui/Select";
 
 type RootStackParamList = {
     Home: undefined;
@@ -26,47 +27,6 @@ type RootStackParamList = {
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-interface SelectProps {
-    value: string;
-    onValueChange: (value: string) => void;
-    items: Array<{ label: string; value: string }>;
-    placeholder?: string;
-}
-
-function Select({ value, onValueChange, items, placeholder }: SelectProps) {
-    const [isOpen, setIsOpen] = useState(false);
-    const selectedItem = items.find(item => item.value === value);
-
-    return (
-        <View style={styles.selectContainer}>
-            <TouchableOpacity
-                style={styles.selectTrigger}
-                onPress={() => setIsOpen(!isOpen)}
-            >
-                <Text style={styles.selectValue}>
-                    {selectedItem?.label || placeholder || 'Выберите...'}
-                </Text>
-                <ChevronDown size={16} color="#6B7280" />
-            </TouchableOpacity>
-            {isOpen && (
-                <View style={[styles.selectContent]}>
-                    {items.map((item) => (
-                        <TouchableOpacity
-                            key={item.value}
-                            style={styles.selectItem}
-                            onPress={() => {
-                                onValueChange(item.value);
-                                setIsOpen(false);
-                            }}
-                        >
-                            <Text style={styles.selectItemText}>{item.label}</Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
-            )}
-        </View>
-    );
-}
 
 export function TaskBoard() {
     const navigation = useNavigation<NavigationProp>();
@@ -152,7 +112,7 @@ export function TaskBoard() {
                         />
                     </View>
                 </View>
-                </LinearGradient>
+            </LinearGradient>
 
             {/* Список задач */}
             <FlatList

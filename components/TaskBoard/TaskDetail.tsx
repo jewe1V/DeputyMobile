@@ -8,18 +8,13 @@ import {
     StatusBar,
     Alert,
 } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
     ArrowLeft,
     Calendar,
     Clock,
-    User,
-    Tag,
     Edit,
     Trash2,
-    MessageSquare,
-    ChevronLeft, Plus, Bell,
+    ChevronLeft,
 } from 'lucide-react-native';
 import {currentUser, mockTasks} from '@/data/mockData';
 import { TaskStatus, TaskPriority } from '@/data/types';
@@ -128,15 +123,15 @@ export function TaskDetail() {
 
     if (!task) {
         return (
-            <SafeAreaView style={styles.container}>
+            <View style={styles.container}>
                 <StatusBar backgroundColor="#2A6E3F" barStyle="light-content" />
                 <View style={[styles.header, { backgroundColor: '#2A6E3F' }]}>
                     <TouchableOpacity  onPress={() => router.push("/TaskBoardScreen")}>
                         <ChevronLeft size={24} color="#FFFFFF" />
                     </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Задача не найдена</Text>
+                    <Text style={styles.taskTitle}>Задача не найдена</Text>
                 </View>
-            </SafeAreaView>
+            </View>
         );
     }
 
@@ -171,7 +166,7 @@ export function TaskDetail() {
     };
 
     const handleEdit = () => {
-        router.push({pathname: '/TaskEditScreen', params: { id: task.id }});
+        router.push({pathname: '/NewTaskScreen', params: { id: task.id, isEdit: 1 }});
     };
 
     const handleDelete = () => {
@@ -188,7 +183,7 @@ export function TaskDetail() {
                             type: 'success',
                             text1: 'Задача удалена',
                         });
-                        navigation.navigate('TaskBoard');
+                        router.push('/TaskBoardScreen');
                     },
                 },
             ]
@@ -197,8 +192,6 @@ export function TaskDetail() {
 
     return (
         <View style={styles.container}>
-            <StatusBar backgroundColor="#2A6E3F" barStyle="light-content" />
-
             <LinearGradient
                 style={styles.header}
                 colors={['#2A6E3F', '#349339']}
@@ -206,19 +199,14 @@ export function TaskDetail() {
                 end={{ x: 1, y: 1 }}
             >
                 <View style={styles.headerContent}>
-                    {/* Кнопка назад (слева) */}
-                    <TouchableOpacity
-                        onPress={() => router.push("/TaskBoardScreen")}
-                    >
+                    <TouchableOpacity onPress={() => router.push("/TaskBoardScreen")}>
                         <ArrowLeft size={24} color="#FFFFFF" />
                     </TouchableOpacity>
-
-                    {/* Заголовок и статус (центр) */}
                     <View style={styles.headerTitleContainer}>
                         <Text
                             style={styles.taskTitle}
                             numberOfLines={5}
-                            ellipsizeMode="tail"  // Троеточие в конце
+                            ellipsizeMode="tail"
                         >
                             {task.title}
                         </Text>
@@ -228,8 +216,6 @@ export function TaskDetail() {
                             </Text>
                         </View>
                     </View>
-
-                    {/* Кнопка редактирования (справа) */}
                     <TouchableOpacity
                         style={styles.headerButton}
                         onPress={handleEdit}

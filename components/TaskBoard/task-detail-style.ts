@@ -32,7 +32,7 @@ export const styles = StyleSheet.create({
         marginLeft: 24,// Отступы от кнопок
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: 40,  // Минимальная высота как у кнопок
+        minHeight: 40,
     },
     taskTitle: {
         color: '#FFF',

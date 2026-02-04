@@ -1,4 +1,4 @@
-import { Profile, Post, Event, Catalog, Document, Role, Task } from './types';
+import { Notification, Profile, Post, Event, Catalog, Document, Role, Task } from './types';
 
 // Моковые роли
 export const mockRoles: Role[] = [
@@ -319,5 +319,88 @@ export const mockTasks: Task[] = [
         createdAt: '2026-01-10T09:00:00Z',
         dueDate: '2026-02-10T18:00:00Z',
         tags: ['имущество', 'учет'],
+    },
+];
+
+export const mockNotifications: Notification[] = [
+    {
+        id: '1',
+        title: 'Новая задача назначена вам',
+        message: 'Вам назначена задача "Подготовка отчета по благоустройству" с высоким приоритетом',
+        type: 'task',
+        isRead: false,
+        createdAt: '2026-02-04T08:30:00Z',
+        relatedId: '1',
+        relatedType: 'task',
+    },
+    {
+        id: '2',
+        title: 'Приближается срок события',
+        message: 'Завтра в 18:00 состоятся публичные слушания по проекту "Набережная Исети"',
+        type: 'event',
+        isRead: false,
+        createdAt: '2026-02-03T16:00:00Z',
+        relatedId: '1',
+        relatedType: 'event',
+    },
+    {
+        id: '3',
+        title: 'Новый документ загружен',
+        message: 'Петрова А.С. загрузила документ "План работы комиссии.docx"',
+        type: 'document',
+        isRead: false,
+        createdAt: '2026-02-03T10:15:00Z',
+        relatedId: '4',
+        relatedType: 'document',
+    },
+    {
+        id: '4',
+        title: 'Задача приближается к дедлайну',
+        message: 'До срока выполнения задачи "Подготовка материалов к публичным слушаниям" осталось менее 24 часов',
+        type: 'warning',
+        isRead: true,
+        createdAt: '2026-02-02T14:00:00Z',
+        relatedId: '3',
+        relatedType: 'task',
+    },
+    {
+        id: '5',
+        title: 'Задача завершена',
+        message: 'Задача "Анализ обращений граждан за декабрь" успешно завершена',
+        type: 'success',
+        isRead: true,
+        createdAt: '2026-02-01T16:30:00Z',
+        relatedId: '4',
+        relatedType: 'task',
+    },
+    {
+        id: '6',
+        title: 'Новая публикация',
+        message: 'Опубликована новость: "Принят новый бюджет на благоустройство дворов"',
+        type: 'info',
+        isRead: true,
+        createdAt: '2026-01-31T14:30:00Z',
+        relatedId: '2',
+        relatedType: 'post',
+    },
+    {
+        id: '7',
+        title: 'Задача просрочена',
+        message: 'Внимание! Задача "Протокол заседания комиссии по бюджету" просрочена на 2 дня',
+        type: 'error',
+        isRead: true,
+        createdAt: '2026-01-30T09:00:00Z',
+        relatedId: '8',
+        relatedType: 'task',
+    },
+    {
+        id: '8',
+        title: 'Изменение в событии',
+        message: 'Время начала "Круглого стола Умный город" перенесено на 15:00',
+        type: 'warning',
+        isRead: true,
+        createdAt: '2026-01-29T11:00:00Z',
+        relatedId: '3',
+        relatedType: 'event',
     },
 ];

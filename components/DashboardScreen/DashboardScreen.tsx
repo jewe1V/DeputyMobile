@@ -110,7 +110,7 @@ export function Dashboard() {
                     end={{ x: 1, y: 1 }}
                     style={styles.header}
                 >
-                    <Animated.View
+                    <View
                         entering={FadeInUp.duration(800).springify().damping(80)} style={styles.headerContent}>
                         <View style={styles.userInfoRow}>
                             <TouchableOpacity style={styles.userProfileButton} onPress={() => router.push("/ProfileScreen")}>
@@ -126,13 +126,13 @@ export function Dashboard() {
                                     <Text style={styles.userName}>{currentUser.fullName.split(' ')[1]}</Text>
                                 </View>
                             </TouchableOpacity>
-                            <TouchableOpacity style={styles.notificationButton}>
+                            <TouchableOpacity style={styles.notificationButton} onPress={() => router.push("/NotificationScreen")}>
                                 <Bell size={20} color="white" />
                             </TouchableOpacity>
                         </View>
                         <Text style={styles.jobTitle}>{currentUser.jobTitle}</Text>
                         <Text style={styles.organization}>Городская Дума Екатеринбурга</Text>
-                    </Animated.View>
+                    </View>
                 </LinearGradient>
             </View>
 

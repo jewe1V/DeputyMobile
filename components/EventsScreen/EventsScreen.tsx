@@ -11,7 +11,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Calendar } from '@/components/EventsScreen/Calendar';
 import { EventCard } from '@/components/EventsScreen/EventCard';
 import { Event } from '@/models/Event';
-import { Header } from "@/components/Header";
+import { Header } from "@/components/ui/Header";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { apiUrl } from "@/api/api";
 
