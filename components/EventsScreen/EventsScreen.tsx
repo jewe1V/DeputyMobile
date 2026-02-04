@@ -177,7 +177,6 @@ const EventsScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
     header: {
-        backgroundColor: '#2A6E3F',
         flexDirection: 'row',
         alignItems: 'center',
         borderBottomLeftRadius: 24,

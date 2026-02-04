@@ -5,9 +5,6 @@ export const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#F5F5F5',
     },
-    scrollView: {
-        flex: 1,
-    },
     header: {
         borderBottomLeftRadius: 24,
         borderBottomRightRadius: 24,

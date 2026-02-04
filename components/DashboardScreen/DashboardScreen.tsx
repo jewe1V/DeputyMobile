@@ -104,7 +104,7 @@ export function Dashboard() {
     }).length;
 
     return (
-        <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
+        <ScrollView showsVerticalScrollIndicator={false} >
             <View>
                 <LinearGradient
                     colors={['#2A6E3F', '#349339']}

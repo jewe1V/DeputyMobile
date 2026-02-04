@@ -3,8 +3,10 @@ import { Calendar, Folder, House, ListTodo } from "lucide-react-native";
 import { BlurView } from "expo-blur";
 import {StyleSheet, View, Text, Platform} from "react-native";
 import {Toast} from "expo-router/build/views/Toast";
+import {useSafeAreaInsets} from "react-native-safe-area-context";
 
 export default () => {
+    const insets = useSafeAreaInsets();
     return (
         <>
             <Tabs
@@ -15,7 +17,7 @@ export default () => {
                     tabBarShowLabel: false,
 
                     tabBarStyle: {
-                        bottom: Platform.OS === 'ios' ? 25 : 30,
+                        bottom: insets.bottom,
                         left: 15,
                         right: 15,
                         elevation: 0,
@@ -112,8 +114,8 @@ const styles = StyleSheet.create({
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 6,
-        paddingHorizontal: 15,
+        paddingVertical: 12,
+        paddingHorizontal: 17,
         borderRadius: 18,
     },
     activeWrapper: {
