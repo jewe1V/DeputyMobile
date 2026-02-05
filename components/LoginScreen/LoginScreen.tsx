@@ -1,23 +1,21 @@
+import { apiUrl } from "@/api/api";
+import { Inter_400Regular, Inter_600SemiBold } from '@expo-google-fonts/inter';
+import { PlayfairDisplay_700Bold, useFonts } from '@expo-google-fonts/playfair-display';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from "expo-router";
 import React, { useState } from 'react';
 import {
+    ActivityIndicator,
+    Alert,
     Image,
-    View,
+    KeyboardAvoidingView,
+    Platform,
     Text,
     TextInput,
     TouchableOpacity,
-    KeyboardAvoidingView,
-    Platform,
-    Modal,
-    Alert,
-    ActivityIndicator
+    View
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { useFonts, PlayfairDisplay_700Bold } from '@expo-google-fonts/playfair-display';
-import { Inter_400Regular, Inter_600SemiBold } from '@expo-google-fonts/inter';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import {apiUrl} from "@/api/api";
 import { styles } from './style';
-import {router} from "expo-router";
 
 class AuthTokenManager {
     private static token: string | null = null;
@@ -78,8 +76,6 @@ class AuthTokenManager {
         } catch (error) {
             console.error('Error clearing auth token:', error);
         }
-
-        // Уведомляем слушателей
         this.notifyListeners();
     }
 
@@ -186,10 +182,7 @@ const LoginScreen = () => {
 
             const data: AuthResponse = await response.json();
 
-            // Сохраняем токен в глобальное хранилище (автоматически очистится через час)
             await AuthTokenManager.setToken(data.token);
-
-            // Сохраняем данные пользователя в AsyncStorage
             await AsyncStorage.setItem('userData', JSON.stringify(data.user));
 
             console.log('Успешная авторизация, токен сохранен в глобальное хранилище');
@@ -213,7 +206,7 @@ const LoginScreen = () => {
                     resizeMode="contain"
                     source={require('@/assets/images/ekb-emblem.png')}
                 />
-                <Text style={styles.title}>Цифровой кабинет депутата</Text>
+                <Text style={styles.title}>Цифровой кабинет депутата {apiUrl}</Text>
             </View>
 
             <View style={styles.form}>
@@ -253,4 +246,5 @@ const LoginScreen = () => {
     );
 };
 
-export { AuthTokenManager,  LoginScreen };
+export { AuthTokenManager, LoginScreen };
+

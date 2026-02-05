@@ -1,77 +1,31 @@
-import React, { useState } from 'react';
+import { taskService } from '@/api/taskService';
+import { SkeletonLoader } from "@/components/ui/SkeletonLoader";
+import { Task, TaskPriority, TaskStatus } from '@/data/types';
+import { LinearGradient } from "expo-linear-gradient";
+import { router, useLocalSearchParams } from "expo-router";
 import {
-    View,
-    Text,
-    ScrollView,
-    TouchableOpacity,
-    SafeAreaView,
-    StatusBar,
-    Alert,
-} from 'react-native';
-import {
+    AlertCircle,
     ArrowLeft,
     Calendar,
+    ChevronLeft,
     Clock,
     Edit,
+    RotateCcw,
     Trash2,
-    ChevronLeft,
 } from 'lucide-react-native';
-import {currentUser, mockTasks} from '@/data/mockData';
-import { TaskStatus, TaskPriority } from '@/data/types';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+    Alert,
+    ScrollView,
+    StatusBar,
+    Text,
+    TouchableOpacity,
+    View
+} from 'react-native';
 import Toast from 'react-native-toast-message';
 import { styles } from './task-detail-style';
-import {router, useLocalSearchParams} from "expo-router";
-import {LinearGradient} from "expo-linear-gradient";
+import {priorityConfig, statusConfig} from '@/consts';
 
-const priorityConfig: Record<TaskPriority, { label: string; dotColor: string; textColor: string }> = {
-    low: {
-        label: 'Низкий',
-        dotColor: '#9CA3AF', // gray-400
-        textColor: '#6B7280', // gray-600
-    },
-    medium: {
-        label: 'Средний',
-        dotColor: '#3B82F6', // blue-500
-        textColor: '#2563EB', // blue-600
-    },
-    high: {
-        label: 'Высокий',
-        dotColor: '#F97316', // orange-500
-        textColor: '#EA580C', // orange-600
-    },
-    urgent: {
-        label: 'Срочный',
-        dotColor: '#EF4444', // red-500
-        textColor: '#DC2626', // red-600
-    },
-};
-
-const statusConfig: Record<TaskStatus, { label: string; bgColor: string; textColor: string; borderColor: string }> = {
-    created: {
-        label: 'Новая',
-        bgColor: '#F3F4F6', // gray-100
-        textColor: '#374151', // gray-700
-        borderColor: '#D1D5DB', // gray-300
-    },
-    in_progress: {
-        label: 'В работе',
-        bgColor: '#DBEAFE', // blue-100
-        textColor: '#1E40AF', // blue-700
-        borderColor: '#93C5FD', // blue-300
-    },
-    approval: {
-        label: 'На согласовании',
-        bgColor: '#FEF3C7', // amber-100
-        textColor: '#92400E', // amber-700
-        borderColor: '#FCD34D', // amber-300
-    },
-    completed: {
-        label: 'Завершена',
-        bgColor: '#D1FAE5', // green-100
-        textColor: '#065F46', // green-700
-        borderColor: '#53c161', // green-300
-    },
-};
 
 const StatusButton = ({
                           status,
@@ -118,15 +72,126 @@ const StatusButton = ({
 
 export function TaskDetail() {
     const { id } = useLocalSearchParams<{ id: string }>();
-    const task = mockTasks.find((t) => t.id === id);
-    const [currentStatus, setCurrentStatus] = useState<TaskStatus>(task?.status || 'created');
+    const [task, setTask] = useState<Task | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [currentStatus, setCurrentStatus] = useState<TaskStatus>('created');
+
+    const loadTask = useCallback(async () => {
+        if (!id) {
+            setLoading(false);
+            setError('ID задачи не найден');
+            return;
+        }
+
+        console.log('[TaskDetail] Загрузка задачи с ID:', id);
+        setLoading(true);
+        setError(null);
+        try {
+            const apiData = await taskService.getTaskById(id);
+            console.log('[TaskDetail] Данные задачи получены:', apiData);
+            const adaptedTask: Task = {
+                id: apiData.id,
+                authorName: apiData.authorName,
+                authorId: apiData.authorId,
+                title: apiData.title,
+                description: apiData.description,
+                status: (apiData.status || 'created') as TaskStatus,
+                priority: (apiData.priority === 0 ? 'low' : apiData.priority === 1 ? 'medium' : apiData.priority === 2 ? 'high' : 'urgent') as TaskPriority,
+                createdAt: apiData.startDate || new Date().toISOString(),
+                dueDate: apiData.expectedEndDate || new Date().toISOString(),
+                tags: apiData.tags || [],
+                users: apiData.users || [],
+            };
+            setTask(adaptedTask);
+            setCurrentStatus(adaptedTask.status);
+            console.log('[TaskDetail] Задача успешно загружена');
+        } catch (error: any) {
+            console.error('[TaskDetail] Ошибка при загрузке задачи:', error);
+            const errorMessage = error?.message || 'Не удалось загрузить задачу';
+            setError(errorMessage);
+            setTask(null);
+        } finally {
+            setLoading(false);
+        }
+    }, [id]);
+
+    useEffect(() => {
+        loadTask();
+    }, [loadTask]);
+
+    if (loading) {
+        return (
+            <View style={styles.container}>
+                <StatusBar backgroundColor="#2A6E3F" barStyle="light-content" />
+                <View style={[styles.header, { backgroundColor: '#2A6E3F' }]}>
+                    <TouchableOpacity onPress={() => router.push("/TaskBoardScreen")}>
+                        <ChevronLeft size={24} color="#FFFFFF" />
+                    </TouchableOpacity>
+                    <Text style={styles.taskTitle}>Загрузка...</Text>
+                </View>
+                <SkeletonLoader count={3} itemHeight={80} itemMargin={16} />
+            </View>
+        );
+    }
+
+    if (error) {
+        return (
+            <View style={styles.container}>
+                <StatusBar backgroundColor="#2A6E3F" barStyle="light-content" />
+                <View style={[styles.header, { backgroundColor: '#2A6E3F' }]}>
+                    <TouchableOpacity onPress={() => router.push("/TaskBoardScreen")}>
+                        <ChevronLeft size={24} color="#FFFFFF" />
+                    </TouchableOpacity>
+                    <Text style={styles.taskTitle}>Ошибка</Text>
+                </View>
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 }}>
+                    <AlertCircle size={48} color="#EF4444" style={{ marginBottom: 16 }} />
+                    <Text style={{ fontSize: 16, fontWeight: '600', textAlign: 'center', marginBottom: 8 }}>Ошибка загрузки</Text>
+                    <Text style={{ fontSize: 14, color: '#6B7280', textAlign: 'center', marginBottom: 24 }}>{error}</Text>
+                    <TouchableOpacity
+                        style={{
+                            backgroundColor: '#2A6E3F',
+                            paddingHorizontal: 24,
+                            paddingVertical: 12,
+                            borderRadius: 8,
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: 8,
+                            marginBottom: 12,
+                        }}
+                        onPress={loadTask}
+                    >
+                        <RotateCcw size={16} color="#fff" />
+                        <Text style={{ color: '#fff', fontWeight: '600' }}>Повторить</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={{
+                            borderWidth: 2,
+                            borderColor: '#2A6E3F',
+                            paddingHorizontal: 24,
+                            paddingVertical: 12,
+                            borderRadius: 8,
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: 8,
+                        }}
+                        onPress={() => router.push("/TaskBoardScreen")}
+                    >
+                        <ChevronLeft size={16} color="#2A6E3F" />
+                        <Text style={{ color: '#2A6E3F', fontWeight: '600' }}>Назад</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        );
+    }
 
     if (!task) {
         return (
             <View style={styles.container}>
                 <StatusBar backgroundColor="#2A6E3F" barStyle="light-content" />
                 <View style={[styles.header, { backgroundColor: '#2A6E3F' }]}>
-                    <TouchableOpacity  onPress={() => router.push("/TaskBoardScreen")}>
+                    <TouchableOpacity onPress={() => router.push("/TaskBoardScreen")}>
                         <ChevronLeft size={24} color="#FFFFFF" />
                     </TouchableOpacity>
                     <Text style={styles.taskTitle}>Задача не найдена</Text>
@@ -135,8 +200,8 @@ export function TaskDetail() {
         );
     }
 
-    const dueDate = new Date(task.dueDate);
-    const createdDate = new Date(task.createdAt);
+    const dueDate = new Date(task.dueDate || '');
+    const createdDate = new Date(task.createdAt || '');
     const today = new Date();
     const daysLeft = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     const isOverdue = daysLeft < 0 && currentStatus !== 'completed';
@@ -335,29 +400,37 @@ export function TaskDetail() {
                     <Text style={styles.sectionTitle}>Участники</Text>
 
                     <View style={styles.participantsContainer}>
-                        <View style={styles.participantItem}>
-                            <View style={[styles.avatar, { backgroundColor: '#2A6E3F' }]}>
-                                <Text style={styles.avatarText}>
-                                    {getInitials(task.assignedToProfile?.fullName || '')}
-                                </Text>
-                            </View>
-                            <View style={styles.participantInfo}>
-                                <Text style={styles.participantName}>
-                                    {task.assignedToProfile?.fullName}
-                                </Text>
-                                <Text style={styles.participantRole}>Исполнитель</Text>
-                            </View>
-                        </View>
+                        {/* Исполнители из массива users */}
+                        {task.users && task.users.length > 0 && (
+                            <>
+                                {task.users.map((user: any, index: number) => (
+                                    <View key={`user-${index}`} style={styles.participantItem}>
+                                        <View style={[styles.avatar, { backgroundColor: '#2A6E3F' }]}>
+                                            <Text style={styles.avatarText}>
+                                                {getInitials(user.fullName || user.name || '')}
+                                            </Text>
+                                        </View>
+                                        <View style={styles.participantInfo}>
+                                            <Text style={styles.participantName}>
+                                                {user.fullName || user.name}
+                                            </Text>
+                                            <Text style={styles.participantRole}>Исполнитель</Text>
+                                        </View>
+                                    </View>
+                                ))}
+                            </>
+                        )}
 
+                        {/* Постановщик */}
                         <View style={styles.participantItem}>
                             <View style={[styles.avatar, { backgroundColor: '#E5E7EB' }]}>
                                 <Text style={[styles.avatarText, { color: '#6B7280' }]}>
-                                    {getInitials(task.createdByProfile?.fullName || '')}
+                                    {getInitials(task.authorName || '')}
                                 </Text>
                             </View>
                             <View style={styles.participantInfo}>
                                 <Text style={styles.participantName}>
-                                    {task.createdByProfile?.fullName}
+                                    {task.authorName}
                                 </Text>
                                 <Text style={styles.participantRole}>Постановщик</Text>
                             </View>

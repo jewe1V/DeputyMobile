@@ -1,4 +1,4 @@
-import {Platform, StyleSheet} from "react-native";
+import { Platform, StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
     container: {
@@ -8,7 +8,7 @@ export const styles = StyleSheet.create({
     header: {
         borderBottomLeftRadius: 24,
         borderBottomRightRadius: 24,
-        paddingBottom: 32,
+        paddingBottom: 20,
         paddingHorizontal: 16,
         paddingTop: Platform.OS === 'ios' ? 80 : 60,
     },
@@ -29,7 +29,6 @@ export const styles = StyleSheet.create({
         flex: 1,  // Занимает доступное пространство
         marginRight: 12,
         marginLeft: 24,// Отступы от кнопок
-        alignItems: 'center',
         justifyContent: 'center',
         minHeight: 40,
     },

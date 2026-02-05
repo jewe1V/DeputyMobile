@@ -1,8 +1,8 @@
-import {Task, TaskPriority} from "@/data/types";
-import {Text, TouchableOpacity, View} from "react-native";
-import {styles} from "@/components/TaskBoard/task-board-style";
-import {Calendar, Clock} from "lucide-react-native";
+import { styles } from "@/components/TaskBoard/task-board-style";
+import { Task, TaskPriority } from "@/data/types";
+import { Calendar, Clock } from "lucide-react-native";
 import React from "react";
+import { Text, TouchableOpacity, View } from "react-native";
 
 interface TaskCardProps {
     task: Task;
@@ -87,7 +87,7 @@ export function TaskCard({ task, onPress }: TaskCardProps) {
             {/* Исполнитель и статус */}
             <View style={styles.footer}>
                 <Text style={styles.assigneeText}>
-                    Исполнитель: {task.assignedToProfile?.fullName.split(' ').slice(0, 2).join(' ')}
+                    Исполнители: {task.users && task.users.length > 0 ? task.users.map((u: any) => u.fullName || u.name).join(', ') : 'не назначены'}
                 </Text>
                 {isOverdue && task.status !== 'completed' && (
                     <View style={styles.overdueBadge}>

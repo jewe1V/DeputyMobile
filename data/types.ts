@@ -69,15 +69,14 @@ export interface Task {
     description: string;
     status: TaskStatus;
     priority: TaskPriority;
-    assignedTo: string;
-    assignedToProfile?: Profile;
-    createdBy: string;
-    createdByProfile?: Profile;
+    authorName: string;
+    authorId: string;
     createdAt: string;
     dueDate: string;
     completedAt?: string;
     attachments?: Attachment[];
     tags?: string[];
+    users?: any[];
 }
 
 export type NotificationType = 'info' | 'success' | 'warning' | 'error' | 'task' | 'event' | 'document';

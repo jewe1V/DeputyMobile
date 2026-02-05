@@ -1,12 +1,24 @@
-import { Tabs } from "expo-router";
-import { Calendar, Folder, House, ListTodo } from "lucide-react-native";
+import { AuthTokenManager } from "@/components/LoginScreen/LoginScreen";
 import { BlurView } from "expo-blur";
-import {StyleSheet, View, Text, Platform} from "react-native";
-import {Toast} from "expo-router/build/views/Toast";
-import {useSafeAreaInsets} from "react-native-safe-area-context";
+import { Tabs, router } from "expo-router";
+import { Calendar, Folder, House, ListTodo } from "lucide-react-native";
+import { useEffect } from "react";
+import { Platform, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default () => {
     const insets = useSafeAreaInsets();
+
+    useEffect(() => {
+        const checkToken = async () => {
+            await AuthTokenManager.initialize();
+            let isTokenValid = AuthTokenManager.isTokenValid();
+            if (!isTokenValid) {
+                router.replace("/");
+            }
+        };
+        checkToken();
+    }, []);
     return (
         <>
             <Tabs

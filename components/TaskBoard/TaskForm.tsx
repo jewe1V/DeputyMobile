@@ -1,21 +1,23 @@
-import React, { useState } from 'react';
-import {
-    View,
-    Text,
-    TextInput,
-    ScrollView,
-    TouchableOpacity,
-    SafeAreaView,
-    StatusBar,
-    KeyboardAvoidingView,
-    Platform,
-    Alert,
-} from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { taskService } from '@/api/taskService';
+import { mockProfiles } from '@/data/mockData';
+import { TaskPriority } from '@/data/types';
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ArrowLeft, Save, X } from 'lucide-react-native';
-import { mockTasks, mockProfiles } from '@/data/mockData';
-import { TaskPriority } from '@/data/types';
+import React, { useState } from 'react';
+import {
+    ActivityIndicator,
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 import Toast from 'react-native-toast-message';
 import { styles } from './task-form-style';
 
@@ -139,24 +141,20 @@ export function TaskForm() {
     const { id } = route.params || {};
 
     const isEditMode = id && id !== 'new';
-    const existingTask = isEditMode ? mockTasks.find((t) => t.id === id) : null;
 
-    const [title, setTitle] = useState(existingTask?.title || '');
-    const [description, setDescription] = useState(existingTask?.description || '');
-    const [priority, setPriority] = useState<TaskPriority>(existingTask?.priority || 'medium');
-    const [assignedTo, setAssignedTo] = useState(existingTask?.assignedTo || '1');
-    const [dueDate, setDueDate] = useState(
-        existingTask?.dueDate
-            ? new Date(existingTask.dueDate).toISOString().slice(0, 16)
-            : ''
-    );
-    const [tags, setTags] = useState(existingTask?.tags?.join(', ') || '');
+    const [title, setTitle] = useState('');
+    const [description, setDescription] = useState('');
+    const [priority, setPriority] = useState<TaskPriority>('medium');
+    const [assignedTo, setAssignedTo] = useState('1');
+    const [dueDate, setDueDate] = useState('');
+    const [tags, setTags] = useState('');
     const [isAssignedToOpen, setIsAssignedToOpen] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Для создания задачи автоматически выставляется дата начала (текущее время)
-    const startDate = new Date().toISOString().slice(0, 16);
+    const startDate = new Date().toISOString();
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (!title.trim()) {
             Toast.show({
                 type: 'error',
@@ -197,14 +195,36 @@ export function TaskForm() {
             return;
         }
 
-        // В реальном приложении здесь был бы API запрос
-        const action = isEditMode ? 'обновлена' : 'создана';
-        Toast.show({
-            type: 'success',
-            text1: 'Успешно',
-            text2: `Задача успешно ${action}`,
-        });
-        navigation.navigate('TaskBoard');
+        setIsSubmitting(true);
+        try {
+            const payload = {
+                title: title.trim(),
+                description: description.trim(),
+                startDate: startDate,
+                expectedEndDate: new Date(dueDate).toISOString(),
+                priority: getPriorityNumber(priority),
+                status: 'created',
+            };
+
+            await taskService.createTask(payload);
+            
+            Toast.show({
+                type: 'success',
+                text1: 'Успешно',
+                text2: 'Задача успешно создана',
+            });
+            
+            navigation.goBack();
+        } catch (error) {
+            console.error('Ошибка при создании задачи:', error);
+            Toast.show({
+                type: 'error',
+                text1: 'Ошибка',
+                text2: 'Не удалось создать задачу',
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleCancel = () => {
@@ -394,18 +414,26 @@ export function TaskForm() {
                 {/* Кнопки действий */}
                 <View style={styles.actionsContainer}>
                     <TouchableOpacity
-                        style={styles.submitButton}
+                        style={[styles.submitButton, isSubmitting && { opacity: 0.7 }]}
                         onPress={handleSubmit}
+                        disabled={isSubmitting}
                     >
-                        <Save size={16} color="#FFFFFF" />
-                        <Text style={styles.submitButtonText}>
-                            {isEditMode ? 'Сохранить изменения' : 'Создать задачу'}
-                        </Text>
+                        {isSubmitting ? (
+                            <ActivityIndicator color="#FFFFFF" size="small" />
+                        ) : (
+                            <>
+                                <Save size={16} color="#FFFFFF" />
+                                <Text style={styles.submitButtonText}>
+                                    {isEditMode ? 'Сохранить изменения' : 'Создать задачу'}
+                                </Text>
+                            </>
+                        )}
                     </TouchableOpacity>
 
                     <TouchableOpacity
                         style={styles.cancelButton}
                         onPress={handleCancel}
+                        disabled={isSubmitting}
                     >
                         <X size={16} color="#6B7280" />
                         <Text style={styles.cancelButtonText}>Отмена</Text>
@@ -415,3 +443,14 @@ export function TaskForm() {
         </SafeAreaView>
     );
 }
+
+// Вспомогательная функция для преобразования приоритета
+const getPriorityNumber = (priority: TaskPriority): number => {
+    const priorityMap: Record<TaskPriority, number> = {
+        low: 0,
+        medium: 1,
+        high: 2,
+        urgent: 3,
+    };
+    return priorityMap[priority];
+};
