@@ -1,4 +1,4 @@
-import {Platform, StyleSheet} from "react-native";
+import { Platform, StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
     container: {
@@ -46,19 +46,36 @@ export const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 12,
     },
+    breadcrumbScroll: {
+        flexDirection: 'row',
+    },
+    breadcrumbItemContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
     breadcrumbButton: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
+        paddingVertical: 4,
     },
     breadcrumbText: {
         fontSize: 14,
         color: '#2A6E3F',
+        fontWeight: '500',
     },
-    breadcrumbCurrent: {
+    breadcrumbSeparator: {
+        fontSize: 14,
+        color: '#9ca3af',
+        marginHorizontal: 4,
+    },
+    breadcrumbButtonCurrent: {
+        paddingVertical: 4,
+    },
+    breadcrumbTextCurrent: {
         fontSize: 14,
         color: '#1f2937',
-        fontWeight: '500',
+        fontWeight: '600',
     },
     searchContainer: {
         backgroundColor: '#ffffff',
@@ -226,5 +243,133 @@ export const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.25,
         shadowRadius: 3.84,
+    },
+    loadingContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 48,
+    },
+    loadingText: {
+        fontSize: 14,
+        color: '#6b7280',
+        marginTop: 12,
+    },
+    errorContainer: {
+        backgroundColor: '#fef2f2',
+        borderRadius: 8,
+        padding: 16,
+        alignItems: 'center',
+        marginTop: 24,
+    },
+    errorText: {
+        fontSize: 14,
+        color: '#991b1b',
+        marginTop: 12,
+        textAlign: 'center',
+    },
+    errorButton: {
+        marginTop: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        backgroundColor: '#ef4444',
+        borderRadius: 6,
+    },
+    errorButtonText: {
+        color: '#ffffff',
+        fontSize: 14,
+        fontWeight: '500',
+    },
+    catalogSelectionContainer: {
+        paddingVertical: 16,
+    },
+    catalogSelectionTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#1f2937',
+        marginBottom: 16,
+    },
+    catalogButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#ffffff',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#e5e7eb',
+        padding: 16,
+        marginBottom: 12,
+    },
+    catalogButtonContent: {
+        flex: 1,
+        marginLeft: 12,
+    },
+    catalogButtonTitle: {
+        fontSize: 16,
+        fontWeight: '500',
+        color: '#1f2937',
+        marginBottom: 4,
+    },
+    catalogButtonSubtitle: {
+        fontSize: 14,
+        color: '#6b7280',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'flex-end',
+    },
+    modalContent: {
+        backgroundColor: '#ffffff',
+        borderTopLeftRadius: 16,
+        borderTopRightRadius: 16,
+        padding: 24,
+        paddingBottom: 32,
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#1f2937',
+        marginBottom: 16,
+    },
+    modalInput: {
+        borderWidth: 1,
+        borderColor: '#e5e7eb',
+        borderRadius: 8,
+        padding: 12,
+        fontSize: 16,
+        color: '#1f2937',
+        marginBottom: 16,
+    },
+    modalError: {
+        fontSize: 14,
+        color: '#ef4444',
+        marginBottom: 16,
+    },
+    modalButtonsContainer: {
+        flexDirection: 'row',
+        gap: 12,
+        marginTop: 24,
+    },
+    modalButton: {
+        flex: 1,
+        paddingVertical: 12,
+        borderRadius: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    modalButtonCancel: {
+        backgroundColor: '#e5e7eb',
+    },
+    modalButtonCancelText: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#1f2937',
+    },
+    modalButtonCreate: {
+        backgroundColor: '#2A6E3F',
+    },
+    modalButtonCreateText: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#ffffff',
     },
 });
