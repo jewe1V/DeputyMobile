@@ -1,49 +1,32 @@
-import React, { useState } from 'react';
-import {
-    View,
-    Text,
-    ScrollView,
-    TouchableOpacity,
-    TextInput,
-    StyleSheet,
-    SafeAreaView,
-    Dimensions,
-    Pressable,
-} from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import {
-    Folder,
-    FileText,
-    Download,
-    Upload,
-    FolderPlus,
-    ArrowLeft,
-    File,
-    FileSpreadsheet,
-    ChevronRight,
-    Search,
-    MoreVertical, Plus,
-} from 'lucide-react-native';
 import { mockCatalogs } from '@/data/mockData';
 import { Catalog } from '@/data/types';
-import { styles } from './file-manager-screen';
-import {LinearGradient} from "expo-linear-gradient";
+import { LinearGradient } from "expo-linear-gradient";
+import {
+    ChevronRight,
+    Download, FileSpreadsheet, FileText, File,
+    Folder,
+    FolderPlus,
+    MoreVertical,
+    Search,
+    Upload
+} from 'lucide-react-native';
+import React, { useState } from 'react';
+import {
+    ScrollView,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { styles } from './file-manager-screen';
+import {formatDate, getFileSize} from "@/utils";
 
 export function FileManager() {
-    const navigation = useNavigation();
     const [currentCatalog, setCurrentCatalog] = useState<Catalog | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const insets = useSafeAreaInsets();
 
-    const formatDate = (dateString: string) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('ru-RU', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-        });
-    };
 
     const getFileIcon = (fileName: string, size = 20) => {
         const ext = fileName.split('.').pop()?.toLowerCase();
@@ -60,11 +43,6 @@ export function FileManager() {
             default:
                 return <File size={size} color="#6b7280" />;
         }
-    };
-
-    const getFileSize = (fileName: string): string => {
-        const sizes = ['245 КБ', '1.2 МБ', '524 КБ', '3.5 МБ', '892 КБ'];
-        return sizes[Math.floor(Math.random() * sizes.length)];
     };
 
     const displayCatalogs = currentCatalog ? currentCatalog.children || [] : mockCatalogs;

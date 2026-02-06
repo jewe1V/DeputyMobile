@@ -20,6 +20,7 @@ import { styles } from './style';
 class AuthTokenManager {
     private static token: string | null = null;
     private static tokenExpiryTimer: NodeJS.Timeout | null = null;
+    private static dailyCheckTimer: NodeJS.Timeout | null = null;
     private static tokenListeners: ((token: string | null) => void)[] = [];
 
     static async initialize() {
@@ -29,11 +30,25 @@ class AuthTokenManager {
 
             if (storedToken && tokenExpiry) {
                 const expiryTime = parseInt(tokenExpiry, 10);
-                if (Date.now() < expiryTime) {
+                const now = Date.now();
+
+                console.log(`Token expiry: ${expiryTime}, Now: ${now}, Diff: ${expiryTime - now}`);
+
+                if (now < expiryTime) {
                     this.token = storedToken;
-                    this.scheduleTokenCleanup(expiryTime - Date.now());
+
+                    // Проверяем время до истечения
+                    const timeUntilExpiry = expiryTime - now;
+
+                    // Если до истечения меньше 1 дня, используем точный таймер
+                    if (timeUntilExpiry > 0 && timeUntilExpiry <= 24 * 60 * 60 * 1000) {
+                        this.scheduleTokenCleanup(timeUntilExpiry);
+                    }
+
+                    // В любом случае запускаем ежедневную проверку
+                    this.scheduleDailyCleanupCheck();
                 } else {
-                    // Токен просрочен, очищаем
+                    console.log('Token expired, clearing...');
                     await this.clearToken();
                 }
             }
@@ -46,37 +61,83 @@ class AuthTokenManager {
         return this.token;
     }
 
-    static async setToken(token: string, expiresInMs: number = 60 * 60 * 1000) {
+    static async setToken(token: string, expiresInDays: number = 30) {
         this.token = token;
 
-        const expiryTime = Date.now() + expiresInMs;
+        // Рассчитываем дату истечения
+        const expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + expiresInDays);
+
+        // Устанавливаем время на конец дня для точности
+        expiryDate.setHours(23, 59, 59, 999);
+
+        // Сохраняем как timestamp
+        const expiryTimestamp = expiryDate.getTime();
+
+        console.log(`Setting token with expiry: ${expiryTimestamp} (${expiryDate.toISOString()})`);
 
         try {
             await AsyncStorage.setItem('authToken', token);
-            await AsyncStorage.setItem('authTokenExpiry', expiryTime.toString());
+            await AsyncStorage.setItem('authTokenExpiry', expiryTimestamp.toString());
         } catch (error) {
             console.error('Error saving auth token:', error);
         }
 
-        this.scheduleTokenCleanup(expiresInMs);
-
-        this.notifyListeners();
-    }
-
-    static async clearToken() {
-        this.token = null;
-
+        // Очищаем старые таймеры
         if (this.tokenExpiryTimer) {
             clearTimeout(this.tokenExpiryTimer);
             this.tokenExpiryTimer = null;
         }
 
-        try {
-            await AsyncStorage.multiRemove(['authToken', 'authTokenExpiry']);
-        } catch (error) {
-            console.error('Error clearing auth token:', error);
+        // Рассчитываем время до истечения
+        const timeUntilExpiry = expiryTimestamp - Date.now();
+
+        console.log(`Time until expiry: ${timeUntilExpiry}ms (${Math.round(timeUntilExpiry / (24 * 60 * 60 * 1000))} days)`);
+
+        // Если до истечения меньше 24 часов, устанавливаем точный таймер
+        if (timeUntilExpiry > 0 && timeUntilExpiry <= 24 * 60 * 60 * 1000) {
+            this.scheduleTokenCleanup(timeUntilExpiry);
         }
+
+        // Запускаем/перезапускаем ежедневную проверку
+        this.scheduleDailyCleanupCheck();
         this.notifyListeners();
+    }
+
+    private static scheduleDailyCleanupCheck() {
+        if (this.dailyCheckTimer) {
+            clearTimeout(this.dailyCheckTimer);
+        }
+
+        const checkAndCleanup = async () => {
+            try {
+                const expiryStr = await AsyncStorage.getItem('authTokenExpiry');
+                if (expiryStr) {
+                    const expiryTime = parseInt(expiryStr, 10);
+                    const now = Date.now();
+
+                    console.log(`Daily check: Now=${now}, Expiry=${expiryTime}, Valid=${now < expiryTime}`);
+
+                    if (now > expiryTime) {
+                        console.log('Token expired in daily check, clearing...');
+                        await this.clearToken();
+                    } else {
+                        // Если токен скоро истечет (меньше суток), устанавливаем точный таймер
+                        const timeUntilExpiry = expiryTime - now;
+                        if (timeUntilExpiry > 0 && timeUntilExpiry <= 24 * 60 * 60 * 1000 && !this.tokenExpiryTimer) {
+                            this.scheduleTokenCleanup(timeUntilExpiry);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error in daily token check:', error);
+            }
+
+            const ONE_DAY = 24 * 60 * 60 * 1000;
+            this.dailyCheckTimer = setTimeout(checkAndCleanup, ONE_DAY);
+        };
+
+        setTimeout(checkAndCleanup, 1000);
     }
 
     private static scheduleTokenCleanup(expiresInMs: number) {
@@ -84,17 +145,46 @@ class AuthTokenManager {
             clearTimeout(this.tokenExpiryTimer);
         }
 
-        // @ts-ignore
-        this.tokenExpiryTimer = setTimeout(() => {
-            this.clearToken();
-            console.log('Token automatically cleared after 1 hour');
+        const MAX_SETTIMEOUT = 2147483647;
+
+        if (expiresInMs > MAX_SETTIMEOUT) {
+            console.log(`Timeout too long (${expiresInMs}ms), will rely on daily check`);
+            return;
+        }
+
+        this.tokenExpiryTimer = setTimeout(async () => {
+            console.log('Token expired by timer, clearing...');
+            await this.clearToken();
         }, expiresInMs);
+    }
+
+    static async clearToken() {
+        console.log('Clearing token...');
+
+        this.token = null;
+
+        if (this.tokenExpiryTimer) {
+            clearTimeout(this.tokenExpiryTimer);
+            this.tokenExpiryTimer = null;
+        }
+
+        if (this.dailyCheckTimer) {
+            clearTimeout(this.dailyCheckTimer);
+            this.dailyCheckTimer = null;
+        }
+
+        try {
+            await AsyncStorage.multiRemove(['authToken', 'authTokenExpiry']);
+        } catch (error) {
+            console.error('Error clearing auth token:', error);
+        }
+
+        this.notifyListeners();
     }
 
     static addListener(listener: (token: string | null) => void) {
         this.tokenListeners.push(listener);
 
-        // Возвращаем функцию для удаления слушателя
         return () => {
             this.tokenListeners = this.tokenListeners.filter(l => l !== listener);
         };
@@ -112,6 +202,34 @@ class AuthTokenManager {
 
     static isTokenValid(): boolean {
         return this.token !== null;
+    }
+
+    // Новый метод для принудительной проверки
+    static async checkTokenValidity(): Promise<boolean> {
+        try {
+            const token = await AsyncStorage.getItem('authToken');
+            const expiryStr = await AsyncStorage.getItem('authTokenExpiry');
+
+            if (!token || !expiryStr) {
+                if (this.token) await this.clearToken();
+                return false;
+            }
+
+            const expiryTime = parseInt(expiryStr, 10);
+            const isValid = Date.now() < expiryTime;
+
+            if (!isValid && this.token) {
+                await this.clearToken();
+            } else if (isValid && !this.token) {
+                this.token = token;
+                this.notifyListeners();
+            }
+
+            return isValid;
+        } catch (error) {
+            console.error('Error checking token validity:', error);
+            return false;
+        }
     }
 }
 
