@@ -116,41 +116,44 @@ class DocumentService {
         try {
             console.log('[DocumentService] Загрузка файла:', file.name);
             
+            // Читаем файл как Blob
+            const fileBlob = await fetch(file.uri).then(r => r.blob());
+            
             const formData = new FormData();
             
-            // Добавляем файл
-            formData.append('File', {
-                uri: file.uri,
-                name: file.name,
-                type: file.type,
-            } as any);
+            // Добавляем файл как Blob с именем
+            formData.append('File', fileBlob, file.name);
             
             // Добавляем обязательные параметры
             formData.append('CatalogId', catalogId);
             
             // Добавляем опциональные параметры
-            if (documentStatus !== undefined) {
-                formData.append('DocumentStatus', documentStatus.toString());
-            }
-            if (startDate) {
-                formData.append('StartDate', startDate);
-            }
-            if (endDate) {
-                formData.append('EndDate', endDate);
-            }
+            formData.append('DocumentStatus', (documentStatus ?? 0).toString());
+            formData.append('StartDate', startDate || '');
+            formData.append('EndDate', endDate || '');
 
-            const response = await this.fetchWithTimeout(
+            console.log('[DocumentService] FormData prepared:', {
+                fileName: file.name,
+                fileType: file.type,
+                catalogId: catalogId,
+            });
+
+            const token = AuthTokenManager.getToken();
+            const response = await fetch(
                 `${apiUrl}/api/Documents/upload`,
                 {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${AuthTokenManager.getToken()}`,
+                        'Accept': 'application/json',
+                        'Authorization': token ? `Bearer ${token}` : '',
                     },
                     body: formData,
                 }
             );
 
             if (!response.ok) {
+                const errorText = await response.text();
+                console.error('[DocumentService] Ошибка ответа сервера:', errorText);
                 throw new Error(`Ошибка при загрузке файла: ${response.status}`);
             }
 

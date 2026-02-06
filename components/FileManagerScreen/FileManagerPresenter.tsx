@@ -1,13 +1,13 @@
 import { CatalogItem, catalogService } from '@/api/catalogService';
 import { Document, documentService } from '@/api/documentService';
+import * as DocumentPicker from 'expo-document-picker';
 import {
     File,
     FileSpreadsheet,
     FileText,
     Folder,
 } from 'lucide-react-native';
-import React, { useState } from 'react';
-import * as DocumentPicker from 'expo-document-picker';
+import { useState } from 'react';
 
 export interface FileManagerState {
     currentCatalog: CatalogItem | null;

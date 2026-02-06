@@ -13,7 +13,6 @@ import {
     Search,
     Upload
 } from 'lucide-react-native';
-import React from 'react';
 import {
     ActivityIndicator,
     Modal,
@@ -48,14 +47,14 @@ export function FileManager() {
                 </View>
                 <View style={styles.headerButtonsContainer}>
                     {state.currentCatalog && (
-                        <TouchableOpacity 
+                        <TouchableOpacity
                             style={styles.headerButton}
                             onPress={handlers.handleOpenCreateModal}
                         >
                             <FolderPlus size={24} color="#ffffff" />
                         </TouchableOpacity>
                     )}
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         style={styles.headerButton}
                         onPress={handlers.handleUploadFile}
                     >
@@ -67,8 +66,8 @@ export function FileManager() {
             {/* Breadcrumb */}
             {state.currentCatalog && (
                 <View style={styles.breadcrumb}>
-                    <ScrollView 
-                        horizontal 
+                    <ScrollView
+                        horizontal
                         showsHorizontalScrollIndicator={false}
                         style={styles.breadcrumbScroll}
                     >
@@ -100,7 +99,7 @@ export function FileManager() {
                 </View>
             )}
 
-            {/* Search */}
+            {/* Search
             {state.currentCatalog && (
                 <View style={styles.searchContainer}>
                     <View style={styles.searchInputContainer}>
@@ -114,7 +113,7 @@ export function FileManager() {
                         />
                     </View>
                 </View>
-            )}
+            )}*/}
 
             {/* Content */}
             <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -127,7 +126,7 @@ export function FileManager() {
                         <AlertCircle size={32} color="#ef4444" />
                         <Text style={styles.errorText}>{state.error}</Text>
                         {state.currentCatalog === null && (
-                            <TouchableOpacity 
+                            <TouchableOpacity
                                 style={styles.errorButton}
                                 onPress={() => handlers.handleGoBack()}
                             >
@@ -298,7 +297,7 @@ export function FileManager() {
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
                         <Text style={styles.modalTitle}>Создать каталог</Text>
-                        
+
                         <TextInput
                             style={styles.modalInput}
                             placeholder="Название каталога"
