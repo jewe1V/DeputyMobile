@@ -4,12 +4,9 @@ import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { LinearGradient } from "expo-linear-gradient";
 import {
     AlertCircle,
-    ChevronRight,
-    Download,
     Folder,
     FolderPlus,
     Home,
-    MoreVertical,
     Search,
     Upload
 } from 'lucide-react-native';
@@ -23,6 +20,9 @@ import {
     View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { CatalogCard } from './CatalogCard';
+import { DocumentCard } from './DocumentCard';
+import { DocumentDetailModal } from './DocumentDetailModal';
 import { useFileManagerPresenter } from './FileManagerPresenter';
 import { styles } from './file-manager-screen';
 
@@ -37,7 +37,7 @@ export function FileManager() {
                 colors={['#2A6E3F', '#349339']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
-                style={[styles.header, {paddingTop: insets.top}]}>
+                style={[styles.header, {paddingTop: insets.top + 5}]}>
 
                 <View style={styles.headerContent}>
                     <Text style={styles.headerTitle}>Документы</Text>
@@ -46,20 +46,20 @@ export function FileManager() {
                     </Text>
                 </View>
                 <View style={styles.headerButtonsContainer}>
-                    {state.currentCatalog && (
-                        <TouchableOpacity
+                    <TouchableOpacity
                             style={styles.headerButton}
                             onPress={handlers.handleOpenCreateModal}
                         >
                             <FolderPlus size={24} color="#ffffff" />
                         </TouchableOpacity>
+                    {state.currentCatalog && !state.currentCatalog.id.startsWith('root-') && (
+                        <TouchableOpacity
+                            style={styles.headerButton}
+                            onPress={handlers.handleUploadFile}
+                        >
+                            <Upload size={20} color="#ffffff" />
+                        </TouchableOpacity>
                     )}
-                    <TouchableOpacity
-                        style={styles.headerButton}
-                        onPress={handlers.handleUploadFile}
-                    >
-                        <Upload size={20} color="#ffffff" />
-                    </TouchableOpacity>
                 </View>
             </LinearGradient>
 
@@ -140,62 +140,18 @@ export function FileManager() {
                 {!state.currentCatalog && !state.loading && !state.error && (
                     <View style={styles.section}>
                         <View style={styles.catalogList}>
-                            {/* Public Catalog */}
-                            <TouchableOpacity
-                                style={styles.catalogItem}
+                            <CatalogCard
+                                catalog={{ id: 'root-public', name: 'Общий', parentId: null, type: 'catalog' }}
                                 onPress={() => handlers.handleOpenCatalog('public', 'Общий')}
-                            >
-                                <View style={styles.catalogContent}>
-                                    <View style={styles.catalogIconContainer}>
-                                        <Folder size={24} color="#2A6E3F" />
-                                    </View>
-                                    <View style={styles.catalogInfo}>
-                                        <Text style={styles.catalogName} numberOfLines={1}>
-                                            Общий
-                                        </Text>
-                                        <Text style={styles.catalogCount}>Общие документы</Text>
-                                    </View>
-                                    <ChevronRight size={20} color="#9ca3af" />
-                                </View>
-                            </TouchableOpacity>
-
-                            {/* My Catalog */}
-                            <TouchableOpacity
-                                style={styles.catalogItem}
+                            />
+                            <CatalogCard
+                                catalog={{ id: 'root-mine', name: 'Личный', parentId: null, type: 'catalog' }}
                                 onPress={() => handlers.handleOpenCatalog('mine', 'Личный')}
-                            >
-                                <View style={styles.catalogContent}>
-                                    <View style={styles.catalogIconContainer}>
-                                        <Folder size={24} color="#2A6E3F" />
-                                    </View>
-                                    <View style={styles.catalogInfo}>
-                                        <Text style={styles.catalogName} numberOfLines={1}>
-                                            Личный
-                                        </Text>
-                                        <Text style={styles.catalogCount}>Ваши документы</Text>
-                                    </View>
-                                    <ChevronRight size={20} color="#9ca3af" />
-                                </View>
-                            </TouchableOpacity>
-
-                            {/* Deputy Catalog */}
-                            <TouchableOpacity
-                                style={styles.catalogItem}
+                            />
+                            <CatalogCard
+                                catalog={{ id: 'root-deputy', name: 'Каталог депутата', parentId: null, type: 'catalog' }}
                                 onPress={() => handlers.handleOpenCatalog('deputy', 'Каталог депутата')}
-                            >
-                                <View style={styles.catalogContent}>
-                                    <View style={styles.catalogIconContainer}>
-                                        <Folder size={24} color="#2A6E3F" />
-                                    </View>
-                                    <View style={styles.catalogInfo}>
-                                        <Text style={styles.catalogName} numberOfLines={1}>
-                                            Каталог депутата
-                                        </Text>
-                                        <Text style={styles.catalogCount}>Документы депутата</Text>
-                                    </View>
-                                    <ChevronRight size={20} color="#9ca3af" />
-                                </View>
-                            </TouchableOpacity>
+                            />
                         </View>
                     </View>
                 )}
@@ -206,24 +162,11 @@ export function FileManager() {
                         <Text style={styles.sectionTitle}>Каталоги ({computed.filteredCatalogs.length})</Text>
                         <View style={styles.catalogList}>
                             {computed.filteredCatalogs.map((cat: CatalogItem) => (
-                                <TouchableOpacity
+                                <CatalogCard
                                     key={cat.id}
-                                    style={styles.catalogItem}
-                                    onPress={() => handlers.handleOpenChildCatalog(cat)}
-                                >
-                                    <View style={styles.catalogContent}>
-                                        <View style={styles.catalogIconContainer}>
-                                            <Folder size={24} color="#2A6E3F" />
-                                        </View>
-                                        <View style={styles.catalogInfo}>
-                                            <Text style={styles.catalogName} numberOfLines={1}>
-                                                {cat.name}
-                                            </Text>
-                                            <Text style={styles.catalogCount}>Каталог</Text>
-                                        </View>
-                                        <ChevronRight size={20} color="#9ca3af" />
-                                    </View>
-                                </TouchableOpacity>
+                                    catalog={cat}
+                                    onPress={handlers.handleOpenChildCatalog}
+                                />
                             ))}
                         </View>
                     </View>
@@ -235,31 +178,13 @@ export function FileManager() {
                         <Text style={styles.sectionTitle}>Файлы ({computed.filteredDocuments.length})</Text>
                         <View style={styles.documentList}>
                             {computed.filteredDocuments.map((doc: Document) => (
-                                <View key={doc.id} style={styles.documentItem}>
-                                    <View style={styles.documentContent}>
-                                        <View style={styles.documentIconContainer}>
-                                            {handlers.getFileIcon({ id: doc.id, name: doc.fileName, parentId: null, type: 'document' } as CatalogItem)}
-                                        </View>
-                                        <View style={styles.documentInfo}>
-                                            <Text style={styles.documentName} numberOfLines={1}>
-                                                {doc.fileName}
-                                            </Text>
-                                            <View style={styles.documentMeta}>
-                                                <Text style={styles.documentMetaText}>
-                                                    Размер: {handlers.getFileSize(doc.fileSize)}
-                                                </Text>
-                                            </View>
-                                        </View>
-                                        <View style={styles.documentActions}>
-                                            <TouchableOpacity style={styles.documentActionButton}>
-                                                <Download size={16} color="#2A6E3F" />
-                                            </TouchableOpacity>
-                                            <TouchableOpacity style={styles.documentActionButton}>
-                                                <MoreVertical size={16} color="#9ca3af" />
-                                            </TouchableOpacity>
-                                        </View>
-                                    </View>
-                                </View>
+                                <DocumentCard
+                                    key={doc.id}
+                                    document={doc}
+                                    getFileIcon={handlers.getFileIcon}
+                                    getFileSize={handlers.getFileSize}
+                                    onInfoPress={handlers.handleOpenDocumentDetail}
+                                />
                             ))}
                         </View>
                     </View>
@@ -335,6 +260,14 @@ export function FileManager() {
                     </View>
                 </View>
             </Modal>
+
+            {/* Document Detail Modal */}
+            <DocumentDetailModal
+                visible={state.showDocumentDetailModal}
+                document={state.selectedDocument}
+                onClose={handlers.handleCloseDocumentDetail}
+                onDelete={handlers.handleDeleteDocument}
+            />
         </View>
     );
 }

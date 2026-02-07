@@ -23,6 +23,8 @@ export interface FileManagerState {
     breadcrumbPath: { id: string; name: string }[];
     currentRootCatalog: CatalogItem | null;
     catalogHierarchy: Map<string, CatalogItem>;
+    selectedDocument: Document | null;
+    showDocumentDetailModal: boolean;
 }
 
 export interface FileManagerHandlers {
@@ -36,6 +38,9 @@ export interface FileManagerHandlers {
     handleCloseCreateModal: () => void;
     handleCatalogNameChange: (name: string) => void;
     handleUploadFile: () => Promise<void>;
+    handleOpenDocumentDetail: (document: Document) => void;
+    handleCloseDocumentDetail: () => void;
+    handleDeleteDocument: (documentId: string) => Promise<void>;
     getFileIcon: (item: CatalogItem, size?: number) => JSX.Element;
     getFileSize: (fileSize: number) => string;
 }
@@ -62,6 +67,9 @@ export const useFileManagerPresenter = () => {
     const [catalogHierarchy, setCatalogHierarchy] = useState<Map<string, CatalogItem>>(new Map());
     const [uploading, setUploading] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
+    const [documentsCache, setDocumentsCache] = useState<Map<string, Document[]>>(new Map());
+    const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
+    const [showDocumentDetailModal, setShowDocumentDetailModal] = useState(false);
 
     // Функция для построения плоской карты каталогов для быстрого поиска
     const buildCatalogMap = (catalogs: CatalogItem[], map: Map<string, CatalogItem> = new Map()): Map<string, CatalogItem> => {
@@ -74,13 +82,26 @@ export const useFileManagerPresenter = () => {
         return map;
     };
 
+    const loadDocumentsWithCache = async (catalogId: string): Promise<Document[]> => {
+        if (documentsCache.has(catalogId)) {
+            return documentsCache.get(catalogId) || [];
+        }
+        const docs = await documentService.getDocumentsByCatalog(catalogId);
+
+        const newCache = new Map(documentsCache);
+        newCache.set(catalogId, docs);
+        setDocumentsCache(newCache);
+
+        return docs;
+    };
+
     const handleOpenCatalog = async (type: 'public' | 'mine' | 'deputy', label: string) => {
         setLoading(true);
         setError(null);
         setDocuments([]);
         try {
             let catalogs: CatalogItem[];
-            
+
             if (type === 'public') {
                 catalogs = await catalogService.getPublicCatalogs();
             } else if (type === 'mine') {
@@ -100,7 +121,7 @@ export const useFileManagerPresenter = () => {
                 setCurrentRootCatalog(rootCatalog);
                 const hierarchy = buildCatalogMap([rootCatalog]);
                 setCatalogHierarchy(hierarchy);
-                
+
                 setCurrentCatalog(rootCatalog);
                 setCurrentCatalogLabel(label);
                 setBreadcrumbPath([{ id: rootCatalog.id, name: label }]);
@@ -108,13 +129,12 @@ export const useFileManagerPresenter = () => {
                 const emptyRoot: CatalogItem = { id: 'empty', name: label, parentId: null, type: 'catalog' };
                 setCurrentRootCatalog(emptyRoot);
                 setCatalogHierarchy(new Map());
-                
+
                 setCurrentCatalog(emptyRoot);
                 setCurrentCatalogLabel(label);
                 setBreadcrumbPath([{ id: 'empty', name: label }]);
             }
         } catch (error: any) {
-            console.error('[FileManager] Ошибка при загрузке каталога:', error);
             setError(error?.message || 'Не удалось загрузить каталог');
             setCurrentCatalog(null);
             setCurrentCatalogLabel('');
@@ -141,25 +161,35 @@ export const useFileManagerPresenter = () => {
         }
 
         const selectedPath = breadcrumbPath[index];
-        
+
         if (selectedPath.id.startsWith('root-')) {
             let catalogType: 'public' | 'mine' | 'deputy' = 'public';
             if (selectedPath.id === 'root-public') catalogType = 'public';
             else if (selectedPath.id === 'root-mine') catalogType = 'mine';
             else if (selectedPath.id === 'root-deputy') catalogType = 'deputy';
-            
+
             handleOpenCatalog(catalogType, selectedPath.name);
             return;
         }
 
         const catalogInHierarchy = catalogHierarchy.get(selectedPath.id);
-        
+
         if (catalogInHierarchy) {
             if (catalogInHierarchy.children && catalogInHierarchy.children.length > 0) {
                 const newPath = breadcrumbPath.slice(0, index + 1);
                 setBreadcrumbPath(newPath);
                 setCurrentCatalog(catalogInHierarchy);
-                setDocuments([]);
+                setLoading(true);
+                try {
+                    const cachedDocs = await loadDocumentsWithCache(catalogInHierarchy.id);
+                    setDocuments(cachedDocs);
+                } catch (err: any) {
+                    console.error('[FileManager] Ошибка при загрузке документов:', err);
+                    setError(err?.message || 'Не удалось загрузить документы');
+                    setDocuments([]);
+                } finally {
+                    setLoading(false);
+                }
                 return;
             }
         }
@@ -169,10 +199,9 @@ export const useFileManagerPresenter = () => {
 
         setLoading(true);
         setError(null);
-        setDocuments([]);
 
         try {
-            const docs = await documentService.getDocumentsByCatalog(selectedPath.id);
+            const docs = await loadDocumentsWithCache(selectedPath.id);
             setDocuments(docs);
             setCurrentCatalog({
                 id: selectedPath.id,
@@ -191,14 +220,12 @@ export const useFileManagerPresenter = () => {
     const handleOpenChildCatalog = async (catalog: CatalogItem) => {
         setLoading(true);
         setError(null);
-        setDocuments([]);
         try {
-            const docs = await documentService.getDocumentsByCatalog(catalog.id);
+            const docs = await loadDocumentsWithCache(catalog.id);
             setDocuments(docs);
             setCurrentCatalog(catalog);
             setBreadcrumbPath([...breadcrumbPath, { id: catalog.id, name: catalog.name }]);
         } catch (err: any) {
-            console.error('[FileManager] Ошибка при загрузке документов:', err);
             setError(err?.message || 'Не удалось загрузить документы');
             setDocuments([]);
         } finally {
@@ -239,7 +266,7 @@ export const useFileManagerPresenter = () => {
             const parentId = currentCatalog?.id && currentCatalog.id !== 'empty' ? currentCatalog.id : undefined;
             const currentBreadcrumbPath = [...breadcrumbPath];
             const currentCatalogId = currentCatalog?.id;
-            
+
             if (currentCatalogLabel === 'Личный') {
                 await catalogService.createPrivateCatalog(catalogName.trim(), parentId);
             } else {
@@ -247,13 +274,13 @@ export const useFileManagerPresenter = () => {
             }
 
             handleCloseCreateModal();
-            
+
             if (currentCatalog && currentCatalogId) {
-                const catalogType = currentCatalogLabel === 'Личный' ? 'mine' : 
+                const catalogType = currentCatalogLabel === 'Личный' ? 'mine' :
                                   currentCatalogLabel === 'Каталог депутата' ? 'deputy' : 'public';
-                
+
                 let updatedCatalogs: CatalogItem[];
-                
+
                 if (catalogType === 'public') {
                     updatedCatalogs = await catalogService.getPublicCatalogs();
                 } else if (catalogType === 'mine') {
@@ -270,22 +297,31 @@ export const useFileManagerPresenter = () => {
                         type: 'catalog',
                         children: updatedCatalogs,
                     };
-                    
+
                     const hierarchy = buildCatalogMap([rootCatalog]);
                     setCatalogHierarchy(hierarchy);
                     setCurrentRootCatalog(rootCatalog);
-                    
+
                     if (currentCatalogId.startsWith('root-')) {
                         setCurrentCatalog(rootCatalog);
                     } else {
                         const updatedCatalog = hierarchy.get(currentCatalogId);
                         if (updatedCatalog) {
                             setCurrentCatalog(updatedCatalog);
+                            // Инвалидируем кэш для текущего каталога
+                            const newCache = new Map(documentsCache);
+                            newCache.delete(currentCatalogId);
+                            setDocumentsCache(newCache);
+                            // Загружаем обновленный список документов
                             const docs = await documentService.getDocumentsByCatalog(currentCatalogId);
                             setDocuments(docs);
+                            // Добавляем в кэш
+                            const updatedCache = new Map(newCache);
+                            updatedCache.set(currentCatalogId, docs);
+                            setDocumentsCache(updatedCache);
                         }
                     }
-                    
+
                     setBreadcrumbPath(currentBreadcrumbPath);
                 }
             }
@@ -341,27 +377,69 @@ export const useFileManagerPresenter = () => {
 
             if (result.assets && result.assets.length > 0) {
                 const file = result.assets[0];
-                
+                const currentCatalogId = currentCatalog.id;
+
                 const uploadedDoc = await documentService.uploadDocument(
                     {
                         uri: file.uri,
                         name: file.name,
                         type: file.mimeType || 'application/octet-stream',
                     },
-                    currentCatalog.id
+                    currentCatalogId
                 );
 
-                console.log('[FileManager] Файл успешно загружен:', uploadedDoc);
-                
-                // Перезагружаем документы в текущем каталоге
-                const updatedDocs = await documentService.getDocumentsByCatalog(currentCatalog.id);
-                setDocuments(updatedDocs);
+
+                // Инвалидируем кэш для текущего каталога
+                const newCache = new Map(documentsCache);
+                newCache.delete(currentCatalogId);
+                setDocumentsCache(newCache);
+
+                // Загружаем обновленный список документов с сервера
+                const docs = await documentService.getDocumentsByCatalog(currentCatalogId);
+                setDocuments(docs);
+
+                // Добавляем обновленный список в кэш
+                const updatedCache = new Map(newCache);
+                updatedCache.set(currentCatalogId, docs);
+                setDocumentsCache(updatedCache);
             }
         } catch (error: any) {
             console.error('[FileManager] Ошибка при загрузке файла:', error);
             setUploadError(error?.message || 'Не удалось загрузить файл');
         } finally {
             setUploading(false);
+        }
+    };
+
+    const handleOpenDocumentDetail = (document: Document) => {
+        setSelectedDocument(document);
+        setShowDocumentDetailModal(true);
+    };
+
+    const handleCloseDocumentDetail = () => {
+        setShowDocumentDetailModal(false);
+        setSelectedDocument(null);
+    };
+
+    const handleDeleteDocument = async (documentId: string) => {
+        try {
+            await documentService.deleteDocument(documentId);
+            
+            // Удаляем документ из текущего списка
+            const updatedDocuments = documents.filter(doc => doc.id !== documentId);
+            setDocuments(updatedDocuments);
+
+            // Инвалидируем кэш для текущего каталога
+            if (currentCatalog) {
+                const newCache = new Map(documentsCache);
+                newCache.delete(currentCatalog.id);
+                setDocumentsCache(newCache);
+            }
+
+            console.log('[FileManager] Документ успешно удален');
+        } catch (error: any) {
+            console.error('[FileManager] Ошибка при удалении документа:', error);
+            throw error;
         }
     };
 
@@ -389,6 +467,8 @@ export const useFileManagerPresenter = () => {
         breadcrumbPath,
         currentRootCatalog,
         catalogHierarchy,
+        selectedDocument,
+        showDocumentDetailModal,
     };
 
     const handlers: FileManagerHandlers = {
@@ -402,6 +482,9 @@ export const useFileManagerPresenter = () => {
         handleCloseCreateModal,
         handleCatalogNameChange,
         handleUploadFile,
+        handleOpenDocumentDetail,
+        handleCloseDocumentDetail,
+        handleDeleteDocument,
         getFileIcon,
         getFileSize,
     };

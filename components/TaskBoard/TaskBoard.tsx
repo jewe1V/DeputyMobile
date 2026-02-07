@@ -119,7 +119,7 @@ export function TaskBoard() {
                     colors={['#2A6E3F', '#349339']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
-                    style={[styles.header, { paddingTop: insets.top }]}
+                    style={[styles.header, { paddingTop: insets.top + 5 }]}
                 >
                     <View style={styles.headerContent}>
                         <Text style={styles.headerTitle}>Задачи</Text>
@@ -181,7 +181,7 @@ export function TaskBoard() {
                 colors={['#2A6E3F', '#349339']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
-                style={[styles.header, { paddingTop: insets.top }]}
+                style={[styles.header, { paddingTop: insets.top + 5}]}
             >
                 <View style={styles.headerContent}>
                     <Text style={styles.headerTitle}>Задачи</Text>

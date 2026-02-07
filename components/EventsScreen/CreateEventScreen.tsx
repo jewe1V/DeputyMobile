@@ -111,7 +111,7 @@ export default function CreateEventScreen() {
         >
             <ScrollView
                 ref={scrollViewRef}
-                contentContainerStyle={[styles.container, { paddingTop: insets.top + 10 }]}
+                contentContainerStyle={[styles.container, { paddingTop: insets.top }]}
             >
                 <View style={styles.header}>
                     <TouchableOpacity

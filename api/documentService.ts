@@ -31,6 +31,7 @@ export interface DocumentApiResponse {
 export interface Document {
     id: string;
     fileName: string;
+    fileNameEncoded: string;
     fileSize: number;
     uploadedAt: string;
     contentType: string;
@@ -71,6 +72,7 @@ class DocumentService {
         return {
             id: data.id,
             fileName: data.fileName,
+            fileNameEncoded: data.fileNameEncoded,
             fileSize: data.size,
             uploadedAt: data.uploadedAt,
             contentType: data.contentType,
@@ -114,29 +116,22 @@ class DocumentService {
         endDate?: string
     ): Promise<Document> {
         try {
-            console.log('[DocumentService] Загрузка файла:', file.name);
-            
+
             // Читаем файл как Blob
             const fileBlob = await fetch(file.uri).then(r => r.blob());
-            
+
             const formData = new FormData();
-            
+
             // Добавляем файл как Blob с именем
             formData.append('File', fileBlob, file.name);
-            
+
             // Добавляем обязательные параметры
             formData.append('CatalogId', catalogId);
-            
+
             // Добавляем опциональные параметры
             formData.append('DocumentStatus', (documentStatus ?? 0).toString());
             formData.append('StartDate', startDate || '');
             formData.append('EndDate', endDate || '');
-
-            console.log('[DocumentService] FormData prepared:', {
-                fileName: file.name,
-                fileType: file.type,
-                catalogId: catalogId,
-            });
 
             const token = AuthTokenManager.getToken();
             const response = await fetch(
@@ -159,10 +154,30 @@ class DocumentService {
 
             const data: DocumentApiResponse = await response.json();
             const document = this.adaptDocument(data);
-            console.log('[DocumentService] Файл загружен:', document);
             return document;
         } catch (error) {
             console.error('[DocumentService] Ошибка при загрузке файла:', error);
+            throw error;
+        }
+    }
+
+    async deleteDocument(documentId: string): Promise<void> {
+        try {
+            const response = await this.fetchWithTimeout(
+                `${apiUrl}/api/Documents/${documentId}`,
+                {
+                    method: 'DELETE',
+                    headers: this.getAuthHeaders(),
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error(`Ошибка при удалении файла: ${response.status}`);
+            }
+
+            console.log('[DocumentService] Файл успешно удален:', documentId);
+        } catch (error) {
+            console.error('[DocumentService] Ошибка при удалении файла:', error);
             throw error;
         }
     }
