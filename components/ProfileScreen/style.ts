@@ -2,163 +2,258 @@ import {StyleSheet} from "react-native";
 
 export const styles = StyleSheet.create({
     container: {
-        paddingHorizontal: 16,
         flex: 1,
-        backgroundColor: '#f3f4f6',
+        backgroundColor: '#F9FAFB',
+    },
+    scrollContent: {
+        paddingBottom: 20,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#F9FAFB',
     },
     loadingText: {
-        marginTop: 10,
-        fontSize: 16,
-        color: '#6b7280',
-        fontFamily: 'Inter_400Regular',
-    },
-    unauthorizedTitle: {
-        fontSize: 20,
-        fontFamily: 'PlayfairDisplay_700Bold',
-        color: '#0b2340',
         marginTop: 12,
+        fontSize: 16,
+        color: '#6B7280',
+    },
+    errorContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 32,
+    },
+    errorTitle: {
+        fontSize: 20,
+        fontWeight: '600',
+        color: '#111827',
+        marginTop: 16,
         marginBottom: 8,
     },
-    unauthorizedText: {
-        fontSize: 15,
-        color: '#6b7280',
+    errorText: {
+        fontSize: 14,
+        color: '#6B7280',
         textAlign: 'center',
-        marginBottom: 20,
-        fontFamily: 'Inter_400Regular',
-        paddingHorizontal: 20,
+        marginBottom: 24,
     },
-    refreshButton: {
+    errorButton: {
+        paddingHorizontal: 32,
+    },
+    header: {
+        backgroundColor: '#2A6E3F',
+        paddingHorizontal: 20,
+        paddingTop: 16,
+        paddingBottom: 60,
+    },
+    headerContent: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#0f6219',
-        paddingVertical: 10,
-        paddingHorizontal: 16,
-        borderRadius: 10,
+        justifyContent: 'space-between',
     },
-    refreshButtonText: {
-        color: '#fff',
-        fontSize: 14,
-        fontFamily: 'Inter_600SemiBold',
-        marginLeft: 8,
+    headerTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#FFFFFF',
     },
-    logoutButton: {
+    settingsButton: {
         padding: 8,
     },
-    card: {
-        backgroundColor: '#fff',
+    profileCard: {
+        backgroundColor: '#FFFFFF',
         borderRadius: 12,
-        marginBottom: 16,
-        padding: 16,
+        marginHorizontal: 16,
+        marginTop: -40,
+        padding: 20,
         shadowColor: '#000',
-        shadowOpacity: 0.08,
-        shadowRadius: 6,
         shadowOffset: { width: 0, height: 2 },
-        elevation: 2,
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 4,
     },
-    cardHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
+    avatarContainer: {
         alignItems: 'center',
-        marginBottom: 12,
+        marginTop: -44,
+        marginBottom: 16,
     },
-    cardTitle: {
-        fontSize: 18,
-        fontFamily: 'Inter_600SemiBold',
-        color: '#0b2340',
+    avatarBase: {
+        width: 88,
+        height: 88,
+        borderRadius: 44,
+        backgroundColor: '#2A6E3F',
+        borderWidth: 4,
+        borderColor: '#FFFFFF',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
-    refreshIcon: {
-        padding: 4,
+    avatar: {
+        // Стили переопределяются через avatarBase
+    },
+    avatarText: {
+        color: '#FFFFFF',
+        fontSize: 28,
+        fontWeight: '600',
+    },
+    userInfo: {
+        alignItems: 'center',
+    },
+    userName: {
+        fontSize: 20,
+        fontWeight: '600',
+        color: '#111827',
+        marginBottom: 4,
+    },
+    userTitle: {
+        fontSize: 14,
+        color: '#6B7280',
+    },
+    divider: {
+        height: 1,
+        backgroundColor: '#E5E7EB',
+        marginVertical: 16,
+    },
+    infoSection: {
+        gap: 16,
     },
     infoRow: {
         flexDirection: 'row',
-        marginBottom: 12,
-        alignItems: 'center',
+        gap: 12,
+    },
+    infoIcon: {
+        marginTop: 2,
+    },
+    infoContent: {
+        flex: 1,
     },
     infoLabel: {
-        fontSize: 14,
-        fontFamily: 'Inter_600SemiBold',
-        color: '#6b7280',
-        width: 100,
+        fontSize: 12,
+        color: '#9CA3AF',
+        marginBottom: 2,
     },
     infoValue: {
         fontSize: 14,
-        fontFamily: 'Inter_400Regular',
-        color: '#0b2340',
-        flex: 1,
+        fontWeight: '500',
+        color: '#111827',
     },
-    rolesContainer: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        flex: 1,
-    },
-    roleBadge: {
-        backgroundColor: '#e5e7eb',
+    rolesCard: {
+        backgroundColor: '#FFFFFF',
         borderRadius: 12,
-        paddingVertical: 4,
-        paddingHorizontal: 10,
-        marginRight: 8,
-        marginBottom: 8,
-    },
-    roleText: {
-        fontSize: 12,
-        fontFamily: 'Inter_600SemiBold',
-        color: '#0b2340',
-    },
-    statsContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 16,
-    },
-    statCard: {
-        backgroundColor: '#fff',
-        borderRadius: 12,
+        marginHorizontal: 16,
+        marginTop: 16,
         padding: 16,
-        flex: 1,
-        marginHorizontal: 4,
-        shadowColor: '#000',
-        shadowOpacity: 0.08,
-        shadowRadius: 6,
-        shadowOffset: { width: 0, height: 2 },
-        elevation: 2,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
     },
-    statNumber: {
-        fontSize: 18,
-        fontFamily: 'Inter_400Regular',
-        color: '#0b2340',
-        marginTop: 8,
-    },
-    statLabel: {
-        fontSize: 12,
-        fontFamily: 'Inter_400Regular',
-        color: '#6b7280',
-        marginTop: 4,
-    },
-    listItem: {
+    rolesHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#e5e7eb',
+        gap: 8,
+        marginBottom: 12,
     },
-    listItemContent: {
+    rolesTitle: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#111827',
+    },
+    rolesList: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+    },
+    roleBadge: {
+        backgroundColor: '#E8F5E9',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
+    },
+    roleText: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: '#2A6E3F',
+    },
+    actionsCard: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 12,
+        marginHorizontal: 16,
+        marginTop: 16,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+    },
+    actionsHeader: {
+        padding: 16,
+        backgroundColor: '#F9FAFB',
+        borderBottomWidth: 1,
+        borderBottomColor: '#E5E7EB',
+    },
+    actionsTitle: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#111827',
+    },
+    actionItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#E5E7EB',
+    },
+    actionIcon: {
+        width: 40,
+        height: 40,
+        borderRadius: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
+    },
+    actionContent: {
         flex: 1,
     },
-    listItemTitle: {
+    actionTitle: {
         fontSize: 14,
-        fontFamily: 'Inter_600SemiBold',
-        color: '#0b2340',
-        marginBottom: 4,
+        fontWeight: '500',
+        color: '#111827',
     },
-    listItemDate: {
+    actionSubtitle: {
         fontSize: 12,
-        fontFamily: 'Inter_400Regular',
-        color: '#6b7280',
+        color: '#6B7280',
+        marginTop: 2,
     },
-    eventIndicator: {
-        width: 6,
-        height: 6,
-        borderRadius: 3,
-        backgroundColor: '#0f6219',
-        marginRight: 12,
+    logoutSection: {
+        marginHorizontal: 16,
+        marginTop: 24,
+    },
+    buttonBase: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: 48,
+        borderRadius: 8,
+        paddingHorizontal: 16,
+    },
+    buttonDefault: {
+        backgroundColor: '#2A6E3F',
+    },
+    buttonOutline: {
+        backgroundColor: 'transparent',
+        borderWidth: 1,
+        borderColor: '#FECACA',
+    },
+    buttonDisabled: {
+        opacity: 0.5,
+    },
+    logoutButton: {
+        borderColor: '#FECACA',
+        gap: 8,
+    },
+    logoutText: {
+        fontSize: 16,
+        fontWeight: '500',
+        color: '#DC2626',
+    },
+    buttonText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: '500',
     },
 });

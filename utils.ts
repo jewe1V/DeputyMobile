@@ -14,7 +14,7 @@ export const getDisplayDate = (post: Post) => {
     return formatDate(dateString);
 };
 
-export  const formatDateShort = (dateString: string) => {
+export const formatDateShort = (dateString: string) => {
         const date = new Date(dateString);
         return date.toLocaleDateString('ru-RU', {
             day: '2-digit',

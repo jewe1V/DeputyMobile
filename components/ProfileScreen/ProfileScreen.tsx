@@ -1,314 +1,302 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     View,
     Text,
-    StyleSheet,
-    ScrollView,
     TouchableOpacity,
+    ScrollView,
+    StyleSheet,
+    SafeAreaView,
+    Alert,
+    RefreshControl,
     ActivityIndicator,
-    Modal, Alert,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { Header } from "@/components/ui/Header";
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Profile } from '@/models/ProfileModel';
-import { Post } from '@/models/Event';
-import { AuthTokenManager } from '@/components/LoginScreen/LoginScreen';
-import { ModalScreen } from '@/components/ProfileScreen/ModalScreen';
-import {router} from "expo-router";
-import {apiUrl} from "@/api/api";
+import Icon from 'react-native-vector-icons/Feather';
+import { useNavigation } from '@react-navigation/native';
+import {apiUrl} from '@/api/api.ts'
+import {AuthTokenManager} from '@/components/LoginScreen/LoginScreen';
 import { styles } from './style';
+import {Profile} from '@/data/types';
 
-const ProfileScreen: React.FC = () => {
+// Кастомные компоненты
+interface ButtonProps {
+    variant?: 'default' | 'outline';
+    onPress: () => void;
+    style?: any;
+    children: React.ReactNode;
+    disabled?: boolean;
+}
+
+const Button: React.FC<ButtonProps> = ({
+                                           variant = 'default',
+                                           onPress,
+                                           style,
+                                           children,
+                                           disabled
+                                       }) => (
+    <TouchableOpacity
+        style={[
+            styles.buttonBase,
+            variant === 'outline' ? styles.buttonOutline : styles.buttonDefault,
+            disabled && styles.buttonDisabled,
+            style,
+        ]}
+        onPress={onPress}
+        disabled={disabled}
+    >
+        {children}
+    </TouchableOpacity>
+);
+
+interface AvatarProps {
+    style?: any;
+    children: React.ReactNode;
+}
+
+const Avatar: React.FC<AvatarProps> = ({ style, children }) => (
+    <View style={[styles.avatarBase, style]}>
+        {children}
+    </View>
+);
+
+const getInitials = (name: string) => {
+    if (!name) return '?';
+    const parts = name.trim().split(' ');
+    return parts.length >= 2 ? `${parts[0][0]}${parts[1][0]}`.toUpperCase() : name[0].toUpperCase();
+};
+
+export function ProfileScreen() {
+    const navigation = useNavigation();
     const [profile, setProfile] = useState<Profile | null>(null);
     const [loading, setLoading] = useState(true);
-    const [token, setToken] = useState<string | null>(AuthTokenManager.getToken());
-    const [selectedPost, setSelectedPost] = useState<Post | null>(null);
-    const insets = useSafeAreaInsets();
+    const [refreshing, setRefreshing] = useState(false);
 
-    // Подписываемся на изменения токена
-    useEffect(() => {
-        const unsubscribe = AuthTokenManager.addListener((newToken) => {
-            console.log('Token changed in ProfileScreen:', newToken);
-            setToken(newToken);
-
-            // Если токен удален, сбрасываем профиль
-            if (!newToken) {
-                setProfile(null);
-                setLoading(false);
-            } else {
-                // Если появился новый токен, загружаем профиль
-                loadProfile(newToken);
-            }
-        });
-
-        return unsubscribe;
-    }, []);
-
-    // Загружаем профиль при первом монтировании
-    useEffect(() => {
-        if (token) {
-            loadProfile(token);
-        } else {
-            setLoading(false);
-        }
-    }, []);
-
-    const loadProfile = async (currentToken?: string) => {
-        const authToken = currentToken || token;
-
-        if (!authToken) {
-            console.warn('Токен не найден');
-            setProfile(null);
-            setLoading(false);
-            return;
-        }
-
-        setLoading(true);
+    // Логика загрузки данных (вынесена в useCallback для стабильности)
+    const loadProfile = useCallback(async () => {
         try {
-            const response = await fetch(`${apiUrl}/api/Auth/current`, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json',
-                    'Authorization': `Bearer ${authToken}`,
-                },
-            });
-
-            if (!response.ok) {
-                if (response.status === 401) {
-                    console.log('Token invalid, clearing...');
-                    await AuthTokenManager.clearToken();
-                }
-                console.error('Ошибка при загрузке профиля', response.status);
+            const token = await AuthTokenManager.getToken();
+            if (!token) {
                 setProfile(null);
                 return;
             }
 
+            const response = await fetch(`${apiUrl}/api/Auth/current`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+            });
+
+            if (response.status === 401) {
+                await AuthTokenManager.clearToken();
+                setProfile(null);
+                return;
+            }
+
+            if (!response.ok) throw new Error('Network response was not ok');
+
             const data = await response.json();
 
-            // Преобразуем данные с API в структуру Profile
-            const formattedProfile: Profile = {
-                id: data.id,
-                email: data.email,
-                fullName: data.fullName,
-                jobTitle: data.jobTitle,
-                createdAt: data.createdAt || new Date().toISOString(),
-                userRoles: data.roles ? data.roles.map((r: string) => ({
-                    role: { name: r }
-                })) : [],
-                posts: data.posts ?? [],
-                documents: data.documents ?? [],
-                eventsOrganized: data.events ?? []
-            };
-
-            setProfile(formattedProfile);
+            // Маппинг данных
+            setProfile(data);
         } catch (error) {
-            console.error('Ошибка загрузки профиля', error);
-            setProfile(null);
-
-            if (error instanceof TypeError) {
-                console.log('Network error, but token might still be valid');
-            }
+            console.error('Profile load error:', error);
+            // Alert.alert('Ошибка', 'Не удалось загрузить профиль');
         } finally {
             setLoading(false);
+            setRefreshing(false);
         }
-    };
+    }, []);
+
+    // Единый эффект для подписки на токен и первичной загрузки
+    useEffect(() => {
+        const unsubscribe = AuthTokenManager.addListener((newToken) => {
+            if (newToken) {
+                loadProfile();
+            } else {
+                setProfile(null);
+                setLoading(false);
+            }
+        });
+
+        loadProfile(); // Начальная загрузка
+
+        return () => unsubscribe(); // Важно: вызываем функцию отписки
+    }, [loadProfile]);
 
     const handleRefresh = () => {
+        setRefreshing(true);
         loadProfile();
     };
 
-    const handleLogout = async () => {
-        await AuthTokenManager.clearToken();
-        // Профиль автоматически очистится через слушатель
-    };
-
-    const handleOpenPost = (post: Post) => {
-        setSelectedPost(post);
-    };
-
-    const handleClosePost = () => {
-        setSelectedPost(null);
-    };
-
-    const handleSharePost = (post: Post) => {
-        // Заглушка для функции "Поделиться"
-        // Здесь можно добавить логику для шаринга, например, через Share API
-        console.log('Sharing post:', post.title);
-        Alert.alert('Поделиться', `Поделиться постом: ${post.title}`);
-    };
-
-    const formatDate = (dateString: string) => {
-        try {
-            return new Date(dateString).toLocaleDateString('ru-RU', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric'
-            });
-        } catch (error) {
-            return 'Неверная дата';
-        }
+    const handleLogout = () => {
+        Alert.alert('Выход', 'Вы уверены, что хотите выйти?', [
+            { text: 'Отмена', style: 'cancel' },
+            {
+                text: 'Выйти',
+                style: 'destructive',
+                onPress: async () => await AuthTokenManager.clearToken()
+            },
+        ]);
     };
 
     if (loading) {
         return (
-            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-                <ActivityIndicator size="large" color="#1760fd" />
-                <Text style={styles.loadingText}>Загрузка профиля...</Text>
-            </View>
+            <SafeAreaView style={styles.container}>
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#2A6E3F" />
+                </View>
+            </SafeAreaView>
         );
     }
 
-    // Если пользователь не авторизован
-    if (!token || !profile) {
+    if (!profile) {
         return (
-            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-                <Ionicons name="person-circle-outline" size={64} color="#6b7280" />
-                <Text style={styles.unauthorizedTitle}>Доступ ограничен</Text>
-                <Text style={styles.unauthorizedText}>Данные профиля доступны только авторизованным пользователям</Text>
-
-                <TouchableOpacity style={styles.refreshButton} onPress={handleRefresh}>
-                    <Ionicons name="refresh" size={20} color="#fff" />
-                    <Text style={styles.refreshButtonText}>Проверить авторизацию</Text>
-                </TouchableOpacity>
-            </View>
+            <SafeAreaView style={styles.container}>
+                <View style={styles.errorContainer}>
+                    <Icon name="user-x" size={48} color="#9CA3AF" />
+                    <Text style={styles.errorTitle}>Профиль не найден</Text>
+                    <Button onPress={() => navigation.navigate('login' as never)} style={styles.errorButton}>
+                        <Text style={styles.buttonText}>Войти</Text>
+                    </Button>
+                </View>
+            </SafeAreaView>
         );
     }
 
     return (
-        <View style={{ flex: 1 }}>
-            <ScrollView style={[styles.container, { paddingTop: insets.top }]}>
-                <Header
-                    title="Профиль"
-                    subTitle={profile.fullName}
-                />
-
-                {/* Основная информация */}
-                <View style={styles.card}>
-                    <View style={styles.cardHeader}>
-                        <Text style={styles.cardTitle}>Основная информация</Text>
-                        <TouchableOpacity onPress={handleRefresh} style={styles.refreshIcon}>
-                            <Ionicons name="refresh" size={20} color="#1760fd" />
+        <SafeAreaView style={styles.container}>
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollContent}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={handleRefresh}
+                        colors={['#2A6E3F']}
+                        tintColor="#2A6E3F"
+                    />
+                }
+            >
+                {/* Header */}
+                <View style={styles.header}>
+                    <View style={styles.headerContent}>
+                        <Text style={styles.headerTitle}>Профиль</Text>
+                        <TouchableOpacity
+                            style={styles.settingsButton}
+                            onPress={() => navigation.navigate('Settings' as never)}
+                        >
+                            <Icon name="settings" size={20} color="#FFFFFF" />
                         </TouchableOpacity>
                     </View>
+                </View>
 
-                    <View style={styles.infoRow}>
-                        <Text style={styles.infoLabel}>ФИО:</Text>
-                        <Text style={styles.infoValue}>{profile.fullName}</Text>
+                {/* Profile Card */}
+                <View style={styles.profileCard}>
+                    <View style={styles.avatarContainer}>
+                        <Avatar style={styles.avatar}>
+                            <Text style={styles.avatarText}>
+                                {getInitials(profile.fullName)}
+                            </Text>
+                        </Avatar>
                     </View>
 
-                    <View style={styles.infoRow}>
-                        <Text style={styles.infoLabel}>Должность:</Text>
-                        <Text style={styles.infoValue}>{profile.jobTitle}</Text>
+                    <View style={styles.userInfo}>
+                        <Text style={styles.userName}>{profile.fullName}</Text>
+                        <Text style={styles.userTitle}>{profile.jobTitle}</Text>
                     </View>
 
-                    <View style={styles.infoRow}>
-                        <Text style={styles.infoLabel}>Email:</Text>
-                        <Text style={styles.infoValue}>{profile.email}</Text>
-                    </View>
+                    <View style={styles.divider} />
 
-                    {profile.userRoles.length > 0 && (
+                    {/* Основная информация */}
+                    <View style={styles.infoSection}>
+
                         <View style={styles.infoRow}>
-                            <Text style={styles.infoLabel}>Роли:</Text>
-                            <View style={styles.rolesContainer}>
-                                {profile.userRoles.map((userRole, index) => (
-                                    <View key={index} style={styles.roleBadge}>
-                                        <Text style={styles.roleText}>{userRole.role.name}</Text>
-                                    </View>
-                                ))}
+                            <Icon name="briefcase" size={20} color="#2A6E3F" style={styles.infoIcon} />
+                            <View style={styles.infoContent}>
+                                <Text style={styles.infoLabel}>Должность</Text>
+                                <Text style={styles.infoValue}>{profile.jobTitle}</Text>
                             </View>
                         </View>
-                    )}
 
-                    {profile.createdAt && (
                         <View style={styles.infoRow}>
-                            <Text style={styles.infoLabel}>В системе с:</Text>
-                            <Text style={styles.infoValue}>{formatDate(profile.createdAt)}</Text>
+                            <Icon name="mail" size={20} color="#2A6E3F" style={styles.infoIcon} />
+                            <View style={styles.infoContent}>
+                                <Text style={styles.infoLabel}>Email</Text>
+                                <Text style={styles.infoValue}>{profile.email}</Text>
+                            </View>
                         </View>
-                    )}
-                </View>
-
-                {/* Статистика */}
-                <View style={styles.statsContainer}>
-                    <View style={styles.statCard}>
-                        <Ionicons name="document-text" size={32} color="#28954a" />
-                        <Text style={styles.statNumber}>{profile.posts.length}</Text>
-                        <Text style={styles.statLabel}>Публикаций</Text>
-                    </View>
-
-                    <View style={styles.statCard}>
-                        <Ionicons name="folder" size={32} color="#28954a" />
-                        <Text style={styles.statNumber}>{profile.documents.length}</Text>
-                        <Text style={styles.statLabel}>Документов</Text>
-                    </View>
-
-                    <View style={styles.statCard}>
-                        <Ionicons name="calendar" size={32} color="#28954a" />
-                        <Text style={styles.statNumber}>{profile.eventsOrganized.length}</Text>
-                        <Text style={styles.statLabel}>Мероприятий</Text>
                     </View>
                 </View>
 
-                {/* Последние публикации */}
-                {profile.posts.length > 0 && (
-                    <View style={styles.card}>
-                        <View style={styles.cardHeader}>
-                            <Text style={styles.cardTitle}>Последние публикации</Text>
+                {/* Роли */}
+                {profile.roles.length > 0 && (
+                    <View style={styles.rolesCard}>
+                        <View style={styles.rolesHeader}>
+                            <Icon name="shield" size={20} color="#2A6E3F" />
+                            <Text style={styles.rolesTitle}>Роли в системе</Text>
                         </View>
-                        {profile.posts.slice(0, 3).map((post) => (
-                            <TouchableOpacity
-                                key={post.id}
-                                style={styles.listItem}
-                                onPress={() => handleOpenPost(post)}
-                            >
-                                <View style={styles.listItemContent}>
-                                    <Text style={styles.listItemTitle} numberOfLines={2}>{post.title}</Text>
-                                    <Text style={styles.listItemDate}>{formatDate(post.createdAt)}</Text>
+
+                        <View style={styles.rolesList}>
+                            {profile.roles.map((userRole, index) => (
+                                <View key={index} style={styles.roleBadge}>
+                                    <Text style={styles.roleText}>{userRole}</Text>
                                 </View>
-                                <Ionicons name="chevron-forward" size={20} color="#6b7280" />
-                            </TouchableOpacity>
-                        ))}
+                            ))}
+                        </View>
                     </View>
                 )}
 
-                {/* Предстоящие мероприятия */}
-                {profile.eventsOrganized.length > 0 && (
-                    <View style={styles.card}>
-                        <View style={styles.cardHeader}>
-                            <Text style={styles.cardTitle}>Предстоящие мероприятия</Text>
-                        </View>
-                        {profile.eventsOrganized.slice(0, 3).map((event) => (
-                            <TouchableOpacity key={event.id} style={styles.listItem} onPress={() => router.push(`/(screens)/EventsScreen`)}>
-                                <View style={styles.eventIndicator} />
-                                <View style={styles.listItemContent}>
-                                    <Text style={styles.listItemTitle} numberOfLines={2}>{event.title}</Text>
-                                    <Text style={styles.listItemDate}>{formatDate(event.startAt)}</Text>
-                                </View>
-                                <Ionicons name="chevron-forward" size={20} color="#175ffb" />
-                            </TouchableOpacity>
-                        ))}
+                {/* Быстрые действия */}
+                <View style={styles.actionsCard}>
+                    <View style={styles.actionsHeader}>
+                        <Text style={styles.actionsTitle}>Быстрые действия</Text>
                     </View>
-                )}
+
+                    <TouchableOpacity
+                        style={styles.actionItem}
+                        onPress={() => navigation.navigate('EventsScreen' as never)}
+                    >
+                        <View style={[styles.actionIcon, { backgroundColor: '#F5F3FF' }]}>
+                            <Icon name="calendar" size={20} color="#7C3AED" />
+                        </View>
+                        <View style={styles.actionContent}>
+                            <Text style={styles.actionTitle}>Мои события</Text>
+                            <Text style={styles.actionSubtitle}>
+                                {profile.events.length} мероприятий
+                            </Text>
+                        </View>
+                        <Icon name="chevron-right" size={20} color="#9CA3AF" />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={styles.actionItem}
+                        onPress={() => navigation.navigate('CatalogScreen' as never)}
+                    >
+                        <View style={[styles.actionIcon, { backgroundColor: '#F0FDF9' }]}>
+                            <Icon name="folder" size={20} color="#0D9488" />
+                        </View>
+                        <View style={styles.actionContent}>
+                            <Text style={styles.actionTitle}>Мои документы</Text>
+                            <Text style={styles.actionSubtitle}>
+                                {profile.documents.length} документов
+                            </Text>
+                        </View>
+                        <Icon name="chevron-right" size={20} color="#9CA3AF" />
+                    </TouchableOpacity>
+                </View>
+
+                {/* Кнопка выхода */}
+                <View style={styles.logoutSection}>
+                    <Button
+                        variant="outline"
+                        onPress={handleLogout}
+                        style={styles.logoutButton}
+                    >
+                        <Icon name="log-out" size={20} color="#DC2626" />
+                        <Text style={styles.logoutText}>Выйти из системы</Text>
+                    </Button>
+                </View>
             </ScrollView>
-
-            {/* Модальное окно для отображения ModalScreen */}
-            <Modal
-                visible={!!selectedPost}
-                animationType="slide"
-                transparent={false} // ModalScreen имеет собственный стиль контейнера
-                onRequestClose={handleClosePost}
-            >
-                {selectedPost && (
-                    <ModalScreen
-                        modalPost={selectedPost}
-                        onClose={handleClosePost}
-                        onShare={handleSharePost}
-                    />
-                )}
-            </Modal>
-        </View>
+        </SafeAreaView>
     );
-};
-
-
-export default ProfileScreen;
+}

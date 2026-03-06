@@ -2,6 +2,7 @@ import React, {useEffect, useState} from 'react';
 import {SafeAreaProvider} from "react-native-safe-area-context";
 import {AuthTokenManager} from "@/components/LoginScreen/LoginScreen";
 import {useRouter, useSegments} from 'expo-router';
+import {YamapInstance} from 'react-native-yamap-plus';
 
 function useProtectedRoute(isAuthenticated: boolean | null) {
     const router = useRouter();
@@ -22,6 +23,21 @@ const App: React.FC = () => {
     const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
     useEffect(() => {
+        YamapInstance.setLocale('ru_RU');
+        const initializeYandexMaps = async () => {
+            try {
+                YamapInstance.init(process.env.EXPO_PUBLIC_YAMAP_TOKEN);
+            } catch (error) {
+                Alert.alert(
+                    "Ошибка карт",
+                    "Не удалось загрузить карты. Проверьте подключение к интернету.",
+                    [{ text: "OK" }]
+                );
+            }
+        };
+
+        initializeYandexMaps();
+
         const token = AuthTokenManager.getToken();
         setIsAuthenticated(!!token);
 

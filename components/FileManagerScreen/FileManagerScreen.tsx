@@ -17,7 +17,8 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    View
+    View,
+    RefreshControl
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CatalogCard } from './CatalogCard';
@@ -99,25 +100,18 @@ export function FileManager() {
                 </View>
             )}
 
-            {/* Search
-            {state.currentCatalog && (
-                <View style={styles.searchContainer}>
-                    <View style={styles.searchInputContainer}>
-                        <Search size={16} color="#9ca3af" style={styles.searchIcon} />
-                        <TextInput
-                            style={styles.searchInput}
-                            placeholder="Поиск файлов..."
-                            value={state.searchQuery}
-                            onChangeText={handlers.handleSearchChange}
-                            placeholderTextColor="#9ca3af"
-                        />
-                    </View>
-                </View>
-            )}*/}
 
             {/* Content */}
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-                {state.loading && (
+            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}
+                        refreshControl={
+                            <RefreshControl
+                                refreshing={state.isRefreshing || false}
+                                onRefresh={handlers.handleRefresh}
+                                colors={['#2A6E3F']}
+                                tintColor="#2A6E3F"
+                            />
+                        }>
+                {state.loading && !state.isRefreshing && (
                     <SkeletonLoader count={3} itemHeight={80} itemMargin={12} />
                 )}
 

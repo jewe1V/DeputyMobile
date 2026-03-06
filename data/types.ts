@@ -5,12 +5,14 @@ export interface Role {
 
 export interface Profile {
     id: string;
-    fullName: string;
     email: string;
     jobTitle: string;
-    userRoles: Role[];
+    fullName: string;
+    userRoles: String[];
+    posts: Post[];
+    documents: Document[];
+    events: Event[];
 }
-
 export interface Post {
     id: string;
     title: string;

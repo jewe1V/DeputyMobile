@@ -10,6 +10,7 @@ import {
     Dimensions,
 } from 'react-native';
 import { Event } from '@/models/Event';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 
 const screenHeight = Dimensions.get('window').height;
 
@@ -74,6 +75,34 @@ export const EventCard: React.FC<EventCardProps> = ({ event, index = 0 }) => {
                 useNativeDriver: true,
             }),
         ]).start(() => setModalVisible(false));
+    };
+
+    const parseLocation = (locString: string) => {
+        if (!locString) return { address: '', coords: null };
+
+        const [address, rawCoords] = locString.split('|');
+
+        if (rawCoords) {
+            const [lat, lng] = rawCoords.split(',').map(Number);
+            if (!isNaN(lat) && !isNaN(lng)) {
+                return {
+                    address: address.trim(),
+                    coords: { latitude: lat, longitude: lng }
+                };
+            }
+        }
+
+        return { address: locString.trim(), coords: null };
+    };
+
+    const { address, coords } = parseLocation(event.location);
+
+    const openInMaps = () => {
+        const url = Platform.select({
+            ios: `maps:0,0?q=${event.location}`,
+            android: `geo:0,0?q=${event.location}`,
+        });
+        Linking.openURL(url);
     };
 
     return (
@@ -144,11 +173,32 @@ export const EventCard: React.FC<EventCardProps> = ({ event, index = 0 }) => {
 
                             <View style={styles.section}>
                                 <Text style={styles.metaLabel}>Место проведения</Text>
-                                <Text style={styles.metaValue}>{event.location}</Text>
+                                <Text style={styles.metaValue}>{address}</Text>
 
                                 {/* Заглушка для карты */}
-                                <View style={styles.mapPlaceholder}>
-                                    <Text style={styles.mapText}>🗺 Здесь будет карта</Text>
+                                <View style={styles.mapContainer}>
+                                    <MapView
+                                        provider={PROVIDER_GOOGLE} // Уберите эту строку, если хотите Apple Maps на iOS
+                                        style={styles.map}
+                                        initialRegion={{
+                                            ...coords,
+                                            latitudeDelta: 0.01,
+                                            longitudeDelta: 0.01,
+                                        }}
+                                        scrollEnabled={false} // Чтобы не мешать прокрутке ScrollView
+                                        pitchEnabled={false}
+                                        rotateEnabled={false}
+                                        onPress={openInMaps}
+                                    >
+                                        <Marker
+                                            coordinate={{
+                                                latitude: region.latitude,
+                                                longitude: region.longitude,
+                                            }}
+                                            title={event.title}
+                                            description={event.location}
+                                        />
+                                    </MapView>
                                 </View>
                             </View>
 
@@ -314,5 +364,16 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
         fontFamily: 'Inter_600SemiBold',
+    },
+    mapContainer: {
+        height: 200,
+        width: '100%',
+        borderRadius: 12,
+        overflow: 'hidden',
+        marginTop: 12,
+        backgroundColor: '#f3f4f6',
+    },
+    map: {
+        ...StyleSheet.absoluteFillObject,
     },
 });

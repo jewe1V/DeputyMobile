@@ -25,6 +25,7 @@ export interface FileManagerState {
     catalogHierarchy: Map<string, CatalogItem>;
     selectedDocument: Document | null;
     showDocumentDetailModal: boolean;
+    isRefreshing: boolean;
 }
 
 export interface FileManagerHandlers {
@@ -43,6 +44,7 @@ export interface FileManagerHandlers {
     handleDeleteDocument: (documentId: string) => Promise<void>;
     getFileIcon: (item: CatalogItem, size?: number) => JSX.Element;
     getFileSize: (fileSize: number) => string;
+    handleRefresh: () => Promise<void>;
 }
 
 export interface FileManagerComputed {
@@ -70,6 +72,7 @@ export const useFileManagerPresenter = () => {
     const [documentsCache, setDocumentsCache] = useState<Map<string, Document[]>>(new Map());
     const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
     const [showDocumentDetailModal, setShowDocumentDetailModal] = useState(false);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
     // Функция для построения плоской карты каталогов для быстрого поиска
     const buildCatalogMap = (catalogs: CatalogItem[], map: Map<string, CatalogItem> = new Map()): Map<string, CatalogItem> => {
@@ -333,6 +336,88 @@ export const useFileManagerPresenter = () => {
         }
     };
 
+    const handleRefresh = async () => {
+        // Если мы не выбрали ни один раздел (мы на главном экране), обновлять нечего
+        if (!currentCatalog && breadcrumbPath.length === 0) return;
+
+        setIsRefreshing(true);
+        setError(null);
+
+        try {
+            // 1. Определяем текущий корневой раздел для обновления структуры папок
+            let catalogType: 'public' | 'mine' | 'deputy' | null = null;
+            if (breadcrumbPath.length > 0) {
+                const rootId = breadcrumbPath[0].id;
+                if (rootId === 'root-public') catalogType = 'public';
+                else if (rootId === 'root-mine') catalogType = 'mine';
+                else if (rootId === 'root-deputy') catalogType = 'deputy';
+            }
+
+            // 2. Обновляем иерархию папок
+            if (catalogType) {
+                let updatedCatalogs: CatalogItem[] = [];
+                if (catalogType === 'public') {
+                    updatedCatalogs = await catalogService.getPublicCatalogs();
+                } else if (catalogType === 'mine') {
+                    updatedCatalogs = await catalogService.getMysCatalogs();
+                } else if (catalogType === 'deputy') {
+                    updatedCatalogs = await catalogService.getDeputyCatalogs();
+                }
+
+                if (updatedCatalogs.length > 0) {
+                    const rootCatalog: CatalogItem = {
+                        id: `root-${catalogType}`,
+                        name: breadcrumbPath[0].name,
+                        parentId: null,
+                        type: 'catalog',
+                        children: updatedCatalogs,
+                    };
+
+                    const hierarchy = buildCatalogMap([rootCatalog]);
+                    setCatalogHierarchy(hierarchy);
+                    setCurrentRootCatalog(rootCatalog);
+
+                    // Обновляем текущий каталог новыми данными (если в нем создали новую подпапку)
+                    if (currentCatalog) {
+                        if (currentCatalog.id.startsWith('root-')) {
+                            setCurrentCatalog(rootCatalog);
+                        } else {
+                            const updatedCurrent = hierarchy.get(currentCatalog.id);
+                            if (updatedCurrent) {
+                                setCurrentCatalog(updatedCurrent);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 3. Обновляем документы для текущей папки (если это не корень)
+            if (currentCatalog && !currentCatalog.id.startsWith('root-') && currentCatalog.id !== 'empty') {
+                const currentId = currentCatalog.id;
+
+                // Удаляем старые данные из кэша
+                const newCache = new Map(documentsCache);
+                newCache.delete(currentId);
+                setDocumentsCache(newCache);
+
+                // Загружаем свежие документы
+                const freshDocs = await documentService.getDocumentsByCatalog(currentId);
+                setDocuments(freshDocs);
+
+                // Сохраняем свежие документы в кэш
+                const updatedCache = new Map(newCache);
+                updatedCache.set(currentId, freshDocs);
+                setDocumentsCache(updatedCache);
+            }
+
+        } catch (err: any) {
+            console.error('[FileManager] Ошибка при обновлении:', err);
+            setError(err?.message || 'Не удалось обновить данные');
+        } finally {
+            setIsRefreshing(false);
+        }
+    };
+
     const getFileIcon = (item: CatalogItem, size = 20): JSX.Element => {
         if (item.children) {
             return <Folder size={size} color="#2A6E3F" />;
@@ -424,7 +509,7 @@ export const useFileManagerPresenter = () => {
     const handleDeleteDocument = async (documentId: string) => {
         try {
             await documentService.deleteDocument(documentId);
-            
+
             // Удаляем документ из текущего списка
             const updatedDocuments = documents.filter(doc => doc.id !== documentId);
             setDocuments(updatedDocuments);
@@ -469,6 +554,7 @@ export const useFileManagerPresenter = () => {
         catalogHierarchy,
         selectedDocument,
         showDocumentDetailModal,
+        isRefreshing,
     };
 
     const handlers: FileManagerHandlers = {
@@ -487,6 +573,7 @@ export const useFileManagerPresenter = () => {
         handleDeleteDocument,
         getFileIcon,
         getFileSize,
+        handleRefresh,
     };
 
     const computed: FileManagerComputed = {

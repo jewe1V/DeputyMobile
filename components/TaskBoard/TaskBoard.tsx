@@ -12,32 +12,34 @@ import {
     Plus,
     RotateCcw
 } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react'; // Добавлен useCallback
 import {
     FlatList,
     Text,
     TouchableOpacity,
-    View
+    View,
+    RefreshControl // Добавлен RefreshControl
 } from 'react-native';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { styles } from './task-board-style';
-
 
 export function TaskBoard() {
     const [filterStatus, setFilterStatus] = useState<TaskStatus | 'all'>('all');
     const [sortBy, setSortBy] = useState<'date' | 'priority'>('date');
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false); // Состояние для pull-to-refresh
     const [error, setError] = useState<string | null>(null);
     const insets = useSafeAreaInsets();
 
     // Загрузка задач с API
-    const loadTasks = async () => {
-        setLoading(true);
+    const loadTasks = async (isSilentRefresh = false) => {
+        // Если это не фоновое обновление, показываем полный лоадер/скелетон
+        if (!isSilentRefresh) setLoading(true);
+
         setError(null);
         try {
             const apiData = await taskService.getAllTasks();
-            // Адаптируем данные из API к типу Task
             const adaptedData: Task[] = (apiData as any[]).map((item: any) => ({
                 id: item.taskId,
                 authorId: item.authorId || '',
@@ -60,26 +62,31 @@ export function TaskBoard() {
             setTasks([]);
         } finally {
             setLoading(false);
+            setRefreshing(false); // Выключаем индикатор обновления
         }
     };
+
+    // Обработчик Pull-to-Refresh
+    const onRefresh = useCallback(() => {
+        setRefreshing(true);
+        loadTasks(true); // Загружаем "тихо" (без скелетона на весь экран)
+    }, []);
 
     useEffect(() => {
         loadTasks();
     }, []);
 
-    // Перезагружаем при фокусе на экран
     useFocusEffect(
-        React.useCallback(() => {
-            loadTasks();
+        useCallback(() => {
+            loadTasks(true); // При фокусе обновляем без перекрытия экрана скелетоном
         }, [])
     );
 
-    // Фильтрация
+    // Фильтрация и сортировка (без изменений)
     let filteredTasks = filterStatus === 'all'
         ? [...tasks]
         : tasks.filter(task => task.status === filterStatus);
 
-    // Сортировка
     if (sortBy === 'priority') {
         const priorityOrder: Record<TaskPriority, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
         filteredTasks.sort((a, b) => priorityOrder[a.priority as TaskPriority] - priorityOrder[b.priority as TaskPriority]);
@@ -88,158 +95,117 @@ export function TaskBoard() {
     }
 
     const handleTaskPress = (id: string) => {
-        router.push({
-            pathname: '/TaskDetailScreen',
-            params: { id },
-        });
+        router.push({ pathname: '/TaskDetailScreen', params: { id } });
     };
 
     const handleNewTask = () => {
         router.push('/NewTaskScreen');
     };
 
-    const filterItems = [
-        { label: 'Все задачи', value: 'all' },
-        { label: 'Новые', value: 'created' },
-        { label: 'В работе', value: 'in_progress' },
-        { label: 'На согласовании', value: 'approval' },
-        { label: 'Завершенные', value: 'completed' },
-    ];
-
-    const sortItems = [
-        { label: 'По дате', value: 'date' },
-        { label: 'По приоритету', value: 'priority' },
-    ];
-
-    if (loading) {
-        return (
-            <View style={{ flex: 1, backgroundColor: '#fff' }}>
-                <LinearGradient
-                    colors={['#2A6E3F', '#349339']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={[styles.header, { paddingTop: insets.top + 5 }]}
-                >
-                    <View style={styles.headerContent}>
-                        <Text style={styles.headerTitle}>Задачи</Text>
-                        <Text style={styles.headerSubtitle}>Загрузка...</Text>
-                    </View>
-                    <TouchableOpacity style={styles.newTaskButton}>
-                        <Plus size={20} color="white" />
-                    </TouchableOpacity>
-                </LinearGradient>
-                <SkeletonLoader count={5} itemHeight={100} itemMargin={12} />
-            </View>
-        );
-    }
-
-    if (error) {
-        return (
-            <View style={{ flex: 1, backgroundColor: '#fff' }}>
-                <LinearGradient
-                    colors={['#2A6E3F', '#349339']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={[styles.header, { paddingTop: insets.top }]}
-                >
-                    <View style={styles.headerContent}>
-                        <Text style={styles.headerTitle}>Задачи</Text>
-                        <Text style={styles.headerSubtitle}>Ошибка загрузки</Text>
-                    </View>
-                    <TouchableOpacity style={styles.newTaskButton} onPress={handleNewTask}>
-                        <Plus size={20} color="white" />
-                    </TouchableOpacity>
-                </LinearGradient>
-                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 }}>
-                    <AlertCircle size={48} color="#EF4444" style={{ marginBottom: 16 }} />
-                    <Text style={{ fontSize: 16, fontWeight: '600', textAlign: 'center', marginBottom: 8 }}>Ошибка загрузки</Text>
-                    <Text style={{ fontSize: 14, color: '#6B7280', textAlign: 'center', marginBottom: 24 }}>{error}</Text>
-                    <TouchableOpacity
-                        style={{
-                            backgroundColor: '#2A6E3F',
-                            paddingHorizontal: 24,
-                            paddingVertical: 12,
-                            borderRadius: 8,
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            gap: 8,
-                        }}
-                        onPress={loadTasks}
-                    >
-                        <RotateCcw size={16} color="#fff" />
-                        <Text style={{ color: '#fff', fontWeight: '600' }}>Повторить</Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-        );
-    }
-
+    // Рендер компонента
     return (
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, backgroundColor: '#fff' }}>
+            {/* Header */}
             <LinearGradient
                 colors={['#2A6E3F', '#349339']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
-                style={[styles.header, { paddingTop: insets.top + 5}]}
+                style={[styles.header, { paddingTop: insets.top + 5 }]}
             >
                 <View style={styles.headerContent}>
                     <Text style={styles.headerTitle}>Задачи</Text>
-                    <Text style={styles.headerSubtitle}>{filteredTasks.length} задач</Text>
+                    <Text style={styles.headerSubtitle}>
+                        {loading ? 'Загрузка...' : `${filteredTasks.length} задач`}
+                    </Text>
                 </View>
                 <TouchableOpacity style={styles.newTaskButton} onPress={handleNewTask}>
                     <Plus size={20} color="white" />
                 </TouchableOpacity>
             </LinearGradient>
 
-            {/* Фильтры и сортировка */}
-            <LinearGradient colors={['#ebfdeb','#fff']} style={styles.filtersSection}>
-                <View style={styles.filtersGrid}>
-                    {/* Фильтр по статусу */}
-                    <View style={styles.filterGroup}>
-                        <Text style={styles.filterLabel}>Фильтр</Text>
-                        <Select
-                            value={filterStatus}
-                            onValueChange={(v) => setFilterStatus(v as TaskStatus | 'all')}
-                            items={filterItems}
-                            placeholder="Все задачи"
-                        />
-                    </View>
-
-                    {/* Сортировка */}
-                    <View style={styles.filterGroup}>
-                        <Text style={styles.filterLabel}>Сортировка</Text>
-                        <Select
-                            value={sortBy}
-                            onValueChange={(v) => setSortBy(v as 'date' | 'priority')}
-                            items={sortItems}
-                            placeholder="По дате"
-                        />
-                    </View>
-                </View>
-            </LinearGradient>
-
-            {/* Список задач */}
-            <FlatList
-                data={filteredTasks}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                    <TaskCard
-                        task={item}
-                        onPress={() => handleTaskPress(item.id)}
-                    />
-                )}
-                contentContainerStyle={styles.taskList}
-                ListEmptyComponent={
-                    <View style={styles.emptyState}>
-                        <View style={styles.emptyIcon}>
-                            <Clock size={32} color="#9CA3AF" />
+            {/* Фильтры показываем всегда, если нет ошибки */}
+            {!error && (
+                <LinearGradient colors={['#ebfdeb', '#fff']} style={styles.filtersSection}>
+                    <View style={styles.filtersGrid}>
+                        <View style={styles.filterGroup}>
+                            <Text style={styles.filterLabel}>Фильтр</Text>
+                            <Select
+                                value={filterStatus}
+                                onValueChange={(v) => setFilterStatus(v as TaskStatus | 'all')}
+                                items={[
+                                    { label: 'Все задачи', value: 'all' },
+                                    { label: 'Новые', value: 'created' },
+                                    { label: 'В работе', value: 'in_progress' },
+                                    { label: 'На согласовании', value: 'approval' },
+                                    { label: 'Завершенные', value: 'completed' },
+                                ]}
+                                placeholder="Все задачи"
+                            />
                         </View>
-                        <Text style={styles.emptyTitle}>Задач не найдено</Text>
-                        <Text style={styles.emptySubtitle}>Попробуйте изменить фильтры</Text>
+                        <View style={styles.filterGroup}>
+                            <Text style={styles.filterLabel}>Сортировка</Text>
+                            <Select
+                                value={sortBy}
+                                onValueChange={(v) => setSortBy(v as 'date' | 'priority')}
+                                items={[
+                                    { label: 'По дате', value: 'date' },
+                                    { label: 'По приоритету', value: 'priority' },
+                                ]}
+                                placeholder="По дате"
+                            />
+                        </View>
                     </View>
-                }
-                showsVerticalScrollIndicator={false}
-            />
+                </LinearGradient>
+            )}
+
+            {/* Контент: Ошибка / Скелетон / Список */}
+            {error ? (
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 }}>
+                    <AlertCircle size={48} color="#EF4444" style={{ marginBottom: 16 }} />
+                    <Text style={{ fontSize: 16, fontWeight: '600', textAlign: 'center' }}>Ошибка загрузки</Text>
+                    <Text style={{ fontSize: 14, color: '#6B7280', textAlign: 'center', marginVertical: 8 }}>{error}</Text>
+                    <TouchableOpacity style={styles.errorButton} onPress={() => loadTasks()}>
+                        <RotateCcw size={16} color="#fff" />
+                        <Text style={{ color: '#fff', fontWeight: '600', marginLeft: 8 }}>Повторить</Text>
+                    </TouchableOpacity>
+                </View>
+            ) : loading && !refreshing ? (
+                /* Скелетон карточек при первой загрузке */
+                <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: 12 }}>
+                    <SkeletonLoader count={5} itemHeight={110} itemMargin={12} />
+                </View>
+            ) : (
+                <FlatList
+                    data={filteredTasks}
+                    keyExtractor={(item) => item.id}
+                    renderItem={({ item }) => (
+                        <TaskCard
+                            task={item}
+                            onPress={() => handleTaskPress(item.id)}
+                        />
+                    )}
+                    contentContainerStyle={styles.taskList}
+                    showsVerticalScrollIndicator={false}
+                    // Pull to refresh логика
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={onRefresh}
+                            colors={['#2A6E3F']} // Android
+                            tintColor="#2A6E3F"  // iOS
+                        />
+                    }
+                    ListEmptyComponent={
+                        <View style={styles.emptyState}>
+                            <View style={styles.emptyIcon}>
+                                <Clock size={32} color="#9CA3AF" />
+                            </View>
+                            <Text style={styles.emptyTitle}>Задач не найдено</Text>
+                            <Text style={styles.emptySubtitle}>Попробуйте изменить фильтры</Text>
+                        </View>
+                    }
+                />
+            )}
         </View>
     );
 }
