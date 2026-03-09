@@ -6,25 +6,12 @@ export interface Role {
 export interface Profile {
     id: string;
     email: string;
-    jobTitle: string;
-    fullName: string;
-    userRoles: String[];
-    posts: Post[];
+    job_title: string;
+    full_name: string;
+    roles: String[];
     documents: Document[];
     events: Event[];
 }
-export interface Post {
-    id: string;
-    title: string;
-    summary: string;
-    body: string;
-    thumbnailUrl: string;
-    publishedAt: string;
-    authorId: string;
-    author?: Profile;
-    attachments?: (Document | Attachment)[];
-}
-
 export interface Event {
     id: string;
     title: string;
@@ -32,31 +19,31 @@ export interface Event {
     startAt: string;
     endAt: string;
     location: string;
-    organizerFullName: string;
+    organizer_full_name: string;
     isPublic: boolean;
-    organizerId: string;
+    organizer_id: string;
 }
 
 export interface Document {
     id: string;
-    fileName: string;
+    file_name: string;
     url: string;
-    uploadedAt: string;
-    uploadedBy: string;
-    catalogId: string;
+    uploaded_at: string;
+    uploaded_by: string;
+    catalog_id: string;
 }
 
 export interface Attachment {
     id: string;
-    fileName: string;
+    file_name: string;
     url: string;
-    uploadedAt: string;
+    uploaded_at: string;
 }
 
 export interface Catalog {
     id: string;
     name: string;
-    parentId: string | null;
+    parent_id: string | null;
     children?: Catalog[];
     documents?: Document[];
 }
@@ -71,11 +58,11 @@ export interface Task {
     description: string;
     status: TaskStatus;
     priority: TaskPriority;
-    authorName: string;
-    authorId: string;
-    createdAt: string;
-    dueDate: string;
-    completedAt?: string;
+    author_name: string;
+    author_id: string;
+    created_at: string;
+    due_date: string;
+    completed_at?: string;
     attachments?: Attachment[];
     tags?: string[];
     users?: any[];
@@ -88,8 +75,8 @@ export interface Notification {
     title: string;
     message: string;
     type: NotificationType;
-    isRead: boolean;
-    createdAt: string;
-    relatedId?: string;
-    relatedType?: 'task' | 'event' | 'post' | 'document';
+    is_read: boolean;
+    created_at: string;
+    related_id?: string;
+    related_type?: 'task' | 'event' | 'post' | 'document';
 }

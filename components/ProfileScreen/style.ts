@@ -53,11 +53,13 @@ export const styles = StyleSheet.create({
         justifyContent: 'space-between',
     },
     headerTitle: {
-        fontSize: 18,
+        fontSize: 22,
         fontWeight: '600',
         color: '#FFFFFF',
     },
-    settingsButton: {
+    logoutButton: {
+        backgroundColor: '#ffffff',
+        borderRadius: 8,
         padding: 8,
     },
     profileCard: {
@@ -67,14 +69,14 @@ export const styles = StyleSheet.create({
         marginTop: -40,
         padding: 20,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
+        shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 4,
+        shadowRadius: 4,
+        elevation: 2,
     },
     avatarContainer: {
         alignItems: 'center',
-        marginTop: -44,
+        marginTop: -50,
         marginBottom: 16,
     },
     avatarBase: {
@@ -86,9 +88,6 @@ export const styles = StyleSheet.create({
         borderColor: '#FFFFFF',
         justifyContent: 'center',
         alignItems: 'center',
-    },
-    avatar: {
-        // Стили переопределяются через avatarBase
     },
     avatarText: {
         color: '#FFFFFF',
@@ -136,26 +135,6 @@ export const styles = StyleSheet.create({
         fontWeight: '500',
         color: '#111827',
     },
-    rolesCard: {
-        backgroundColor: '#FFFFFF',
-        borderRadius: 12,
-        marginHorizontal: 16,
-        marginTop: 16,
-        padding: 16,
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
-    },
-    rolesHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        marginBottom: 12,
-    },
-    rolesTitle: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#111827',
-    },
     rolesList: {
         flexDirection: 'row',
         flexWrap: 'wrap',
@@ -164,8 +143,8 @@ export const styles = StyleSheet.create({
     roleBadge: {
         backgroundColor: '#E8F5E9',
         paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 20,
+        marginTop: 8,
+        borderRadius: 8,
     },
     roleText: {
         fontSize: 14,
@@ -218,42 +197,5 @@ export const styles = StyleSheet.create({
         fontSize: 12,
         color: '#6B7280',
         marginTop: 2,
-    },
-    logoutSection: {
-        marginHorizontal: 16,
-        marginTop: 24,
-    },
-    buttonBase: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: 48,
-        borderRadius: 8,
-        paddingHorizontal: 16,
-    },
-    buttonDefault: {
-        backgroundColor: '#2A6E3F',
-    },
-    buttonOutline: {
-        backgroundColor: 'transparent',
-        borderWidth: 1,
-        borderColor: '#FECACA',
-    },
-    buttonDisabled: {
-        opacity: 0.5,
-    },
-    logoutButton: {
-        borderColor: '#FECACA',
-        gap: 8,
-    },
-    logoutText: {
-        fontSize: 16,
-        fontWeight: '500',
-        color: '#DC2626',
-    },
-    buttonText: {
-        color: '#FFFFFF',
-        fontSize: 16,
-        fontWeight: '500',
     },
 });

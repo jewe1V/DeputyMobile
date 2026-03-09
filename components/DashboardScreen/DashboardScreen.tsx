@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
     ScrollView,
     TouchableOpacity,
+    ActivityIndicator,
+    Alert
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
@@ -14,37 +16,70 @@ import {
     Bell,
     AlertCircle,
 } from 'lucide-react-native';
-import { currentUser, mockTasks, mockEvents, mockDocuments } from '@/data/mockData';
-import {styles} from './style';
-import Animated, {FadeInUp, FadeInDown, FadeInRight, ZoomIn} from 'react-native-reanimated';
-import {router} from "expo-router";
-import {useSafeAreaInsets} from "react-native-safe-area-context";
+import { styles } from './style';
+import Animated, { FadeInDown, FadeInRight, ZoomIn } from 'react-native-reanimated';
+import { router } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {AuthTokenManager} from "@/components/LoginScreen/LoginScreen";
+import { apiUrl } from '@/api/api';
+
+interface DashboardData {
+    user_name: string;
+    roles: string[];
+    event_count: number;
+    urgent_event_count: number;
+    task_count: number;
+    urgent_tasks_count: number;
+    tasks: any[];
+    urgent_tasks: any[];
+    urgent_events: any[];
+    events_by_status: {
+        Going: any[];
+        NotGoing: any[];
+        Unknown: any[];
+        NotAnswered: any[];
+    };
+}
 
 export function Dashboard() {
     const insets = useSafeAreaInsets();
-    const upcomingTasks = mockTasks
-        .filter(task => task.status !== 'completed')
-        .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
-        .slice(0, 3);
 
-    // Получаем ближайшие мероприятия
-    const upcomingEvents = mockEvents
-        .filter(event => new Date(event.startAt) > new Date())
-        .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime())
-        .slice(0, 3);
+    const [data, setData] = useState<DashboardData | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
-    // Получаем последние загруженные файлы
-    const recentDocuments = [...mockDocuments]
-        .sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime())
-        .slice(0, 3);
+    useEffect(() => {
+        fetchDashboardData();
+    }, []);
+
+    const fetchDashboardData = async () => {
+        try {
+            const token = AuthTokenManager.getToken();
+
+            const response = await fetch(`${apiUrl}/api/Dashboard/get`, {
+                method: 'GET',
+                headers: {
+                    'accept': '*/*',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            const json = await response.json();
+            setData(json);
+        } catch (error) {
+            console.error(error);
+            Alert.alert('Ошибка', 'Не удалось загрузить данные дашборда');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const getInitials = (name: string) => {
+        if (!name) return '';
         const parts = name.split(' ');
         return parts.length >= 2 ? `${parts[0][0]}${parts[1][0]}` : name[0];
     };
 
     const getTaskStatusColor = (status: string) => {
-        switch (status) {
+        switch (status?.toLowerCase()) {
             case 'created':
                 return { backgroundColor: '#f3f4f6', color: '#374151' };
             case 'in_progress':
@@ -57,7 +92,7 @@ export function Dashboard() {
     };
 
     const getTaskStatusLabel = (status: string) => {
-        switch (status) {
+        switch (status?.toLowerCase()) {
             case 'created':
                 return 'Создана';
             case 'in_progress':
@@ -65,7 +100,7 @@ export function Dashboard() {
             case 'approval':
                 return 'На согласовании';
             default:
-                return status;
+                return status || 'Неизвестно';
         }
     };
 
@@ -93,24 +128,35 @@ export function Dashboard() {
         const today = new Date();
         const due = new Date(dueDate);
         const diffTime = due.getTime() - today.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        return diffDays;
+        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     };
 
-    const activeTasks = mockTasks.filter(task => task.status !== 'completed').length;
-    const urgentTasks = upcomingTasks.filter(task => {
-        const days = getDaysUntilDue(task.dueDate);
-        return days <= 2 && days >= 0;
-    }).length;
+    if (isLoading || !data) {
+        return (
+            <View style={[styles.content, { flex: 1, justifyContent: 'center', alignItems: 'center' }]}>
+                <ActivityIndicator size="large" color="#2A6E3F" />
+            </View>
+        );
+    }
+
+    // Собираем все мероприятия из объекта events_by_status в один плоский массив
+    const allUpcomingEvents = [
+        ...(data.events_by_status?.Going || []),
+        ...(data.events_by_status?.NotAnswered || []),
+        ...(data.events_by_status?.Unknown || [])
+    ].slice(0, 3); // берем первые 3
+
+    // Берем первые 3 задачи
+    const displayTasks = data.tasks?.slice(0, 3) || [];
 
     return (
-        <ScrollView showsVerticalScrollIndicator={false} >
+        <ScrollView showsVerticalScrollIndicator={false}>
             <View>
                 <LinearGradient
                     colors={['#2A6E3F', '#349339']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
-                    style={[styles.header, {paddingTop: insets.top + 5}]}
+                    style={[styles.header, { paddingTop: insets.top + 15 }]}
                 >
                     <View style={styles.headerContent}>
                         <View style={styles.userInfoRow}>
@@ -118,20 +164,21 @@ export function Dashboard() {
                                 <View style={styles.avatarContainer}>
                                     <View style={styles.avatar}>
                                         <Text style={styles.avatarText}>
-                                            {getInitials(currentUser.fullName)}
+                                            {getInitials(data.user_name)}
                                         </Text>
                                     </View>
                                 </View>
                                 <View style={styles.userInfo}>
                                     <Text style={styles.greeting}>Добрый день,</Text>
-                                    <Text style={styles.userName}>{currentUser.fullName.split(' ')[1]}</Text>
+                                    <Text style={styles.userName}>{data.user_name}</Text>
                                 </View>
                             </TouchableOpacity>
                             <TouchableOpacity style={styles.notificationButton} onPress={() => router.push("/NotificationScreen")}>
                                 <Bell size={20} color="white" />
                             </TouchableOpacity>
                         </View>
-                        <Text style={styles.jobTitle}>{currentUser.jobTitle}</Text>
+                        {/* Берем первую роль из массива как должность */}
+                        <Text style={styles.jobTitle}>{data.roles?.[0] || 'Сотрудник'}</Text>
                         <Text style={styles.organization}>Городская Дума Екатеринбурга</Text>
                     </View>
                 </LinearGradient>
@@ -142,27 +189,27 @@ export function Dashboard() {
 
                     {/* --- КАРТОЧКА 1 --- */}
                     <Animated.View style={styles.statCardContainer} entering={FadeInDown.delay(200).duration(600).springify()}>
-                        <LinearGradient colors={['#ffffff','#f3fdf3']} style={styles.statCard}>
+                        <LinearGradient colors={['#ffffff', '#f3fdf3']} style={styles.statCard}>
                             <View style={styles.statIcon}><Calendar size={20} color="black" /></View>
-                            <Text style={styles.statNumber}>{upcomingEvents?.length || 0}</Text>
+                            <Text style={styles.statNumber}>{data.event_count || 0}</Text>
                             <Text style={styles.statLabel}>Мероприятий</Text>
                         </LinearGradient>
                     </Animated.View>
 
                     {/* --- КАРТОЧКА 2 --- */}
                     <Animated.View style={styles.statCardContainer} entering={FadeInDown.delay(400).duration(600).springify()}>
-                        <LinearGradient colors={['#ffffff','#f3fdf3']} style={styles.statCard}>
+                        <LinearGradient colors={['#ffffff', '#f3fdf3']} style={styles.statCard}>
                             <View style={styles.statIcon}><CheckCircle2 size={20} color="black" /></View>
-                            <Text style={styles.statNumber}>{activeTasks || 0}</Text>
+                            <Text style={styles.statNumber}>{data.task_count || 0}</Text>
                             <Text style={styles.statLabel}>Задач</Text>
                         </LinearGradient>
                     </Animated.View>
 
                     {/* --- КАРТОЧКА 3 --- */}
                     <Animated.View style={styles.statCardContainer} entering={FadeInDown.delay(600).duration(600).springify()}>
-                        <LinearGradient colors={['#ffffff','#f3fdf3']} style={styles.statCard}>
+                        <LinearGradient colors={['#ffffff', '#f3fdf3']} style={styles.statCard}>
                             <View style={styles.statIcon}><AlertCircle size={20} color="black" /></View>
-                            <Text style={styles.statNumber}>{urgentTasks || 0}</Text>
+                            <Text style={styles.statNumber}>{data.urgent_tasks_count || 0}</Text>
                             <Text style={styles.statLabel}>Срочных задач</Text>
                         </LinearGradient>
                     </Animated.View>
@@ -179,8 +226,8 @@ export function Dashboard() {
                     </View>
 
                     <View style={styles.cardsContainer}>
-                        {upcomingTasks.length > 0 ? (
-                            upcomingTasks.map((task, index) => {
+                        {displayTasks.length > 0 ? (
+                            displayTasks.map((task: any, index: number) => {
                                 const daysLeft = getDaysUntilDue(task.dueDate);
                                 const isUrgent = daysLeft <= 2 && daysLeft >= 0;
                                 const isOverdue = daysLeft < 0;
@@ -188,8 +235,7 @@ export function Dashboard() {
 
                                 return (
                                     <Animated.View
-                                        key={task.id}
-                                        // Каждая карточка вылетает чуть позже предыдущей
+                                        key={task.id || index}
                                         entering={FadeInRight.delay(800 + index * 100).duration(500).springify()}
                                     >
                                         <TouchableOpacity style={styles.card}>
@@ -219,7 +265,6 @@ export function Dashboard() {
                                 );
                             })
                         ) : (
-                            // Плавное увеличение пустой карточки, если задач нет
                             <Animated.View entering={ZoomIn.delay(800)} style={styles.emptyCard}>
                                 <View style={styles.emptyIconContainer}>
                                     <CheckCircle2 size={32} color="#4CAF50" />
@@ -241,11 +286,10 @@ export function Dashboard() {
                     </View>
 
                     <View style={styles.cardsContainer}>
-                        {upcomingEvents.length > 0 ? (
-                            upcomingEvents.map((event, index) => (
+                        {allUpcomingEvents.length > 0 ? (
+                            allUpcomingEvents.map((event: any, index: number) => (
                                 <Animated.View
-                                    key={event.id}
-                                    // Появляются с небольшим сдвигом справа
+                                    key={event.id || index}
                                     entering={FadeInRight.delay(1100 + index * 100).duration(500).springify()}
                                 >
                                     <TouchableOpacity style={styles.card}>

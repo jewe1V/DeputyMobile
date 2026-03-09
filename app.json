@@ -19,7 +19,6 @@
       "permissions": [
         "INTERNET"
       ],
-      "usesCleartextTraffic": true,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -28,6 +27,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
+      "googleServicesFile": "./google-services.json",
       "package": "com.jewel12345.hackathonMobile"
     },
     "web": {
@@ -35,6 +35,8 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      "@react-native-firebase/app",
+      "expo-build-properties",
       "expo-router",
       [
         "expo-splash-screen",

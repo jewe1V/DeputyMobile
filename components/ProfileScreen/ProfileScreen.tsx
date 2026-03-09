@@ -4,48 +4,27 @@ import {
     Text,
     TouchableOpacity,
     ScrollView,
-    StyleSheet,
-    SafeAreaView,
     Alert,
     RefreshControl,
     ActivityIndicator,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/Feather';
+import {
+    UserX,
+    Mail,
+    Shield,
+    Calendar,
+    Folder,
+    ChevronRight,
+    LogOut
+} from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
-import {apiUrl} from '@/api/api.ts'
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {apiUrl} from '@/api/api'
 import {AuthTokenManager} from '@/components/LoginScreen/LoginScreen';
 import { styles } from './style';
 import {Profile} from '@/data/types';
+import { LinearGradient } from 'expo-linear-gradient';
 
-// Кастомные компоненты
-interface ButtonProps {
-    variant?: 'default' | 'outline';
-    onPress: () => void;
-    style?: any;
-    children: React.ReactNode;
-    disabled?: boolean;
-}
-
-const Button: React.FC<ButtonProps> = ({
-                                           variant = 'default',
-                                           onPress,
-                                           style,
-                                           children,
-                                           disabled
-                                       }) => (
-    <TouchableOpacity
-        style={[
-            styles.buttonBase,
-            variant === 'outline' ? styles.buttonOutline : styles.buttonDefault,
-            disabled && styles.buttonDisabled,
-            style,
-        ]}
-        onPress={onPress}
-        disabled={disabled}
-    >
-        {children}
-    </TouchableOpacity>
-);
 
 interface AvatarProps {
     style?: any;
@@ -66,6 +45,7 @@ const getInitials = (name: string) => {
 
 export function ProfileScreen() {
     const navigation = useNavigation();
+    const insets = useSafeAreaInsets();
     const [profile, setProfile] = useState<Profile | null>(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -73,7 +53,7 @@ export function ProfileScreen() {
     // Логика загрузки данных (вынесена в useCallback для стабильности)
     const loadProfile = useCallback(async () => {
         try {
-            const token = await AuthTokenManager.getToken();
+            const token = AuthTokenManager.getToken();
             if (!token) {
                 setProfile(null);
                 return;
@@ -92,11 +72,8 @@ export function ProfileScreen() {
                 return;
             }
 
-            if (!response.ok) throw new Error('Network response was not ok');
-
             const data = await response.json();
 
-            // Маппинг данных
             setProfile(data);
         } catch (error) {
             console.error('Profile load error:', error);
@@ -141,30 +118,30 @@ export function ProfileScreen() {
 
     if (loading) {
         return (
-            <SafeAreaView style={styles.container}>
+            <View style={[styles.container, { paddingTop: insets.top }]}>
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color="#2A6E3F" />
                 </View>
-            </SafeAreaView>
+            </View>
         );
     }
 
     if (!profile) {
         return (
-            <SafeAreaView style={styles.container}>
+            <View style={[styles.container, { paddingTop: insets.top }]}>
                 <View style={styles.errorContainer}>
-                    <Icon name="user-x" size={48} color="#9CA3AF" />
+                    <UserX size={48} color="#9CA3AF" />
                     <Text style={styles.errorTitle}>Профиль не найден</Text>
-                    <Button onPress={() => navigation.navigate('login' as never)} style={styles.errorButton}>
-                        <Text style={styles.buttonText}>Войти</Text>
-                    </Button>
+                    <TouchableOpacity onPress={() => navigation.navigate('login' as never)} style={styles.errorButton}>
+                        <Text>Войти</Text>
+                    </TouchableOpacity>
                 </View>
-            </SafeAreaView>
+            </View>
         );
     }
 
     return (
-        <SafeAreaView style={styles.container}>
+        <View>
             <ScrollView
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
@@ -177,74 +154,64 @@ export function ProfileScreen() {
                     />
                 }
             >
-                {/* Header */}
-                <View style={styles.header}>
+                <LinearGradient
+                    colors={['#2A6E3F', '#349339']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={[styles.header, {paddingTop: insets.top + 20}]}
+                >
                     <View style={styles.headerContent}>
                         <Text style={styles.headerTitle}>Профиль</Text>
                         <TouchableOpacity
-                            style={styles.settingsButton}
-                            onPress={() => navigation.navigate('Settings' as never)}
+                            style={styles.logoutButton}
+                            onPress={handleLogout}
                         >
-                            <Icon name="settings" size={20} color="#FFFFFF" />
+                            <LogOut size={20} color="#2A6E3F" />
                         </TouchableOpacity>
                     </View>
-                </View>
+                </LinearGradient>
 
                 {/* Profile Card */}
                 <View style={styles.profileCard}>
                     <View style={styles.avatarContainer}>
-                        <Avatar style={styles.avatar}>
+                        <Avatar>
                             <Text style={styles.avatarText}>
-                                {getInitials(profile.fullName)}
+                                {getInitials(profile.full_name)}
                             </Text>
                         </Avatar>
                     </View>
 
                     <View style={styles.userInfo}>
-                        <Text style={styles.userName}>{profile.fullName}</Text>
-                        <Text style={styles.userTitle}>{profile.jobTitle}</Text>
+                        <Text style={styles.userName}>{profile.full_name}</Text>
+                        <Text style={styles.userTitle}>{profile.job_title}</Text>
                     </View>
 
                     <View style={styles.divider} />
 
                     {/* Основная информация */}
                     <View style={styles.infoSection}>
-
                         <View style={styles.infoRow}>
-                            <Icon name="briefcase" size={20} color="#2A6E3F" style={styles.infoIcon} />
-                            <View style={styles.infoContent}>
-                                <Text style={styles.infoLabel}>Должность</Text>
-                                <Text style={styles.infoValue}>{profile.jobTitle}</Text>
-                            </View>
-                        </View>
-
-                        <View style={styles.infoRow}>
-                            <Icon name="mail" size={20} color="#2A6E3F" style={styles.infoIcon} />
+                            <Mail size={20} color="#2A6E3F" style={styles.infoIcon} />
                             <View style={styles.infoContent}>
                                 <Text style={styles.infoLabel}>Email</Text>
                                 <Text style={styles.infoValue}>{profile.email}</Text>
                             </View>
                         </View>
+                        <View style={styles.infoRow}>
+                            <Shield size={20} color="#2A6E3F" style={styles.infoIcon} />
+                            <View style={styles.infoContent}>
+                                <Text style={styles.infoLabel}>Роли в системе</Text>
+                                <View style={styles.rolesList}>
+                                    {profile.roles.map((userRole, index) => (
+                                        <View key={index} style={styles.roleBadge}>
+                                            <Text style={styles.roleText}>{userRole}</Text>
+                                        </View>
+                                    ))}
+                                </View>
+                            </View>
+                        </View>
                     </View>
                 </View>
-
-                {/* Роли */}
-                {profile.roles.length > 0 && (
-                    <View style={styles.rolesCard}>
-                        <View style={styles.rolesHeader}>
-                            <Icon name="shield" size={20} color="#2A6E3F" />
-                            <Text style={styles.rolesTitle}>Роли в системе</Text>
-                        </View>
-
-                        <View style={styles.rolesList}>
-                            {profile.roles.map((userRole, index) => (
-                                <View key={index} style={styles.roleBadge}>
-                                    <Text style={styles.roleText}>{userRole}</Text>
-                                </View>
-                            ))}
-                        </View>
-                    </View>
-                )}
 
                 {/* Быстрые действия */}
                 <View style={styles.actionsCard}>
@@ -257,7 +224,7 @@ export function ProfileScreen() {
                         onPress={() => navigation.navigate('EventsScreen' as never)}
                     >
                         <View style={[styles.actionIcon, { backgroundColor: '#F5F3FF' }]}>
-                            <Icon name="calendar" size={20} color="#7C3AED" />
+                            <Calendar size={20} color="#7C3AED" />
                         </View>
                         <View style={styles.actionContent}>
                             <Text style={styles.actionTitle}>Мои события</Text>
@@ -265,7 +232,7 @@ export function ProfileScreen() {
                                 {profile.events.length} мероприятий
                             </Text>
                         </View>
-                        <Icon name="chevron-right" size={20} color="#9CA3AF" />
+                        <ChevronRight size={20} color="#9CA3AF" />
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -273,7 +240,7 @@ export function ProfileScreen() {
                         onPress={() => navigation.navigate('CatalogScreen' as never)}
                     >
                         <View style={[styles.actionIcon, { backgroundColor: '#F0FDF9' }]}>
-                            <Icon name="folder" size={20} color="#0D9488" />
+                            <Folder size={20} color="#0D9488" />
                         </View>
                         <View style={styles.actionContent}>
                             <Text style={styles.actionTitle}>Мои документы</Text>
@@ -281,22 +248,10 @@ export function ProfileScreen() {
                                 {profile.documents.length} документов
                             </Text>
                         </View>
-                        <Icon name="chevron-right" size={20} color="#9CA3AF" />
+                        <ChevronRight size={20} color="#9CA3AF" />
                     </TouchableOpacity>
                 </View>
-
-                {/* Кнопка выхода */}
-                <View style={styles.logoutSection}>
-                    <Button
-                        variant="outline"
-                        onPress={handleLogout}
-                        style={styles.logoutButton}
-                    >
-                        <Icon name="log-out" size={20} color="#DC2626" />
-                        <Text style={styles.logoutText}>Выйти из системы</Text>
-                    </Button>
-                </View>
             </ScrollView>
-        </SafeAreaView>
+        </View>
     );
 }
