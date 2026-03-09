@@ -7,7 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "depute",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.jewel12345.hackathonMobile",
@@ -18,7 +18,9 @@
     },
     "android": {
       "permissions": [
-        "INTERNET"
+        "INTERNET",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE"
       ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
