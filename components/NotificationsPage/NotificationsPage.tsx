@@ -2,11 +2,7 @@ import React, { useState } from 'react';
 import {
     View,
     Text,
-    ScrollView,
     TouchableOpacity,
-    StyleSheet,
-    SafeAreaView,
-    StatusBar,
     FlatList,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -14,17 +10,16 @@ import {
     ArrowLeft,
     Bell,
     CheckCircle2,
-    AlertCircle,
     Info,
     FileText,
     Calendar,
     ClipboardList,
     AlertTriangle,
     XCircle,
-    Filter, Plus,
 } from 'lucide-react-native';
 import { mockNotifications } from '@/data/mockData';
-import {Notification, NotificationType, TaskStatus} from '@/data/types';
+import {Notification, NotificationType} from '@/models/NotificationModel';
+import {TaskStatus} from "@/models/TaskBoardModel";
 import { styles } from './notifications-page';
 import { router } from 'expo-router';
 import {LinearGradient} from "expo-linear-gradient";

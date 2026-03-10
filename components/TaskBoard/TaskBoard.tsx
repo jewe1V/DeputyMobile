@@ -2,7 +2,7 @@ import { taskService } from '@/api/taskService';
 import { TaskCard } from "@/components/TaskBoard/TaskCard";
 import { Select } from "@/components/ui/Select";
 import { SkeletonLoader } from "@/components/ui/SkeletonLoader";
-import { Task, TaskPriority, TaskStatus } from '@/data/types';
+import { Task} from '@/models/TaskBoardModel';
 import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
@@ -18,43 +18,27 @@ import {
     Text,
     TouchableOpacity,
     View,
-    RefreshControl // Добавлен RefreshControl
+    RefreshControl
 } from 'react-native';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { styles } from './task-board-style';
 
 export function TaskBoard() {
-    const [filterStatus, setFilterStatus] = useState<TaskStatus | 'all'>('all');
+    const [filterStatus, setFilterStatus] = useState<string | 'all'>('all');
     const [sortBy, setSortBy] = useState<'date' | 'priority'>('date');
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false); // Состояние для pull-to-refresh
+    const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const insets = useSafeAreaInsets();
 
-    // Загрузка задач с API
     const loadTasks = async (isSilentRefresh = false) => {
-        // Если это не фоновое обновление, показываем полный лоадер/скелетон
         if (!isSilentRefresh) setLoading(true);
-
         setError(null);
+
         try {
-            const apiData = await taskService.getAllTasks();
-            const adaptedData: Task[] = (apiData as any[]).map((item: any) => ({
-                id: item.taskId,
-                authorId: item.authorId || '',
-                authorName: item.authorName || '',
-                title: item.title,
-                description: item.description,
-                status: (item.status || 'created') as TaskStatus,
-                priority: (item.priority === 0 ? 'low' : item.priority === 1 ? 'medium' : item.priority === 2 ? 'high' : 'urgent') as TaskPriority,
-                assignedTo: item.assignedTo || '',
-                createdAt: item.startDate || new Date().toISOString(),
-                dueDate: item.expectedEndDate || new Date().toISOString(),
-                tags: item.tags || [],
-                users: item.users || [],
-            }));
-            setTasks(adaptedData);
+            const apiData: Task[] = await taskService.getAllTasks();
+            setTasks(apiData);
         } catch (error: any) {
             console.error('Ошибка при загрузке задач:', error);
             const errorMessage = error?.message || 'Не удалось загрузить задачи';
@@ -62,14 +46,13 @@ export function TaskBoard() {
             setTasks([]);
         } finally {
             setLoading(false);
-            setRefreshing(false); // Выключаем индикатор обновления
+            setRefreshing(false);
         }
     };
 
-    // Обработчик Pull-to-Refresh
     const onRefresh = useCallback(() => {
         setRefreshing(true);
-        loadTasks(true); // Загружаем "тихо" (без скелетона на весь экран)
+        loadTasks(true);
     }, []);
 
     useEffect(() => {
@@ -78,20 +61,26 @@ export function TaskBoard() {
 
     useFocusEffect(
         useCallback(() => {
-            loadTasks(true); // При фокусе обновляем без перекрытия экрана скелетоном
+            loadTasks(true);
         }, [])
     );
 
-    // Фильтрация и сортировка (без изменений)
+    // Фильтрация и сортировка
     let filteredTasks = filterStatus === 'all'
         ? [...tasks]
         : tasks.filter(task => task.status === filterStatus);
 
     if (sortBy === 'priority') {
-        const priorityOrder: Record<TaskPriority, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
-        filteredTasks.sort((a, b) => priorityOrder[a.priority as TaskPriority] - priorityOrder[b.priority as TaskPriority]);
+        const priorityOrder: Record<TaskPriority, number> = {
+            low: 3,
+            medium: 2,
+            high: 1,
+            urgent: 0,
+            critical: -1 // если есть критический
+        };
+        filteredTasks.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
     } else {
-        filteredTasks.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+        filteredTasks.sort((a, b) => new Date(a.expected_end_date).getTime() - new Date(b.expected_end_date).getTime());
     }
 
     const handleTaskPress = (id: string) => {
@@ -102,7 +91,6 @@ export function TaskBoard() {
         router.push('/NewTaskScreen');
     };
 
-    // Рендер компонента
     return (
         <View style={{ flex: 1, backgroundColor: '#fff' }}>
             {/* Header */}
@@ -131,7 +119,7 @@ export function TaskBoard() {
                             <Text style={styles.filterLabel}>Фильтр</Text>
                             <Select
                                 value={filterStatus}
-                                onValueChange={(v) => setFilterStatus(v as TaskStatus | 'all')}
+                                onValueChange={(v) => setFilterStatus(v as string | 'all')}
                                 items={[
                                     { label: 'Все задачи', value: 'all' },
                                     { label: 'Новые', value: 'created' },
@@ -170,29 +158,27 @@ export function TaskBoard() {
                     </TouchableOpacity>
                 </View>
             ) : loading && !refreshing ? (
-                /* Скелетон карточек при первой загрузке */
                 <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: 12 }}>
                     <SkeletonLoader count={5} itemHeight={110} itemMargin={12} />
                 </View>
             ) : (
                 <FlatList
                     data={filteredTasks}
-                    keyExtractor={(item) => item.id}
+                    keyExtractor={(item) => item.task_id} // Изменено с id на task_id
                     renderItem={({ item }) => (
                         <TaskCard
                             task={item}
-                            onPress={() => handleTaskPress(item.id)}
+                            onPress={() => handleTaskPress(item.task_id)} // Изменено с item.id на item.task_id
                         />
                     )}
                     contentContainerStyle={styles.taskList}
                     showsVerticalScrollIndicator={false}
-                    // Pull to refresh логика
                     refreshControl={
                         <RefreshControl
                             refreshing={refreshing}
                             onRefresh={onRefresh}
-                            colors={['#2A6E3F']} // Android
-                            tintColor="#2A6E3F"  // iOS
+                            colors={['#2A6E3F']}
+                            tintColor="#2A6E3F"
                         />
                     }
                     ListEmptyComponent={

@@ -26,6 +26,7 @@ import { DocumentCard } from './DocumentCard';
 import { DocumentDetailModal } from './DocumentDetailModal';
 import { useFileManagerPresenter } from './FileManagerPresenter';
 import { styles } from './file-manager-screen';
+import { CreateCatalogModal } from './CreateCatalogModal';
 
 export function FileManager() {
     const { state, handlers, computed } = useFileManagerPresenter();
@@ -207,53 +208,15 @@ export function FileManager() {
             </ScrollView>
 
             {/* Create Catalog Modal */}
-            <Modal
+            <CreateCatalogModal
                 visible={state.showCreateModal}
-                transparent
-                animationType="fade"
-                onRequestClose={handlers.handleCloseCreateModal}
-            >
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Создать каталог</Text>
-
-                        <TextInput
-                            style={styles.modalInput}
-                            placeholder="Название каталога"
-                            value={state.catalogName}
-                            onChangeText={handlers.handleCatalogNameChange}
-                            placeholderTextColor="#9ca3af"
-                            editable={!state.creatingCatalog}
-                        />
-
-                        {state.createError && (
-                            <Text style={styles.modalError}>{state.createError}</Text>
-                        )}
-
-                        <View style={styles.modalButtonsContainer}>
-                            <TouchableOpacity
-                                style={[styles.modalButton, styles.modalButtonCancel]}
-                                onPress={handlers.handleCloseCreateModal}
-                                disabled={state.creatingCatalog}
-                            >
-                                <Text style={styles.modalButtonCancelText}>Отмена</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={[styles.modalButton, styles.modalButtonCreate]}
-                                onPress={handlers.handleCreateCatalog}
-                                disabled={state.creatingCatalog}
-                            >
-                                {state.creatingCatalog ? (
-                                    <ActivityIndicator size="small" color="#ffffff" />
-                                ) : (
-                                    <Text style={styles.modalButtonCreateText}>Создать</Text>
-                                )}
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
-            </Modal>
+                catalogName={state.catalogName}
+                creatingCatalog={state.creatingCatalog}
+                createError={state.createError}
+                onClose={handlers.handleCloseCreateModal}
+                onNameChange={handlers.handleCatalogNameChange}
+                onCreate={handlers.handleCreateCatalog}
+            />
 
             {/* Document Detail Modal */}
             <DocumentDetailModal

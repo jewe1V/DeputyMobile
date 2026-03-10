@@ -1,4 +1,4 @@
-import {TaskPriority, TaskStatus} from "@/data/types";
+import {TaskPriority, TaskStatus} from "@/models/TaskBoardModel";
 
 export const priorityConfig: Record<TaskPriority, { label: string; dotColor: string; textColor: string }> = {
     low: {

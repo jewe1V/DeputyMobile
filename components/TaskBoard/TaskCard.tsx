@@ -1,5 +1,5 @@
 import { styles } from "@/components/TaskBoard/task-board-style";
-import { Task, TaskPriority } from "@/data/types";
+import { Task } from "@/models/TaskBoardModel";
 import { Calendar, Clock } from "lucide-react-native";
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
@@ -10,12 +10,13 @@ interface TaskCardProps {
 }
 
 export function TaskCard({ task, onPress }: TaskCardProps) {
-    const dueDate = new Date(task.dueDate);
-    const startDate = new Date(task.createdAt);
+    const expectedEndDate = new Date(task.expected_end_date);
+    const startDate = new Date(task.created_at);
     const today = new Date();
-    const daysLeft = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    const daysLeft = Math.ceil((expectedEndDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     const isOverdue = daysLeft < 0 && task.status !== 'completed';
     const isUrgent = daysLeft <= 2 && daysLeft >= 0 && task.status !== 'completed';
+    const priority = priorityConfig[task.priority] || priorityConfig.low;
 
     const truncatedDescription = task.description.length > 70
         ? task.description.substring(0, 70) + '...'
@@ -50,11 +51,11 @@ export function TaskCard({ task, onPress }: TaskCardProps) {
                 <View
                     style={[
                         styles.priorityDot,
-                        { backgroundColor: priorityConfig[task.priority].dotColor },
+                        { backgroundColor: priority.dotColor },
                     ]}
                 />
                 <Text style={styles.priorityText}>
-                    Приоритет: {priorityConfig[task.priority].label}
+                    Приоритет: {priority.label}
                 </Text>
             </View>
 
@@ -73,7 +74,7 @@ export function TaskCard({ task, onPress }: TaskCardProps) {
                         isOverdue && styles.overdueText,
                         isUrgent && styles.urgentText
                     ]}>
-                        Дедлайн: {formatDate(dueDate)}
+                        Дедлайн: {formatDate(expectedEndDate)}
                         {isOverdue && ' (просрочено)'}
                     </Text>
                 </View>
@@ -99,25 +100,37 @@ export function TaskCard({ task, onPress }: TaskCardProps) {
     );
 }
 
+// Исправленный тип для priorityConfig
+interface PriorityConfig {
+    label: string;
+    color: string;
+    dotColor: string;
+}
+
 const priorityConfig: Record<TaskPriority, { label: string; color: string; dotColor: string }> = {
     low: {
         label: 'Низкий',
-        color: '#9CA3AF', // gray-400
+        color: '#9CA3AF',
         dotColor: '#9CA3AF'
     },
     medium: {
         label: 'Средний',
-        color: '#3B82F6', // blue-500
+        color: '#3B82F6',
         dotColor: '#3B82F6'
     },
     high: {
         label: 'Высокий',
-        color: '#F97316', // orange-500
+        color: '#F97316',
         dotColor: '#F97316'
     },
     urgent: {
         label: 'Срочный',
-        color: '#EF4444', // red-500
+        color: '#EF4444',
         dotColor: '#EF4444'
     },
+    critical: {
+        label: 'Критический',
+        color: '#7F1D1D',
+        dotColor: '#7F1D1D'
+    }
 };

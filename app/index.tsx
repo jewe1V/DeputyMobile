@@ -16,8 +16,6 @@ import {
     AuthorizationStatus
 } from '@react-native-firebase/messaging';
 
-// 1. Инициализация фонового обработчика
-// В v22+ первым аргументом ВСЕГДА идет экземпляр messaging
 setBackgroundMessageHandler(getMessaging(), async (remoteMessage) => {
     console.log('Message handled in the background!', remoteMessage);
 });

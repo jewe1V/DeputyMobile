@@ -15,6 +15,7 @@ import {
     CheckCircle2,
     Bell,
     AlertCircle,
+    RefreshCw
 } from 'lucide-react-native';
 import { styles } from './style';
 import Animated, { FadeInDown, FadeInRight, ZoomIn } from 'react-native-reanimated';
@@ -41,11 +42,14 @@ interface DashboardData {
     };
 }
 
+
+
 export function Dashboard() {
     const insets = useSafeAreaInsets();
 
     const [data, setData] = useState<DashboardData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         fetchDashboardData();
@@ -53,7 +57,15 @@ export function Dashboard() {
 
     const fetchDashboardData = async () => {
         try {
+            setIsLoading(true);
+            setError(null);
+
             const token = AuthTokenManager.getToken();
+
+            if (!token) {
+                setError('Не найден токен авторизации');
+                return;
+            }
 
             const response = await fetch(`${apiUrl}/api/Dashboard/get`, {
                 method: 'GET',
@@ -62,11 +74,21 @@ export function Dashboard() {
                     'Authorization': `Bearer ${token}`
                 }
             });
+
+            if (!response.ok) {
+                if (response.status === 401) {
+                    setError('Сессия истекла. Пожалуйста, войдите снова');
+                } else {
+                    setError(`Ошибка сервера: ${response.status}`);
+                }
+                return;
+            }
+
             const json = await response.json();
             setData(json);
         } catch (error) {
             console.error(error);
-            Alert.alert('Ошибка', 'Не удалось загрузить данные дашборда');
+            setError('Не удалось загрузить данные дашборда. Проверьте подключение к интернету');
         } finally {
             setIsLoading(false);
         }
@@ -131,11 +153,87 @@ export function Dashboard() {
         return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     };
 
-    if (isLoading || !data) {
+    // Отображение загрузки
+    if (isLoading) {
         return (
             <View style={[styles.content, { flex: 1, justifyContent: 'center', alignItems: 'center' }]}>
                 <ActivityIndicator size="large" color="#2A6E3F" />
+                <Text style={{ marginTop: 10, color: '#666' }}>Загрузка данных...</Text>
             </View>
+        );
+    }
+
+    // Отображение ошибки
+    if (error || !data) {
+        return (
+            <ScrollView showsVerticalScrollIndicator={false}>
+                <View>
+                    <LinearGradient
+                        colors={['#2A6E3F', '#349339']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={[styles.header, { paddingTop: insets.top + 15 }]}
+                    >
+                        <View style={styles.headerContent}>
+                            <View style={styles.userInfoRow}>
+                                <TouchableOpacity style={styles.userProfileButton} onPress={() => router.push("/ProfileScreen")}>
+                                    <View style={styles.avatarContainer}>
+                                        <View style={styles.avatar}>
+                                            <Text style={styles.avatarText}>?</Text>
+                                        </View>
+                                    </View>
+                                    <View style={styles.userInfo}>
+                                        <Text style={styles.greeting}>Добрый день,</Text>
+                                        <Text style={styles.userName}>Гость</Text>
+                                    </View>
+                                </TouchableOpacity>
+                                <TouchableOpacity style={styles.notificationButton} onPress={() => router.push("/NotificationScreen")}>
+                                    <Bell size={20} color="white" />
+                                </TouchableOpacity>
+                            </View>
+                            <Text style={styles.jobTitle}>Сотрудник</Text>
+                            <Text style={styles.organization}>Городская Дума Екатеринбурга</Text>
+                        </View>
+                    </LinearGradient>
+                </View>
+
+                <View style={[styles.content, { flex: 1, justifyContent: 'center', alignItems: 'center', minHeight: 300 }]}>
+                    <View style={{
+                        backgroundColor: '#FEF2F2',
+                        padding: 20,
+                        borderRadius: 12,
+                        alignItems: 'center',
+                        borderWidth: 1,
+                        borderColor: '#FEE2E2',
+                        marginHorizontal: 20
+                    }}>
+                        <AlertCircle size={48} color="#DC2626" />
+                        <Text style={{ fontSize: 18, fontWeight: '600', color: '#991B1B', marginTop: 10, textAlign: 'center' }}>
+                            Ошибка загрузки
+                        </Text>
+                        <Text style={{ fontSize: 14, color: '#B91C1C', marginTop: 5, textAlign: 'center' }}>
+                            {error || 'Не удалось загрузить данные'}
+                        </Text>
+                        <TouchableOpacity
+                            onPress={fetchDashboardData}
+                            style={{
+                                backgroundColor: '#2A6E3F',
+                                paddingHorizontal: 20,
+                                paddingVertical: 10,
+                                borderRadius: 8,
+                                marginTop: 15,
+                                flexDirection: 'row',
+                                alignItems: 'center'
+                            }}
+                        >
+                            <RefreshCw size={18} color="white" />
+                            <Text style={{ color: 'white', marginLeft: 8, fontSize: 14, fontWeight: '500' }}>
+                                Повторить попытку
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </ScrollView>
         );
     }
 

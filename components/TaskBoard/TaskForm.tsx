@@ -23,7 +23,6 @@ type RootStackParamList = {
     TaskForm: { id?: string };
 };
 
-// Определяем 5 уровней приоритета согласно вашему API (1-5)
 const PRIORITY_MAP = [
     { id: 1, label: 'Низкий' },
     { id: 2, label: 'Средний' },

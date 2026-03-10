@@ -22,7 +22,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {apiUrl} from '@/api/api'
 import {AuthTokenManager} from '@/components/LoginScreen/LoginScreen';
 import { styles } from './style';
-import {Profile} from '@/data/types';
+import {Profile} from '@/models/ProfileModel';
 import { LinearGradient } from 'expo-linear-gradient';
 
 
