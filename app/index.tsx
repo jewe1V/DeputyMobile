@@ -1,180 +1,95 @@
-import React, { useEffect, useState } from 'react';
-import { Platform, Alert, PermissionsAndroid } from 'react-native';
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import { AuthTokenManager } from "@/components/LoginScreen/LoginScreen";
-import { useRouter } from 'expo-router';
-import { YamapInstance } from 'react-native-yamap-plus';
-import { apiUrl } from "@/api/api";
-import {
-    getMessaging,
-    setBackgroundMessageHandler,
-    onMessage,
-    onNotificationOpenedApp,
-    getInitialNotification,
-    requestPermission,
-    getToken,
-    AuthorizationStatus
-} from '@react-native-firebase/messaging';
-
-setBackgroundMessageHandler(getMessaging(), async (remoteMessage) => {
-    console.log('Message handled in the background!', remoteMessage);
-});
+import React, {useEffect, useState} from 'react';
+import {SafeAreaProvider} from "react-native-safe-area-context";
+import {AuthTokenManager} from "@/components/LoginScreen/LoginScreen";
+import {useRouter, useSegments} from 'expo-router';
+import {requestUserPermission, registerDeviceToken, getFCMToken} from "@/api/fcmService"
+import { getMessaging, onMessage, onTokenRefresh } from '@react-native-firebase/messaging';
+import {Alert} from "react-native";
+import {YamapInstance} from "react-native-yamap-plus";
 
 function useProtectedRoute(isAuthenticated: boolean | null) {
     const router = useRouter();
+    const segments = useSegments();
+
     useEffect(() => {
         if (isAuthenticated === null) return;
+
         if (!isAuthenticated) {
             router.replace('/login');
-        } else {
+        } else if (isAuthenticated) {
             router.replace('/(screens)/DashboardScreen');
         }
-    }, [isAuthenticated]);
+    }, [isAuthenticated, segments]);
 }
 
-// --- API методы ---
-
-const fetchYAMapToken = async (token: string) => {
-    try {
-        const response = await fetch(`${apiUrl}/api/Auth/maps-token`, {
-            method: 'GET',
-            headers: {
-                'accept': '*/*',
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        return response;
-    } catch (e) {
-        console.error("Fetch Yandex Token error:", e);
-        return null;
-    }
-}
-
-const registerDeviceToken = async (authToken: string, fcmToken: string) => {
-    try {
-        return await fetch(`${apiUrl}/api/device/register`, {
-            method: 'POST',
-            headers: {
-                'accept': '*/*',
-                'Authorization': `Bearer ${authToken}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                token: fcmToken,
-                platform: Platform.OS
-            })
-        });
-    } catch (e) {
-        console.error("Device register error:", e);
-        return null;
-    }
-}
+const messagingInstance = getMessaging();
 
 const App: React.FC = () => {
     const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-    const [mapInitialized, setMapInitialized] = useState(false);
-    const [deviceSynced, setDeviceSynced] = useState(false);
-
-    const token = AuthTokenManager.getToken();
-    const messagingInstance = getMessaging(); // Создаем экземпляр для переиспользования
-
-    // 2. Функция запроса разрешений (Модульный стиль)
-    const requestUserPermission = async () => {
-        if (Platform.OS === 'android' && Platform.Version >= 33) {
-            await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
-        }
-
-        const authStatus = await requestPermission(messagingInstance);
-        return (
-            authStatus === AuthorizationStatus.AUTHORIZED ||
-            authStatus === AuthorizationStatus.PROVISIONAL
-        );
-    };
 
     useEffect(() => {
+        // Инициализация Яндекс Карт
+        YamapInstance.init("123");
         YamapInstance.setLocale('ru_RU');
+
+        // Проверка авторизации
+        const token = AuthTokenManager.getToken();
         setIsAuthenticated(!!token);
 
-        const unsubscribeAuth = AuthTokenManager.addListener((newToken) => {
-            setIsAuthenticated(!!newToken);
-            if (!newToken) {
-                setMapInitialized(false);
-                setDeviceSynced(false);
-            }
+        // Слушатель изменений токена авторизации
+        return AuthTokenManager.addListener((token) => {
+            setIsAuthenticated(!!token);
         });
-
-        // 3. Слушатель уведомлений на переднем плане (Foreground)
-        const unsubscribeMessaging = onMessage(messagingInstance, async (remoteMessage) => {
-            Alert.alert(
-                remoteMessage.notification?.title || 'Уведомление',
-                remoteMessage.notification?.body || ''
-            );
-        });
-
-        // 4. Обработка клика (Background state)
-        const unsubscribeOpenedApp = onNotificationOpenedApp(messagingInstance, (remoteMessage) => {
-            console.log('Notification caused app to open from background:', remoteMessage.data);
-        });
-
-        // 5. Обработка клика (Quit state)
-        getInitialNotification(messagingInstance).then((remoteMessage) => {
-            if (remoteMessage) {
-                console.log('Notification caused app to open from quit state:', remoteMessage.data);
-            }
-        });
-
-        return () => {
-            unsubscribeAuth();
-            unsubscribeMessaging();
-            unsubscribeOpenedApp();
-        };
     }, []);
 
     useEffect(() => {
-        const initializeAppServices = async () => {
-            if (isAuthenticated && token) {
-                // Инициализация Яндекс Карт
-                if (!mapInitialized) {
-                    try {
-                        const response = await fetchYAMapToken(token);
-                        if (response?.ok) {
-                            const data = await response.json();
-                            await YamapInstance.init(data.token);
-                            setMapInitialized(true);
-                            console.log("✅ Yandex Maps initialized");
-                        }
-                    } catch (e) {
-                        console.warn("Ошибка карт:", e);
-                    }
-                }
+        if (!isAuthenticated) return;
 
-                // Синхронизация FCM токена
-                if (!deviceSynced) {
-                    try {
-                        const hasPermission = await requestUserPermission();
-                        if (hasPermission) {
-                            const fcmToken = await getToken(messagingInstance);
-                            if (fcmToken) {
-                                const response = await registerDeviceToken(token, fcmToken);
-                                if (response?.ok) {
-                                    setDeviceSynced(true);
-                                    console.log("✅ FCM Token synced:", fcmToken);
-                                }
-                            }
-                        }
-                    } catch (e) {
-                        console.warn("Ошибка регистрации устройства:", e);
-                    }
-                }
+        let unsubscribeOnMessage: (() => void) | undefined;
+        let unsubscribeOnTokenRefresh: (() => void) | undefined;
+
+        const setupNotifications = async () => {
+            const hasPermission = await requestUserPermission();
+            if (!hasPermission) return;
+
+            const fcmToken = await getFCMToken();
+            const authToken = AuthTokenManager.getToken();
+
+            if (fcmToken && authToken) {
+                await registerDeviceToken(authToken, fcmToken);
             }
+
+            unsubscribeOnMessage = onMessage(messagingInstance, async remoteMessage => {
+                Alert.alert(
+                    remoteMessage.notification?.title || 'Новое уведомление',
+                    remoteMessage.notification?.body || 'Сообщение получено'
+                );
+                console.log('Foreground message:', remoteMessage);
+            });
+
+            unsubscribeOnTokenRefresh = onTokenRefresh(messagingInstance, async (newToken) => {
+                console.log('FCM Token refreshed:', newToken);
+                const authToken = AuthTokenManager.getToken();
+                if (authToken) {
+                    await registerDeviceToken(authToken, newToken);
+                }
+            });
         };
 
-        initializeAppServices();
-    }, [isAuthenticated, token, mapInitialized, deviceSynced]);
+        setupNotifications();
+
+        return () => {
+            if (unsubscribeOnMessage) unsubscribeOnMessage();
+            if (unsubscribeOnTokenRefresh) unsubscribeOnTokenRefresh();
+        };
+    }, [isAuthenticated]);
 
     useProtectedRoute(isAuthenticated);
 
-    return <SafeAreaProvider />;
+    return (
+        <SafeAreaProvider>
+        </SafeAreaProvider>
+    );
 };
 
 export default App;

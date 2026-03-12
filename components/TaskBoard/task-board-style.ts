@@ -110,14 +110,13 @@ export const styles = StyleSheet.create({
         marginTop: -12,
     },
     taskCard: {
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#ffffff',
         borderWidth: 1,
         borderColor: '#E5E7EB',
         padding: 16,
         marginBottom: 12,
-        borderLeftColor: "#46b574",
-        borderLeftWidth: 4,
         borderRadius: 20,
+        borderBottomRightRadius: 20,
     },
     taskTitle: {
         fontSize: 16,

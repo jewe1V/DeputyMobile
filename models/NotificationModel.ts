@@ -1,8 +1,6 @@
 import {Profile} from "./ProfileModel"
-export enum NotificationType {
-    Event,
-    Task,
-}
+
+export type NotificationType = "Event" | "Task";
 
 export interface Notification {
     id: string;

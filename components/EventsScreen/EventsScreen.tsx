@@ -10,11 +10,10 @@ import {
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Calendar } from '@/components/EventsScreen/Calendar';
 import { EventCard } from '@/components/EventsScreen/EventCard';
-import { Event } from '@/models/Event';
-import { Header } from "@/components/ui/Header";
+import { Event } from '@/models/EventModel';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { apiUrl } from "@/api/api";
-import {CirclePlus, Plus} from "lucide-react-native";
+import {Plus} from "lucide-react-native";
 import {LinearGradient} from "expo-linear-gradient";
 import {router} from "expo-router";
 
@@ -86,16 +85,16 @@ const EventsScreen: React.FC = () => {
 
     const filteredEvents = useMemo(() => {
         if (selectedDate) {
-            return events.filter(ev => ev.startAt.split('T')[0] === selectedDate);
+            return events.filter(ev => ev.start_at.split('T')[0] === selectedDate);
         }
         const now = new Date();
-        return events.filter(ev => new Date(ev.startAt) >= now);
+        return events.filter(ev => new Date(ev.start_at) >= now);
     }, [events, selectedDate]);
 
     const grouped = useMemo(() => {
         const map: Record<string, Event[]> = {};
         filteredEvents.forEach(event => {
-            const dateKey = event.startAt.split('T')[0];
+            const dateKey = event.start_at.split('T')[0];
             if (!map[dateKey]) map[dateKey] = [];
             map[dateKey].push(event);
         });

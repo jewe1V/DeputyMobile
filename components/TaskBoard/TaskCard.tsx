@@ -32,12 +32,7 @@ export function TaskCard({ task, onPress }: TaskCardProps) {
 
     return (
         <TouchableOpacity
-            style={[
-                styles.taskCard,
-                {
-
-                },
-            ]}
+            style={styles.taskCard}
             onPress={onPress}
             activeOpacity={0.7}
         >

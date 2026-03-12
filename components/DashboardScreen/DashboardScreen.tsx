@@ -23,6 +23,7 @@ import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {AuthTokenManager} from "@/components/LoginScreen/LoginScreen";
 import { apiUrl } from '@/api/api';
+import {Event} from "@/models/EventModel"
 
 interface DashboardData {
     user_name: string;
@@ -98,32 +99,6 @@ export function Dashboard() {
         if (!name) return '';
         const parts = name.split(' ');
         return parts.length >= 2 ? `${parts[0][0]}${parts[1][0]}` : name[0];
-    };
-
-    const getTaskStatusColor = (status: string) => {
-        switch (status?.toLowerCase()) {
-            case 'created':
-                return { backgroundColor: '#f3f4f6', color: '#374151' };
-            case 'in_progress':
-                return { backgroundColor: '#E8F5E9', color: '#2E7D32' };
-            case 'approval':
-                return { backgroundColor: '#FFFBEB', color: '#B45309' };
-            default:
-                return { backgroundColor: '#f3f4f6', color: '#374151' };
-        }
-    };
-
-    const getTaskStatusLabel = (status: string) => {
-        switch (status?.toLowerCase()) {
-            case 'created':
-                return 'Создана';
-            case 'in_progress':
-                return 'В работе';
-            case 'approval':
-                return 'На согласовании';
-            default:
-                return status || 'Неизвестно';
-        }
     };
 
     const formatDate = (dateString: string) => {
@@ -287,7 +262,7 @@ export function Dashboard() {
 
                     {/* --- КАРТОЧКА 1 --- */}
                     <Animated.View style={styles.statCardContainer} entering={FadeInDown.delay(200).duration(600).springify()}>
-                        <LinearGradient colors={['#ffffff', '#f3fdf3']} style={styles.statCard}>
+                        <LinearGradient colors={['#ffffff', '#fffafa']} style={styles.statCard}>
                             <View style={styles.statIcon}><Calendar size={20} color="black" /></View>
                             <Text style={styles.statNumber}>{data.event_count || 0}</Text>
                             <Text style={styles.statLabel}>Мероприятий</Text>
@@ -296,7 +271,7 @@ export function Dashboard() {
 
                     {/* --- КАРТОЧКА 2 --- */}
                     <Animated.View style={styles.statCardContainer} entering={FadeInDown.delay(400).duration(600).springify()}>
-                        <LinearGradient colors={['#ffffff', '#f3fdf3']} style={styles.statCard}>
+                        <LinearGradient colors={['#ffffff', '#fffafa']} style={styles.statCard}>
                             <View style={styles.statIcon}><CheckCircle2 size={20} color="black" /></View>
                             <Text style={styles.statNumber}>{data.task_count || 0}</Text>
                             <Text style={styles.statLabel}>Задач</Text>
@@ -305,31 +280,28 @@ export function Dashboard() {
 
                     {/* --- КАРТОЧКА 3 --- */}
                     <Animated.View style={styles.statCardContainer} entering={FadeInDown.delay(600).duration(600).springify()}>
-                        <LinearGradient colors={['#ffffff', '#f3fdf3']} style={styles.statCard}>
+                        <LinearGradient colors={['#ffffff', '#fffafa']} style={styles.statCard}>
                             <View style={styles.statIcon}><AlertCircle size={20} color="black" /></View>
                             <Text style={styles.statNumber}>{data.urgent_tasks_count || 0}</Text>
                             <Text style={styles.statLabel}>Срочных задач</Text>
                         </LinearGradient>
                     </Animated.View>
-
                 </View>
 
-                {/* --- СЕКЦИЯ: МОИ ЗАДАЧИ --- */}
-                <Animated.View
-                    entering={FadeInDown.delay(700).duration(600)}
-                    style={styles.section}
-                >
-                    <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>Мои задачи</Text>
-                    </View>
+                {displayTasks.length > 0 && (
+                    <Animated.View
+                        entering={FadeInDown.delay(700).duration(600)}
+                        style={styles.section}
+                    >
+                        <View style={styles.sectionHeader}>
+                            <Text style={styles.sectionTitle}>Мои задачи</Text>
+                        </View>
 
-                    <View style={styles.cardsContainer}>
-                        {displayTasks.length > 0 ? (
-                            displayTasks.map((task: any, index: number) => {
+                        <View style={styles.cardsContainer}>
+                            {displayTasks.map((task: any, index: number) => {
                                 const daysLeft = getDaysUntilDue(task.dueDate);
                                 const isUrgent = daysLeft <= 2 && daysLeft >= 0;
                                 const isOverdue = daysLeft < 0;
-                                const statusColors = getTaskStatusColor(task.status);
 
                                 return (
                                     <Animated.View
@@ -343,9 +315,9 @@ export function Dashboard() {
                                                         {task.title}
                                                     </Text>
                                                     <View style={styles.cardTags}>
-                                                        <View style={[styles.tag, { backgroundColor: statusColors.backgroundColor }]}>
-                                                            <Text style={[styles.tagText, { color: statusColors.color }]}>
-                                                                {getTaskStatusLabel(task.status)}
+                                                        <View style={styles.tag}>
+                                                            <Text style={styles.tagText}>
+                                                                {task.status}
                                                             </Text>
                                                         </View>
                                                         <View style={styles.timeTag}>
@@ -361,43 +333,35 @@ export function Dashboard() {
                                         </TouchableOpacity>
                                     </Animated.View>
                                 );
-                            })
-                        ) : (
-                            <Animated.View entering={ZoomIn.delay(800)} style={styles.emptyCard}>
-                                <View style={styles.emptyIconContainer}>
-                                    <CheckCircle2 size={32} color="#4CAF50" />
-                                </View>
-                                <Text style={styles.emptyTitle}>Нет активных задач</Text>
-                                <Text style={styles.emptySubtitle}>Все задачи выполнены</Text>
-                            </Animated.View>
-                        )}
-                    </View>
-                </Animated.View>
+                            })}
+                        </View>
+                    </Animated.View>
+                )}
 
-                {/* --- СЕКЦИЯ: ПРЕДСТОЯЩИЕ МЕРОПРИЯТИЯ --- */}
-                <Animated.View
-                    entering={FadeInDown.delay(1000).duration(600)}
-                    style={styles.section}
-                >
-                    <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>Предстоящие мероприятия</Text>
-                    </View>
+                {/* --- СЕКЦИЯ: ПРЕДСТОЯЩИЕ МЕРОПРИЯТИЯ (показываем всегда, если есть события) --- */}
+                {allUpcomingEvents.length > 0 && (
+                    <Animated.View
+                        entering={FadeInDown.delay(displayTasks.length > 0 ? 1000 : 700).duration(600)}
+                        style={styles.section}
+                    >
+                        <View style={styles.sectionHeader}>
+                            <Text style={styles.sectionTitle}>Предстоящие мероприятия</Text>
+                        </View>
 
-                    <View style={styles.cardsContainer}>
-                        {allUpcomingEvents.length > 0 ? (
-                            allUpcomingEvents.map((event: any, index: number) => (
+                        <View style={styles.cardsContainer}>
+                            {allUpcomingEvents.map((event: Event, index: number) => (
                                 <Animated.View
                                     key={event.id || index}
-                                    entering={FadeInRight.delay(1100 + index * 100).duration(500).springify()}
+                                    entering={FadeInRight.delay((displayTasks.length > 0 ? 1100 : 800) + index * 100).duration(500).springify()}
                                 >
-                                    <TouchableOpacity style={styles.card}>
+                                    <TouchableOpacity style={styles.card} onPress={() => router.push({pathname: '/EventDetailsScreen'})}>
                                         <View style={styles.cardContent}>
                                             <View style={styles.eventDateContainer}>
                                                 <Text style={styles.eventDay}>
-                                                    {new Date(event.startAt).toLocaleDateString('ru-RU', { day: 'numeric' })}
+                                                    {new Date(event.start_at).toLocaleDateString('ru-RU', { day: 'numeric' })}
                                                 </Text>
                                                 <Text style={styles.eventMonth}>
-                                                    {new Date(event.startAt).toLocaleDateString('ru-RU', { month: 'short' }).toUpperCase()}
+                                                    {new Date(event.start_at).toLocaleDateString('ru-RU', { month: 'short' }).toUpperCase()}
                                                 </Text>
                                             </View>
                                             <View style={styles.cardTextContainer}>
@@ -407,7 +371,7 @@ export function Dashboard() {
                                                 <View style={styles.eventTime}>
                                                     <Clock size={14} color="#6b7280" />
                                                     <Text style={styles.eventTimeText}>
-                                                        {formatDate(event.startAt)}
+                                                        {formatDate(event.start_at)} · {event.location}
                                                     </Text>
                                                 </View>
                                                 {event.isPublic && (
@@ -420,18 +384,26 @@ export function Dashboard() {
                                         </View>
                                     </TouchableOpacity>
                                 </Animated.View>
-                            ))
-                        ) : (
-                            <Animated.View entering={ZoomIn.delay(1100)} style={[styles.emptyCard, { backgroundColor: '#F5F9FF' }]}>
-                                <View style={[styles.emptyIconContainer, { backgroundColor: '#E3F2FD' }]}>
-                                    <Calendar size={32} color="#1976D2" />
-                                </View>
-                                <Text style={styles.emptyTitle}>Нет предстоящих мероприятий</Text>
-                                <Text style={styles.emptySubtitle}>Календарь пуст</Text>
-                            </Animated.View>
-                        )}
-                    </View>
-                </Animated.View>
+                            ))}
+                        </View>
+                    </Animated.View>
+                )}
+
+                {/* --- ЗАГЛУШКА (когда нет ни задач, ни событий) --- */}
+                {displayTasks.length === 0 && allUpcomingEvents.length === 0 && (
+                    <Animated.View
+                        entering={FadeInDown.delay(700).duration(600)}
+                        style={[styles.section]}
+                    >
+                        <View style={styles.emptyContainer}>
+                            <CheckCircle2 size={48} color="#3bb625" />
+                            <Text style={styles.emptyMainTitle}>Нет активных задач</Text>
+                            <Text style={styles.emptyMainSubtitle}>
+                                Идеальный момент, чтобы просто побыть в покое и насладиться тишиной
+                            </Text>
+                        </View>
+                    </Animated.View>
+                )}
             </View>
         </ScrollView>
     );

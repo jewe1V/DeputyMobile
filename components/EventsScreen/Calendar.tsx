@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {View, Text, StyleSheet, TouchableOpacity, ActivityIndicator} from 'react-native';
-import {Event} from "@/models/Event";
+import {Event} from "@/models/EventModel";
 import { useFonts as useInterFonts, Inter_400Regular, Inter_600SemiBold } from '@expo-google-fonts/inter';
 import {useFonts as usePlayfair} from "@expo-google-fonts/playfair-display/useFonts";
 import {PlayfairDisplay_600SemiBold, PlayfairDisplay_700Bold} from "@expo-google-fonts/playfair-display";
@@ -53,7 +53,7 @@ export const Calendar: React.FC<CalendarProps> = ({ selectedDate, onSelectDate, 
     const eventsByDate = useMemo(() => {
         const map: Record<string, Event[]> = {};
         events.forEach((event) => {
-            const dateKey = formatDate(event.startAt);
+            const dateKey = formatDate(event.start_at);
             if (!map[dateKey]) map[dateKey] = [];
             map[dateKey].push(event);
         });

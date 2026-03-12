@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { RouteProp, useRoute } from '@react-navigation/native';
-import { Event } from '@/models/Event';
+import { Event } from '@/models/EventModel';
 
 type EventDetailsRouteProp = RouteProp<{ EventDetails: { event: Event } }, 'EventDetails'>;
 
@@ -9,8 +9,8 @@ const EventDetailsScreen: React.FC = () => {
     const route = useRoute<EventDetailsRouteProp>();
     const { event } = route.params;
 
-    const startDate = new Date(event.startAt);
-    const endDate = new Date(event.endAt);
+    const startDate = new Date(event.start_at);
+    const endDate = new Date(event.end_at);
 
     const formatDate = (d: Date) =>
         `${d.toLocaleDateString('ru-RU', { day: '2-digit', month: 'long', year: 'numeric' })} ${d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`;

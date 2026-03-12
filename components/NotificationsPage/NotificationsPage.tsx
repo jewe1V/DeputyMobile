@@ -1,95 +1,92 @@
-import React, { useState } from 'react';
+import React, {useState, useEffect, useMemo} from 'react';
 import {
     View,
     Text,
     TouchableOpacity,
     FlatList,
+    ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import {
     ArrowLeft,
     Bell,
-    CheckCircle2,
-    Info,
-    FileText,
     Calendar,
     ClipboardList,
-    AlertTriangle,
-    XCircle,
 } from 'lucide-react-native';
-import { mockNotifications } from '@/data/mockData';
-import {Notification, NotificationType} from '@/models/NotificationModel';
-import {TaskStatus} from "@/models/TaskBoardModel";
 import { styles } from './notifications-page';
 import { router } from 'expo-router';
-import {LinearGradient} from "expo-linear-gradient";
-import {Select} from "@/components/ui/Select";
+import { LinearGradient } from "expo-linear-gradient";
+import { Select } from "@/components/ui/Select";
+import { AuthTokenManager } from "@/components/LoginScreen/LoginScreen";
+import {Notification, NotificationType} from "@/models/NotificationModel";
+import {apiUrl} from "@/api/api"
 
-const notificationConfig: Record<NotificationType, {
-    icon: any;
-    bgColor: string;
-    iconColor: string;
-    borderColor: string;
-}> = {
-    info: {
-        icon: Info,
-        bgColor: 'bg-blue-50',
-        iconColor: 'text-blue-600',
-        borderColor: 'border-l-blue-500',
-    },
-    success: {
-        icon: CheckCircle2,
-        bgColor: 'bg-green-50',
-        iconColor: 'text-green-600',
-        borderColor: 'border-l-green-500',
-    },
-    warning: {
-        icon: AlertTriangle,
-        bgColor: 'bg-orange-50',
-        iconColor: 'text-orange-600',
-        borderColor: 'border-l-orange-500',
-    },
-    error: {
-        icon: XCircle,
-        bgColor: 'bg-red-50',
-        iconColor: 'text-red-600',
-        borderColor: 'border-l-red-500',
-    },
-    task: {
+const notificationConfig: Record<NotificationType, { icon: any; iconColor: string }> = {
+    Task: {
         icon: ClipboardList,
-        bgColor: 'bg-blue-50',
-        iconColor: 'text-blue-600',
-        borderColor: 'border-l-blue-500',
+        iconColor: '#268356',
     },
-    event: {
+    Event: {
         icon: Calendar,
-        bgColor: 'bg-purple-50',
-        iconColor: 'text-purple-600',
-        borderColor: 'border-l-purple-500',
-    },
-    document: {
-        icon: FileText,
-        bgColor: 'bg-teal-50',
-        iconColor: 'text-teal-600',
-        borderColor: 'border-l-teal-500',
+        iconColor: '#8B5CF6',
     },
 };
 
 const filterOptions = [
     { label: 'Все уведомления', value: 'all' },
-    { label: 'Задачи', value: 'task' },
-    { label: 'События', value: 'event' },
-    { label: 'Документы', value: 'document' },
-    { label: 'Информация', value: 'info' },
-    { label: 'Успех', value: 'success' },
-    { label: 'Предупреждения', value: 'warning' },
-    { label: 'Ошибки', value: 'error' },
+    { label: 'Задачи', value: 'Task' },
+    { label: 'События', value: 'Event' },
 ];
 
 export function Notifications() {
     const navigation = useNavigation();
-    const [notifications, setNotifications] = useState(mockNotifications);
+    const [notifications, setNotifications] = useState<Notification[]>([]);
     const [filterType, setFilterType] = useState<NotificationType | 'all'>('all');
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const fetchNotifications = async () => {
+        try {
+            setError(null);
+            const token = await AuthTokenManager.getToken();
+
+            if (!token) {
+                throw new Error('Токен авторизации не найден');
+            }
+
+            const response = await fetch(`${apiUrl}/api/Notify/all`, {
+                method: 'GET',
+                headers: {
+                    'accept': '*/*',
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error(`Ошибка сервера: ${response.status}`);
+            }
+
+            const data: Notification[] = await response.json();
+
+            setNotifications(data);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Не удалось загрузить уведомления');
+            console.error('Error fetching notifications:', err);
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchNotifications();
+    }, []);
+
+    const handleRefresh = () => {
+        setRefreshing(true);
+        fetchNotifications();
+    };
 
     const formatTime = (dateString: string) => {
         const date = new Date(dateString);
@@ -107,70 +104,47 @@ export function Notifications() {
         return date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
     };
 
-    const handleMarkAllAsRead = () => {
-        setNotifications(notifications.map(n => ({ ...n, isRead: true })));
-    };
-
     const handleNotificationClick = (notification: Notification) => {
-        // Отмечаем как прочитанное
-        setNotifications(notifications.map(n =>
-            n.id === notification.id ? { ...n, isRead: true } : n
-        ));
-
-        // Переход на связанную страницу
-        if (notification.relatedId && notification.relatedType) {
-            switch (notification.relatedType) {
-                case 'task':
-                    router.push({pathname: '/TaskDetailScreen', params: { id: notification.relatedId }});
-                    break;
-                case 'event':
-                    router.push({pathname: '/EventDetailsScreen', params: { id: notification.relatedId }});
-                case 'document':
-                    router.push("/CatalogScreen")
-                    break;
-            }
+        // Теперь сравнение со строками чистое и понятное
+        if (notification.notify_type === 'Task') {
+            router.push('/TaskBoardScreen');
+        } else if (notification.notify_type === 'Event') {
+            router.push('/EventsScreen');
+        } else {
+            router.push({
+                pathname: '/NotificationDetailScreen',
+                params: { id: notification.id, notification: JSON.stringify(notification) }
+            });
         }
     };
 
-    const filteredNotifications = filterType === 'all'
-        ? notifications
-        : notifications.filter(n => n.type === filterType);
-
-    const unreadCount = notifications.filter(n => !n.isRead).length;
+    const filteredNotifications = useMemo(() => {
+        if (filterType === 'all') return notifications;
+        return notifications.filter(n => n.notify_type === filterType);
+    }, [notifications, filterType]);
 
     const renderNotificationItem = ({ item }: { item: Notification }) => {
-        const config = notificationConfig[item.type];
+        const config = notificationConfig[item.notify_type] || { icon: Bell, iconColor: '#9CA3AF' };
         const Icon = config.icon;
 
         return (
-            <TouchableOpacity
-                onPress={() => handleNotificationClick(item)}
-                style={[
-                    styles.notificationItem,
-                    !item.isRead ? styles.unreadNotification : styles.readNotification,
-                ]}
-            >
+            <TouchableOpacity onPress={() => handleNotificationClick(item)} style={styles.notificationItem}>
                 <View style={styles.notificationContent}>
-                    {/* Иконка */}
-                    <View style={[styles.iconContainer, getBackgroundColor(config.bgColor)]}>
-                        <Icon size={20} color={getIconColor(config.iconColor)} />
+                    <View style={styles.iconContainer}>
+                        <Icon size={20} color={"#268356"} />
                     </View>
 
-                    {/* Контент */}
                     <View style={styles.textContainer}>
                         <View style={styles.headerRow}>
-                            <Text style={[styles.title, !item.isRead ? styles.unreadTitle : styles.readTitle]}>
-                                {item.title}
-                            </Text>
-                            {!item.isRead && (
-                                <View style={styles.unreadDot} />
-                            )}
+                            <Text style={styles.title}>{item.title}</Text>
                         </View>
                         <Text style={styles.message} numberOfLines={2}>
-                            {item.message}
+                            {typeof item.description === 'string' && item.description.startsWith('{')
+                                ? 'Новое уведомление'
+                                : item.description}
                         </Text>
                         <Text style={styles.time}>
-                            {formatTime(item.createdAt)}
+                            {formatTime(item.notify_date)}
                         </Text>
                     </View>
                 </View>
@@ -192,6 +166,23 @@ export function Notifications() {
         </View>
     );
 
+    const renderError = () => (
+        <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={fetchNotifications}>
+                <Text style={styles.retryButtonText}>Повторить</Text>
+            </TouchableOpacity>
+        </View>
+    );
+
+    if (loading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#2A6E3F" />
+            </View>
+        );
+    }
+
     return (
         <View style={styles.container}>
             <LinearGradient
@@ -206,26 +197,13 @@ export function Notifications() {
                     </TouchableOpacity>
                     <View style={styles.headerTitleContainer}>
                         <Text style={styles.headerTitle}>Уведомления</Text>
-                        <Text style={styles.headerSubtitle}>
-                            {unreadCount > 0 ? `${unreadCount} непрочитанных` : 'Все прочитано'}
-                        </Text>
                     </View>
-                    {unreadCount > 0 && (
-                        <TouchableOpacity
-                            onPress={handleMarkAllAsRead}
-                            style={styles.markAllButton}
-                        >
-                            <Text style={styles.markAllText}>Прочитать все</Text>
-                        </TouchableOpacity>
-                    )}
                 </View>
-
             </LinearGradient>
 
             {/* Фильтры */}
-            <LinearGradient colors={['#ebfdeb','#fff']} style={styles.filtersSection}>
+            <LinearGradient colors={['#ebfdeb', '#fff']} style={styles.filtersSection}>
                 <View style={styles.filtersGrid}>
-                    {/* Фильтр по статусу */}
                     <View style={styles.filterGroup}>
                         <Text style={styles.filterLabel}>Фильтр</Text>
                         <Select
@@ -239,39 +217,18 @@ export function Notifications() {
             </LinearGradient>
 
             {/* Список уведомлений */}
-            <FlatList
-                data={filteredNotifications}
-                renderItem={renderNotificationItem}
-                keyExtractor={(item) => item.id.toString()}
-                ListEmptyComponent={renderEmptyList}
-                contentContainerStyle={styles.listContent}
-                showsVerticalScrollIndicator={false}
-            />
+            {error ? renderError() : (
+                <FlatList
+                    data={filteredNotifications}
+                    renderItem={renderNotificationItem}
+                    keyExtractor={(item) => item.id}
+                    ListEmptyComponent={renderEmptyList}
+                    contentContainerStyle={styles.listContent}
+                    showsVerticalScrollIndicator={false}
+                    refreshing={refreshing}
+                    onRefresh={handleRefresh}
+                />
+            )}
         </View>
     );
 }
-
-// Вспомогательные функции для преобразования Tailwind классов в цвета
-const getBackgroundColor = (twClass: string) => {
-    const colors: Record<string, string> = {
-        'bg-blue-50': '#EFF6FF',
-        'bg-green-50': '#F0FDF4',
-        'bg-orange-50': '#FFF7ED',
-        'bg-red-50': '#FEF2F2',
-        'bg-purple-50': '#FAF5FF',
-        'bg-teal-50': '#F0FDFA',
-    };
-    return { backgroundColor: colors[twClass] || '#F3F4F6' };
-};
-
-const getIconColor = (twClass: string) => {
-    const colors: Record<string, string> = {
-        'text-blue-600': '#2563EB',
-        'text-green-600': '#16A34A',
-        'text-orange-600': '#EA580C',
-        'text-red-600': '#DC2626',
-        'text-purple-600': '#9333EA',
-        'text-teal-600': '#0D9488',
-    };
-    return colors[twClass] || '#6B7280';
-};

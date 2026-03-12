@@ -1,5 +1,3 @@
-import {TaskPriority, TaskStatus} from "@/models/TaskBoardModel";
-
 export const priorityConfig: Record<TaskPriority, { label: string; dotColor: string; textColor: string }> = {
     low: {
         label: 'Низкий',

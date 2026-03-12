@@ -7,7 +7,7 @@ import {
     FileText,
     Folder,
 } from 'lucide-react-native';
-import { useState } from 'react';
+import {JSX, useState} from 'react';
 
 export interface FileManagerState {
     currentCatalog: CatalogItem | null;

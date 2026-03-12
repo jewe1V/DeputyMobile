@@ -36,7 +36,6 @@ export const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
-        elevation: 3,
     },
     avatarText: {
         color: '#2A6E3F',
@@ -98,7 +97,6 @@ export const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
         shadowRadius: 12,
-        elevation: 2,
         backgroundColor: '#ffffff',
 
     },
@@ -145,7 +143,6 @@ export const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
         shadowRadius: 8,
-        elevation: 2,
     },
     warningContent: {
         flexDirection: 'row',
@@ -210,7 +207,6 @@ export const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
         shadowRadius: 8,
-        elevation: 2,
     },
     cardContent: {
         flexDirection: 'row',
@@ -293,7 +289,6 @@ export const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
-        elevation: 2,
     },
     eventDay: {
         fontSize: 18,
@@ -341,7 +336,6 @@ export const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
         shadowRadius: 8,
-        elevation: 2,
     },
     emptyIconContainer: {
         width: 64,
@@ -361,5 +355,31 @@ export const styles = StyleSheet.create({
     emptySubtitle: {
         fontSize: 12,
         color: '#6b7280',
+    },
+    emptyContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 40,
+        paddingHorizontal: 20,
+        backgroundColor: '#fdf9f9',
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: '#F0F0F0',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 12,
+    },
+    emptyMainTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#1F2937',
+        marginTop: 16,
+        marginBottom: 8,
+    },
+    emptyMainSubtitle: {
+        fontSize: 14,
+        color: '#6B7280',
+        textAlign: 'center',
+        lineHeight: 20,
     },
 });

@@ -7,9 +7,9 @@ import {
     Animated,
     Modal,
     ScrollView,
-    Dimensions,
+    Dimensions, Platform, Linking,
 } from 'react-native';
-import { Event } from '@/models/Event';
+import { Event } from '@/models/EventModel';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 
 const screenHeight = Dimensions.get('window').height;
@@ -42,7 +42,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, index = 0 }) => {
         }).start();
     }, []);
 
-    const startDate = new Date(event.startAt);
+    const startDate = new Date(event.start_at);
     const day = startDate.getDate().toString().padStart(2, '0');
     const month = startDate.toLocaleString('ru-RU', { month: 'short' });
 
@@ -102,7 +102,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, index = 0 }) => {
             ios: `maps:0,0?q=${event.location}`,
             android: `geo:0,0?q=${event.location}`,
         });
-        Linking.openURL(url);
+        Linking.openURL(url!);
     };
 
     return (
@@ -153,7 +153,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, index = 0 }) => {
                             <View style={styles.section}>
                                 <Text style={styles.metaLabel}>Дата и время</Text>
                                 <Text style={styles.metaValue}>
-                                    {new Date(event.startAt).toLocaleString('ru-RU', {
+                                    {new Date(event.start_at).toLocaleString('ru-RU', {
                                         day: '2-digit',
                                         month: 'long',
                                         year: 'numeric',
@@ -161,7 +161,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, index = 0 }) => {
                                         minute: '2-digit',
                                     })}{' '}
                                     —{' '}
-                                    {new Date(event.endAt).toLocaleString('ru-RU', {
+                                    {new Date(event.end_at).toLocaleString('ru-RU', {
                                         day: '2-digit',
                                         month: 'long',
                                         year: 'numeric',
