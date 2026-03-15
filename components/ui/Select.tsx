@@ -5,7 +5,7 @@ import {ChevronDown} from "lucide-react-native";
 
 
 interface SelectProps {
-    value: string;
+    value?: string;
     onValueChange: (value: string) => void;
     items: Array<{ label: string; value: string }>;
     placeholder?: string;

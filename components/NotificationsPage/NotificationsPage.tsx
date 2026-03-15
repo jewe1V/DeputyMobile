@@ -105,7 +105,6 @@ export function Notifications() {
     };
 
     const handleNotificationClick = (notification: Notification) => {
-        // Теперь сравнение со строками чистое и понятное
         if (notification.notify_type === 'Task') {
             router.push('/TaskBoardScreen');
         } else if (notification.notify_type === 'Event') {

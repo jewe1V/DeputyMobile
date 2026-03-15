@@ -1,11 +1,9 @@
-import React, { useMemo, useState } from 'react';
-import {View, Text, StyleSheet, TouchableOpacity, ActivityIndicator} from 'react-native';
-import {Event} from "@/models/EventModel";
-import { useFonts as useInterFonts, Inter_400Regular, Inter_600SemiBold } from '@expo-google-fonts/inter';
-import {useFonts as usePlayfair} from "@expo-google-fonts/playfair-display/useFonts";
-import {PlayfairDisplay_600SemiBold, PlayfairDisplay_700Bold} from "@expo-google-fonts/playfair-display";
-import {useSafeAreaInsets} from "react-native-safe-area-context";
+import React, { useState, useMemo } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 import { MoveLeft, MoveRight } from 'lucide-react-native';
+import { Event } from "@/models/EventModel";
+
 interface CalendarProps {
     selectedDate: string | undefined;
     onSelectDate: (date: string) => void;
@@ -16,203 +14,188 @@ interface CalendarProps {
 export const Calendar: React.FC<CalendarProps> = ({ selectedDate, onSelectDate, events, onMonthChange }) => {
     const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
     const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
-    const [pfLoaded] = usePlayfair({ PlayfairDisplay_700Bold, PlayfairDisplay_600SemiBold });
-    const [interLoaded] = useInterFonts({ Inter_400Regular, Inter_600SemiBold });
-    const fontsLoaded = pfLoaded && interLoaded;
-    const months = [
-        'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
-        'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь',
-    ];
 
-    const getDaysInMonth = (month: number, year: number) => {
-        return new Date(year, month + 1, 0).getDate();
-    };
-
-    const getFirstDayOfMonth = (month: number, year: number) => {
-        const day = new Date(year, month, 1).getDay();
-        // Преобразуем воскресенье (0) в 7 для правильного отступа
-        return day === 0 ? 7 : day;
-    };
-
-    const daysInMonth = getDaysInMonth(currentMonth, currentYear);
-    const firstDay = getFirstDayOfMonth(currentMonth, currentYear);
-
-    const daysArray = useMemo(() => {
-        const days = [];
-        for (let i = 1; i <= daysInMonth; i++) {
-            days.push(i);
-        }
-        return days;
-    }, [daysInMonth]);
-
-    // Функция для преобразования даты в формат YYYY-MM-DD
-    const formatDate = (dateString: string) => {
-        return dateString.split('T')[0];
-    };
-
-    const eventsByDate = useMemo(() => {
-        const map: Record<string, Event[]> = {};
-        events.forEach((event) => {
-            const dateKey = formatDate(event.start_at);
-            if (!map[dateKey]) map[dateKey] = [];
-            map[dateKey].push(event);
-        });
-        return map;
-    }, [events]);
+    const months = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
 
     const changeMonth = (newMonth: number, newYear: number) => {
         setCurrentMonth(newMonth);
         setCurrentYear(newYear);
-        if (onMonthChange) {
-            onMonthChange(newYear, newMonth);
+        if (onMonthChange) onMonthChange(newYear, newMonth);
+    };
+
+    const eventsByDate = useMemo(() => {
+        const map: Record<string, Event[]> = {};
+        if (!events) return map;
+        events.forEach((event) => {
+            const dateKey = event.start_at.split('T')[0];
+            if (!map[dateKey]) map[dateKey] = [];
+            map[dateKey].push(event);
+        });
+        return map;
+    }, [events, currentMonth, currentYear]);
+
+    const calendarWeeks = useMemo(() => {
+        const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+        let firstDay = new Date(currentYear, currentMonth, 1).getDay();
+        firstDay = firstDay === 0 ? 7 : firstDay;
+
+        const weeks = [];
+        let currentWeek = Array(firstDay - 1).fill(null);
+
+        for (let day = 1; day <= daysInMonth; day++) {
+            currentWeek.push(day);
+            if (currentWeek.length === 7) {
+                weeks.push(currentWeek);
+                currentWeek = [];
+            }
         }
-    };
-
-    const prevMonth = () => {
-        if (currentMonth === 0) {
-            changeMonth(11, currentYear - 1);
-        } else {
-            changeMonth(currentMonth - 1, currentYear);
+        if (currentWeek.length > 0) {
+            while (currentWeek.length < 7) currentWeek.push(null);
+            weeks.push(currentWeek);
         }
-    };
-
-    const nextMonth = () => {
-        if (currentMonth === 11) {
-            changeMonth(0, currentYear + 1);
-        } else {
-            changeMonth(currentMonth + 1, currentYear);
-        }
-    };
-
-    const LoadingScreen: React.FC<LoadingScreenProps> = () => {
-        const insets = useSafeAreaInsets();
-
-        return (
-            <View style={[styles.loading, { paddingTop: insets.top }]}>
-                <ActivityIndicator size="large" color="#0a58ff" />
-            </View>
-        );
-    };
-
-    if (!fontsLoaded) {
-        return <LoadingScreen />;
-    }
+        return weeks;
+    }, [currentMonth, currentYear]);
 
     return (
-        <View style={styles.calendarContainer}>
-            <View style={styles.calendarHeader}>
-                <TouchableOpacity onPress={prevMonth}>
-                    <MoveLeft size={18} color={"#0f6319"}/>
-                </TouchableOpacity>
-                <Text style={styles.calendarTitle}>{`${months[currentMonth]} ${currentYear}`}</Text>
-                <TouchableOpacity onPress={nextMonth}>
-                    <MoveRight size={18} color={"#0f6319"}/>
-                </TouchableOpacity>
-            </View>
-            <View style={styles.calendarGrid}>
-                {['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map((day) => (
-                    <Text key={day} style={styles.calendarDay}>
-                        {day}
-                    </Text>
-                ))}
-                {Array(firstDay - 1)
-                    .fill(null)
-                    .map((_, idx) => (
-                        <View key={`empty-${idx}`} style={styles.calendarEmpty} />
-                    ))}
-                {daysArray.map((day) => {
-                    const dateStr = `${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}-${day
-                        .toString()
-                        .padStart(2, '0')}`;
-                    const hasEvents = !!eventsByDate[dateStr];
+        <Animated.View layout={LinearTransition} style={styles.calendar}>
+            <View style={styles.container}>
+                {/* Header */}
+                <View style={styles.calendarHeader}>
+                    <TouchableOpacity
+                        onPress={() => changeMonth(currentMonth === 0 ? 11 : currentMonth - 1, currentMonth === 0 ? currentYear - 1 : currentYear)}
+                        style={styles.navButton}
+                    >
+                        <MoveLeft size={22} color={"#0f6319"} />
+                    </TouchableOpacity>
 
-                    return (
-                        <TouchableOpacity
-                            key={day}
-                            style={[
-                                styles.calendarDate,
-                                selectedDate === dateStr && styles.calendarDateSelected,
-                                hasEvents && styles.calendarDateWithEvents,
-                            ]}
-                            onPress={() => onSelectDate(dateStr)}
-                        >
-                            <Text
-                                style={[
-                                    styles.calendarDateText,
-                                    selectedDate === dateStr && styles.calendarDateTextSelected,
-                                ]}
-                            >
-                                {day}
-                            </Text>
-                            {hasEvents && <View style={styles.eventDot} />}
-                        </TouchableOpacity>
-                    );
-                })}
+                    <Text style={styles.calendarTitle}>{`${months[currentMonth]} ${currentYear}`}</Text>
+
+                    <TouchableOpacity
+                        onPress={() => changeMonth(currentMonth === 11 ? 0 : currentMonth + 1, currentMonth === 11 ? currentYear + 1 : currentYear)}
+                        style={styles.navButton}
+                    >
+                        <MoveRight size={22} color={"#0f6319"} />
+                    </TouchableOpacity>
+                </View>
+
+                {/* Сетка календаря (Всегда видна) */}
+                <Animated.View
+                    key={`grid-${currentMonth}-${currentYear}`}
+                    entering={FadeIn.duration(300)}
+                    style={styles.gridContainer}
+                >
+                    <View style={styles.weekRow}>
+                        {['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map((day) => (
+                            <View key={day} style={styles.dayWrapper}>
+                                <Text style={styles.calendarDayText}>{day}</Text>
+                            </View>
+                        ))}
+                    </View>
+
+                    {calendarWeeks.map((week, weekIdx) => (
+                        <View key={`week-${weekIdx}`} style={styles.weekRow}>
+                            {week.map((day, dayIdx) => {
+                                if (!day) return <View key={`empty-${dayIdx}`} style={styles.dayWrapper} />;
+
+                                const dateStr = `${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                                const isSelected = selectedDate === dateStr;
+                                const dayEvents = eventsByDate[dateStr] || [];
+                                const hasEvents = dayEvents.length > 0;
+                                const isDayPast = new Date(dateStr + 'T23:59:59') < new Date();
+
+                                return (
+                                    <View key={day} style={styles.dayWrapper}>
+                                        <TouchableOpacity
+                                            style={styles.daySquare}
+                                            onPress={() => onSelectDate(dateStr)}
+                                            activeOpacity={0.7}
+                                        >
+                                            <Text style={styles.calendarDateText}>
+                                                {day}
+                                            </Text>
+                                            {hasEvents && (
+                                                <View style={[
+                                                    styles.eventDot,
+                                                    isDayPast && styles.eventDotPast
+                                                ]} />
+                                            )}
+                                        </TouchableOpacity>
+                                    </View>
+                                );
+                            })}
+                        </View>
+                    ))}
+                </Animated.View>
             </View>
-        </View>
+        </Animated.View>
     );
 };
 
 const styles = StyleSheet.create({
-    calendarContainer: {
+    calendar: {
         backgroundColor: '#fff',
-        borderRadius: 20,
+        borderRadius: 24,
+        width: '90%',
+        alignSelf: 'center',
+    },
+    container: {
         padding: 16,
-        paddingBottom: 0,
-        marginBottom: 16,
     },
     calendarHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 26,
-        paddingHorizontal: 6
+
+    },
+    navButton: {
+        padding: 8,
     },
     calendarTitle: {
-        fontSize: 20,
-        fontFamily: 'PlayfairDisplay_600SemiBold',
+        fontSize: 18,
+        fontWeight: '600',
         color: '#0b2340',
+        textTransform: 'capitalize',
     },
-    calendarGrid: {
+    gridContainer: {
+        width: '100%',
+    },
+    weekRow: {
         flexDirection: 'row',
-        flexWrap: 'wrap',
+        width: '100%',
     },
-    calendarDay: {
-        width: `${100 / 7}%`,
-        textAlign: 'center',
-        fontSize: 12,
-        color: '#6b7280',
-        fontFamily: 'Inter_400Regular',
-        marginBottom: 8,
-    },
-    calendarDate: {
-        width: `${100 / 7}%`,
+    dayWrapper: {
+        width: '14.28%',
+        aspectRatio: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 32,
     },
-    calendarDateLastRow: {
-        marginBottom: 0,
+    calendarDayText: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#9ca3af',
     },
-    calendarDateSelected: {
-        backgroundColor: '#0f6219',
-        borderRadius: 8,
-    },
-    calendarDateWithEvents: {
-        borderBottomWidth: 2,
-        borderBottomColor: '#0f6319',
+    daySquare: {
+        width: '80%',
+        height: '80%',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 12,
+
     },
     calendarDateText: {
-        fontSize: 14,
-        fontFamily: 'Inter_400Regular',
-        color: '#0b2340',
+        fontSize: 15,
+        fontWeight: '500',
+        color: '#1f2937',
     },
-    calendarDateTextSelected: {
-        color: '#fff',
-        fontFamily: 'Inter_600SemiBold',
+    eventDot: {
+        width: 7,
+        height: 7,
+        borderRadius: "50%",
+        backgroundColor: '#13b626',
+        position: 'absolute',
+        bottom: 0,
     },
-    calendarEmpty: {
-        width: `${100 / 7}%`,
-        aspectRatio: 1,
+    eventDotPast: {
+        backgroundColor: '#9ca3af', // Серый цвет (slate-400) для прошедших
     },
 });

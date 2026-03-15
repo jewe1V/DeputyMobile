@@ -6,6 +6,8 @@ import {requestUserPermission, registerDeviceToken, getFCMToken} from "@/api/fcm
 import { getMessaging, onMessage, onTokenRefresh } from '@react-native-firebase/messaging';
 import {Alert} from "react-native";
 import {YamapInstance} from "react-native-yamap-plus";
+import {toastConfig} from "@/components/Toast/toastConfig";
+import Toast from "react-native-toast-message";
 
 function useProtectedRoute(isAuthenticated: boolean | null) {
     const router = useRouter();
@@ -28,9 +30,8 @@ const App: React.FC = () => {
     const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
     useEffect(() => {
-        // Инициализация Яндекс Карт
-        YamapInstance.init("123");
         YamapInstance.setLocale('ru_RU');
+        YamapInstance.init("123");
 
         // Проверка авторизации
         const token = AuthTokenManager.getToken();
@@ -59,12 +60,35 @@ const App: React.FC = () => {
                 await registerDeviceToken(authToken, fcmToken);
             }
 
-            unsubscribeOnMessage = onMessage(messagingInstance, async remoteMessage => {
-                Alert.alert(
-                    remoteMessage.notification?.title || 'Новое уведомление',
-                    remoteMessage.notification?.body || 'Сообщение получено'
-                );
-                console.log('Foreground message:', remoteMessage);
+            unsubscribeOnMessage = onMessage(messagingInstance, async (remoteMessage) => {
+                try {
+                    console.log('Foreground message received:', remoteMessage);
+
+                    const payload = JSON.parse(remoteMessage.data.payload);
+                    const eventData = payload.data;
+
+                    const headerTitle = payload.type === 'event'
+                        ? 'Напоминание о событии'
+                        : 'Напоминание о дедлайне';
+
+                    const tempDate = eventData.StartAt || 'Время не указано';
+                    console.log('Toast config:', toastConfig);
+                    Toast.show({
+                        type: 'customNotification',
+                        text1: headerTitle,
+                        position: 'top',
+                        props: {
+                            title: eventData.Title || 'Без названия',
+                            time: tempDate
+                        },
+                    });
+
+                } catch (e) {
+                    console.error("Ошибка парсинга или вывода Toast:", e);
+
+                    // Резервный вариант, если всё совсем сломалось
+                    Alert.alert('Новое уведомление', 'Не удалось распарсить данные');
+                }
             });
 
             unsubscribeOnTokenRefresh = onTokenRefresh(messagingInstance, async (newToken) => {

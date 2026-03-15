@@ -198,7 +198,15 @@ export const styles = StyleSheet.create({
         marginRight: 4,
     },
     cardsContainer: {
-        gap: 12,
+        marginTop: 4,
+        gap: 4,
+    },
+    eventDate: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: '#8f8f8f',
+        marginBottom: 4,
+        paddingHorizontal: 2,
     },
     card: {
         backgroundColor: 'white',

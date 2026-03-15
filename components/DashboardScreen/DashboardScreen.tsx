@@ -5,7 +5,6 @@ import {
     ScrollView,
     TouchableOpacity,
     ActivityIndicator,
-    Alert
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
@@ -18,12 +17,15 @@ import {
     RefreshCw
 } from 'lucide-react-native';
 import { styles } from './style';
-import Animated, { FadeInDown, FadeInRight, ZoomIn } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeInRight} from 'react-native-reanimated';
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {AuthTokenManager} from "@/components/LoginScreen/LoginScreen";
 import { apiUrl } from '@/api/api';
 import {Event} from "@/models/EventModel"
+import {EventCard} from "@/components/EventsScreen/EventCard";
+import {Task} from "@/models/TaskBoardModel";
+import {formatDate, formatDateToDay, getDaysUntilDue} from "@/utils";
 
 interface DashboardData {
     user_name: string;
@@ -121,12 +123,7 @@ export function Dashboard() {
         }
     };
 
-    const getDaysUntilDue = (dueDate: string) => {
-        const today = new Date();
-        const due = new Date(dueDate);
-        const diffTime = due.getTime() - today.getTime();
-        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    };
+
 
     // Отображение загрузки
     if (isLoading) {
@@ -220,7 +217,7 @@ export function Dashboard() {
     ].slice(0, 3); // берем первые 3
 
     // Берем первые 3 задачи
-    const displayTasks = data.tasks?.slice(0, 3) || [];
+    const displayTasks : Task[] = data.tasks?.slice(0, 3) || [];
 
     return (
         <ScrollView showsVerticalScrollIndicator={false}>
@@ -349,42 +346,26 @@ export function Dashboard() {
                         </View>
 
                         <View style={styles.cardsContainer}>
-                            {allUpcomingEvents.map((event: Event, index: number) => (
-                                <Animated.View
-                                    key={event.id || index}
-                                    entering={FadeInRight.delay((displayTasks.length > 0 ? 1100 : 800) + index * 100).duration(500).springify()}
-                                >
-                                    <TouchableOpacity style={styles.card} onPress={() => router.push({pathname: '/EventDetailsScreen'})}>
-                                        <View style={styles.cardContent}>
-                                            <View style={styles.eventDateContainer}>
-                                                <Text style={styles.eventDay}>
-                                                    {new Date(event.start_at).toLocaleDateString('ru-RU', { day: 'numeric' })}
-                                                </Text>
-                                                <Text style={styles.eventMonth}>
-                                                    {new Date(event.start_at).toLocaleDateString('ru-RU', { month: 'short' }).toUpperCase()}
-                                                </Text>
-                                            </View>
-                                            <View style={styles.cardTextContainer}>
-                                                <Text style={styles.cardTitle} numberOfLines={2}>
-                                                    {event.title}
-                                                </Text>
-                                                <View style={styles.eventTime}>
-                                                    <Clock size={14} color="#6b7280" />
-                                                    <Text style={styles.eventTimeText}>
-                                                        {formatDate(event.start_at)} · {event.location}
-                                                    </Text>
-                                                </View>
-                                                {event.isPublic && (
-                                                    <View style={styles.publicBadge}>
-                                                        <Text style={styles.publicBadgeText}>Публичное мероприятие</Text>
-                                                    </View>
-                                                )}
-                                            </View>
-                                            <ChevronRight size={20} color="#9ca3af" />
-                                        </View>
-                                    </TouchableOpacity>
-                                </Animated.View>
-                            ))}
+                            {allUpcomingEvents.map((event: Event, index: number) => {
+                            const showDate = index === 0 ||
+                            formatDate(event.start_at) !== formatDate(allUpcomingEvents[index - 1].start_at);
+
+                            return (
+                            <View key={event.id}>
+                            {showDate && (
+                                <Text style={styles.eventDate}>{formatDateToDay(event.start_at)}</Text>
+                            )}
+                            <EventCard
+                                event={event}
+                                index={index}
+                                onPress={() => router.push({
+                                    pathname: '/(screens)/EventDetailsScreen',
+                                    params: { id: event.id }
+                                })}
+                            />
+                        </View>
+                        );
+                        })}
                         </View>
                     </Animated.View>
                 )}

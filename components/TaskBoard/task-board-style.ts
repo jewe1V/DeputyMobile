@@ -7,9 +7,9 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
         borderBottomLeftRadius: 24,
         borderBottomRightRadius: 24,
-        paddingBottom: 32,
         paddingHorizontal: 20,
         paddingTop: Platform.OS === 'ios' ? 60 : 40,
+        paddingBottom: 40,
     },
     headerContent: {
         marginLeft: 10

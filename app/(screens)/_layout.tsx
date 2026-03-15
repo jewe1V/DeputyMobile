@@ -2,9 +2,11 @@ import { AuthTokenManager } from "@/components/LoginScreen/LoginScreen";
 import { BlurView } from "expo-blur";
 import { Tabs, router } from "expo-router";
 import { Calendar, Folder, House, ListTodo } from "lucide-react-native";
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {toastConfig} from "@/components/Toast/toastConfig";
+import Toast from "react-native-toast-message";
 
 export default () => {
     const insets = useSafeAreaInsets();
@@ -19,6 +21,7 @@ export default () => {
         };
         checkToken();
     }, []);
+
     return (
         <>
             <Tabs

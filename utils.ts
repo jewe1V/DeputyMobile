@@ -1,5 +1,3 @@
-import { Post } from "@/models/Event";
-
 export const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('ru-RU', {
@@ -9,9 +7,13 @@ export const formatDate = (dateString: string) => {
     });
 };
 
-export const getDisplayDate = (post: Post) => {
-    const dateString = post.publishedAt || post.createdAt;
-    return formatDate(dateString);
+export const formatDateToDay = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ru-RU', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+    });
 };
 
 export const formatDateShort = (dateString: string) => {
@@ -23,8 +25,9 @@ export const formatDateShort = (dateString: string) => {
         });
     };
 
-
-export const getFileSize = (fileName: string): string => {
-    const sizes = ['245 КБ', '1.2 МБ', '524 КБ', '3.5 МБ', '892 КБ'];
-    return sizes[Math.floor(Math.random() * sizes.length)];
+export const getDaysUntilDue = (dueDate: string) => {
+    const today = new Date();
+    const due = new Date(dueDate);
+    const diffTime = due.getTime() - today.getTime();
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 };
