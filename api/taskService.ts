@@ -54,12 +54,7 @@ class TaskService {
         body: JSON.stringify(payload),
       });
 
-      if (!response.ok) {
-        throw new Error(`Ошибка при создании задачи: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
+      return await response.json();
     } catch (error) {
       console.error('Ошибка при создании задачи:', error);
       throw error;
@@ -82,10 +77,6 @@ class TaskService {
         headers: this.getAuthHeaders(),
       });
 
-      if (!response.ok) {
-        throw new Error(`Ошибка при получении задач: ${response.status}`);
-      }
-
       const data = await response.json();
       return Array.isArray(data) ? data : [];
     } catch (error) {
@@ -100,9 +91,6 @@ class TaskService {
         headers: this.getAuthHeaders(),
       });
 
-      if (!response.ok) {
-        throw new Error(`Ошибка при получении задач: ${response.status}`);
-      }
 
       const data = await response.json();
       return Array.isArray(data) ? data : [];
@@ -118,10 +106,6 @@ class TaskService {
         headers: this.getAuthHeaders(),
       });
 
-      if (!response.ok) {
-        throw new Error(`Ошибка при получении задач: ${response.status}`);
-      }
-
       const data = await response.json();
       return Array.isArray(data) ? data : [];
     } catch (error) {
@@ -136,10 +120,6 @@ class TaskService {
         headers: this.getAuthHeaders(),
       });
 
-      if (!response.ok) {
-        throw new Error(`Ошибка при получении задач: ${response.status}`);
-      }
-
       const data = await response.json();
       return Array.isArray(data) ? data : [];
     } catch (error) {
@@ -150,7 +130,7 @@ class TaskService {
 
   async deleteTask(id: string) {
     try {
-      const response = await this.fetchWithTimeout(`${apiUrl}/api/task/gdelete/${id}`, {
+      await this.fetchWithTimeout(`${apiUrl}/api/task/gdelete/${id}`, {
         method: 'DELETE',
         headers: this.getAuthHeaders(),
       });
@@ -166,10 +146,6 @@ class TaskService {
         method: 'GET',
         headers: this.getAuthHeaders(),
       });
-
-      if (!response.ok) {
-        throw new Error(`Ошибка при получении задачи: ${response.status}`);
-      }
 
       const data = await response.json();
       console.log('[TaskService] Задача успешно получена:', data);

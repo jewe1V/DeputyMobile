@@ -45,7 +45,7 @@ export function DocumentDetailModal({ visible, document, onClose, onDelete }: Do
     const handleDeletePress = () => {
         Alert.alert(
             'Удалить файл?',
-            `Вы уверены, что хотите удалить файл "${document?.fileName}"? Это действие нельзя отменить.`,
+            `Вы уверены, что хотите удалить файл "${document?.file_name}"? Это действие нельзя отменить.`,
             [
                 {
                     text: 'Отмена',
@@ -138,25 +138,25 @@ export function DocumentDetailModal({ visible, document, onClose, onDelete }: Do
                         {/* File Name */}
                         <View style={styles.documentDetailField}>
                             <Text style={styles.documentDetailLabel}>Название файла</Text>
-                            <Text style={styles.documentDetailValue}>{document.fileName}</Text>
+                            <Text style={styles.documentDetailValue}>{document.file_name}</Text>
                         </View>
 
                         {/* File Size */}
                         <View style={styles.documentDetailField}>
                             <Text style={styles.documentDetailLabel}>Размер</Text>
-                            <Text style={styles.documentDetailValue}>{formatFileSize(document.fileSize)}</Text>
+                            <Text style={styles.documentDetailValue}>{formatFileSize(document.file_size)}</Text>
                         </View>
 
                         {/* Content Type */}
                         <View style={styles.documentDetailField}>
                             <Text style={styles.documentDetailLabel}>Тип файла</Text>
-                            <Text style={styles.documentDetailValue}>{document.fileNameEncoded.split('.')[1]}</Text>
+                            <Text style={styles.documentDetailValue}>{document.file_name_encoded.split('.')[1]}</Text>
                         </View>
 
                         {/* Uploaded At */}
                         <View style={styles.documentDetailField}>
                             <Text style={styles.documentDetailLabel}>Дата загрузки</Text>
-                            <Text style={styles.documentDetailValue}>{formatDate(document.uploadedAt)}</Text>
+                            <Text style={styles.documentDetailValue}>{formatDate(document.uploaded_at)}</Text>
                         </View>
 
                         {/* URL */}

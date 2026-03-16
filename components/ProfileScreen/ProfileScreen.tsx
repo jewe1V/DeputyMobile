@@ -102,7 +102,7 @@ export function ProfileScreen() {
             {
                 text: 'Выйти',
                 style: 'destructive',
-                onPress: async () => await AuthManager.clearToken()
+                onPress: async () => await AuthManager.clearAuth()
             },
         ]);
     };

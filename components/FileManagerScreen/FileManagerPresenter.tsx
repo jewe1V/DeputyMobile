@@ -117,7 +117,7 @@ export const useFileManagerPresenter = () => {
                 const rootCatalog: CatalogItem = {
                     id: `root-${type}`,
                     name: label,
-                    parentId: null,
+                    parent_catalog_id: null,
                     type: 'catalog',
                     children: catalogs,
                 };
@@ -129,7 +129,7 @@ export const useFileManagerPresenter = () => {
                 setCurrentCatalogLabel(label);
                 setBreadcrumbPath([{ id: rootCatalog.id, name: label }]);
             } else {
-                const emptyRoot: CatalogItem = { id: 'empty', name: label, parentId: null, type: 'catalog' };
+                const emptyRoot: CatalogItem = { id: 'empty', name: label, parent_catalog_id: null, type: 'catalog' };
                 setCurrentRootCatalog(emptyRoot);
                 setCatalogHierarchy(new Map());
 
@@ -209,7 +209,7 @@ export const useFileManagerPresenter = () => {
             setCurrentCatalog({
                 id: selectedPath.id,
                 name: selectedPath.name,
-                parentId: null,
+                parent_catalog_id: null,
                 type: 'catalog',
             });
         } catch (err: any) {
@@ -264,9 +264,16 @@ export const useFileManagerPresenter = () => {
 
         setCreatingCatalog(true);
         setCreateError(null);
+        let parentId: string | undefined = undefined;
 
         try {
-            const parentId = currentCatalog?.id && currentCatalog.id !== 'empty' ? currentCatalog.id : undefined;
+            if (
+                currentCatalog?.id &&
+                currentCatalog.id !== 'empty' &&
+                !currentCatalog.id.startsWith('root-')
+            ) {
+                parentId = currentCatalog.id;
+            }
             const currentBreadcrumbPath = [...breadcrumbPath];
             const currentCatalogId = currentCatalog?.id;
 
@@ -296,7 +303,7 @@ export const useFileManagerPresenter = () => {
                     const rootCatalog: CatalogItem = {
                         id: `root-${catalogType}`,
                         name: currentCatalogLabel,
-                        parentId: null,
+                        parent_catalog_id: null,
                         type: 'catalog',
                         children: updatedCatalogs,
                     };
@@ -368,7 +375,7 @@ export const useFileManagerPresenter = () => {
                     const rootCatalog: CatalogItem = {
                         id: `root-${catalogType}`,
                         name: breadcrumbPath[0].name,
-                        parentId: null,
+                        parent_catalog_id: null,
                         type: 'catalog',
                         children: updatedCatalogs,
                     };
@@ -535,7 +542,7 @@ export const useFileManagerPresenter = () => {
     );
 
     const filteredDocuments = documents.filter((doc: Document) =>
-        doc.fileName.toLowerCase().includes(searchQuery.toLowerCase())
+        doc.file_name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     const state: FileManagerState = {

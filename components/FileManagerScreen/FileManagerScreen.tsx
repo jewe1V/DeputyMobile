@@ -11,11 +11,8 @@ import {
     Upload
 } from 'lucide-react-native';
 import {
-    ActivityIndicator,
-    Modal,
     ScrollView,
     Text,
-    TextInput,
     TouchableOpacity,
     View,
     RefreshControl
@@ -39,7 +36,7 @@ export function FileManager() {
                 colors={['#2A6E3F', '#349339']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
-                style={[styles.header, {paddingTop: insets.top + 5}]}>
+                style={[styles.header, {paddingTop: insets.top + 15}]}>
 
                 <View style={styles.headerContent}>
                     <Text style={styles.headerTitle}>Документы</Text>
@@ -136,15 +133,15 @@ export function FileManager() {
                     <View style={styles.section}>
                         <View style={styles.catalogList}>
                             <CatalogCard
-                                catalog={{ id: 'root-public', name: 'Общий', parentId: null, type: 'catalog' }}
+                                catalog={{ id: 'root-public', name: 'Общий', parent_catalog_id: null, type: 'catalog' }}
                                 onPress={() => handlers.handleOpenCatalog('public', 'Общий')}
                             />
                             <CatalogCard
-                                catalog={{ id: 'root-mine', name: 'Личный', parentId: null, type: 'catalog' }}
+                                catalog={{ id: 'root-mine', name: 'Личный', parent_catalog_id: null, type: 'catalog' }}
                                 onPress={() => handlers.handleOpenCatalog('mine', 'Личный')}
                             />
                             <CatalogCard
-                                catalog={{ id: 'root-deputy', name: 'Каталог депутата', parentId: null, type: 'catalog' }}
+                                catalog={{ id: 'root-deputy', name: 'Каталог депутата', parent_catalog_id: null, type: 'catalog' }}
                                 onPress={() => handlers.handleOpenCatalog('deputy', 'Каталог депутата')}
                             />
                         </View>

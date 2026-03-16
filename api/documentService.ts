@@ -3,38 +3,38 @@ import { apiUrl } from './api';
 
 export interface DocumentApiResponse {
     id: string;
-    fileName: string;
-    fileNameEncoded: string;
+    file_name: string;
+    file_name_encoded: string;
     status: number;
-    startDate: string;
-    endDate: string;
+    start_date: string;
+    end_date: string;
     url: string;
-    contentType: string;
+    content_type: string;
     size: number;
-    uploadedById: string;
-    catalogId: string;
-    postId: string;
+    uploaded_by_id: string;
+    catalog_id: string;
+    post_id: string;
     post?: {
         id: string;
         title: string;
         summary: string;
         body: string;
-        createdById: string;
-        createdAt: string;
-        publishedAt: string;
-        thumbnailUrl: string;
+        created_by_id: string;
+        created_at: string;
+        published_at: string;
+        thumbnail_url: string;
         attachments: string[];
     };
-    uploadedAt: string;
+    uploaded_at: string;
 }
 
 export interface Document {
     id: string;
-    fileName: string;
-    fileNameEncoded: string;
-    fileSize: number;
-    uploadedAt: string;
-    contentType: string;
+    file_name: string;
+    file_name_encoded: string;
+    file_size: number;
+    uploaded_at: string;
+    content_type: string;
     url: string;
 }
 
@@ -71,11 +71,11 @@ class DocumentService {
     private adaptDocument(data: DocumentApiResponse): Document {
         return {
             id: data.id,
-            fileName: data.fileName,
-            fileNameEncoded: data.fileNameEncoded,
-            fileSize: data.size,
-            uploadedAt: data.uploadedAt,
-            contentType: data.contentType,
+            file_name: data.file_name,
+            file_name_encoded: data.file_name_encoded,
+            file_size: data.size,
+            uploaded_at: data.uploaded_at,
+            content_type: data.content_type,
             url: data.url,
         };
     }

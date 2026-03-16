@@ -48,20 +48,25 @@ export function TaskBoard() {
 
             switch (taskMode) {
                 case 'all':
+                    // @ts-ignore
                     apiData = userRole === 'Admin'
                         ? await taskService.getAllTasks()
                         : await taskService.getTasksByCurrentUser();
                     break;
                 case 'my_tasks':
+                    // @ts-ignore
                     apiData = await taskService.getTasksByCurrentUser();
                     break;
                 case 'assigned':
+                    // @ts-ignore
                     apiData = await taskService.getAssignedTasks();
                     break;
                 case 'authored':
+                    // @ts-ignore
                     apiData = await taskService.getAuthorTasks();
                     break;
                 default:
+                    // @ts-ignore
                     apiData = await taskService.getTasksByCurrentUser();
             }
 

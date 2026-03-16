@@ -1,7 +1,9 @@
-import { CatalogItem, Document } from '@/api/catalogService';
+import { CatalogItem} from '@/api/catalogService';
+import {Document} from "@/api/documentService"
 import { Download, Info } from 'lucide-react-native';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { styles } from './file-manager-screen';
+import { JSX } from 'react';
 
 interface DocumentCardProps {
     document: Document;
@@ -15,15 +17,15 @@ export function DocumentCard({ document, getFileIcon, getFileSize, onInfoPress }
         <View style={styles.documentItem}>
             <View style={styles.documentContent}>
                 <View style={styles.documentIconContainer}>
-                    {getFileIcon({ id: document.id, name: document.fileName, parentId: null, type: 'document' } as CatalogItem)}
+                    {getFileIcon({ id: document.id, name: document.file_name, parent_catalog_id: null, type: 'document' } as CatalogItem)}
                 </View>
                 <View style={styles.documentInfo}>
                     <Text style={styles.documentName} numberOfLines={1}>
-                        {document.fileName}
+                        {document.file_name}
                     </Text>
                     <View style={styles.documentMeta}>
                         <Text style={styles.documentMetaText}>
-                            Размер: {getFileSize(document.fileSize)}
+                            Размер: {getFileSize(document.file_size)}
                         </Text>
                     </View>
                 </View>
@@ -31,7 +33,7 @@ export function DocumentCard({ document, getFileIcon, getFileSize, onInfoPress }
                     <TouchableOpacity style={styles.documentActionButton}>
                         <Download size={17} color="#777d87" />
                     </TouchableOpacity>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         style={styles.documentActionButton}
                         onPress={() => onInfoPress(document)}
                     >

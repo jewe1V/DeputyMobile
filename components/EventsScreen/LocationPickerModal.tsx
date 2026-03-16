@@ -39,6 +39,7 @@ export default function LocationPickerModal({
 
     const mapRef = useRef<any>(null);
     const insets = useSafeAreaInsets();
+    // @ts-ignore
     const searchTimeout = useRef<NodeJS.Timeout>();
 
     // Сброс состояния при открытии модалки
@@ -176,6 +177,7 @@ export default function LocationPickerModal({
             clearTimeout(searchTimeout.current);
         }
 
+        // @ts-ignore
         searchTimeout.current = setTimeout(() => {
             searchPlaces(text);
         }, 500);

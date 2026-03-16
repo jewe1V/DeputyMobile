@@ -318,12 +318,14 @@ export const styles = StyleSheet.create({
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
         justifyContent: 'flex-end',
     },
+    keyboardView: {
+        justifyContent: 'flex-end',
+    },
     modalContent: {
         backgroundColor: '#ffffff',
         borderTopLeftRadius: 16,
         borderTopRightRadius: 16,
         padding: 24,
-        paddingBottom: 32,
     },
     modalTitle: {
         fontSize: 18,

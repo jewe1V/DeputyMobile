@@ -1,8 +1,7 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import {
     View, Text, StyleSheet, ScrollView, TouchableOpacity,
-    ActivityIndicator, RefreshControl, Linking,
-    Platform, Alert
+    ActivityIndicator, RefreshControl, Alert
 } from 'react-native';
 import { useLocalSearchParams, router } from "expo-router";
 import { AuthManager } from "@/components/LoginScreen/LoginScreen";

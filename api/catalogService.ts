@@ -4,7 +4,7 @@ import { apiUrl } from './api';
 export interface CatalogApiResponse {
     id: string;
     name: string;
-    parentCatalogId: string | null;
+    parent_catalog_id: string | null;
 }
 
 export type CatalogItemType = 'catalog' | 'document';
@@ -12,7 +12,7 @@ export type CatalogItemType = 'catalog' | 'document';
 export interface CatalogItem {
     id: string;
     name: string;
-    parentId: string | null;
+    parent_catalog_id: string | null;
     type: CatalogItemType;
     children?: CatalogItem[];
 }
@@ -28,7 +28,7 @@ class CatalogService {
 
     private buildTree(items: CatalogItem[], parentId: string | null = null): CatalogItem[] {
         return items
-            .filter(item => item.parentId === parentId)
+            .filter(item => item.parent_catalog_id === parentId)
             .map(item => ({
                 ...item,
                 children: this.buildTree(items, item.id)
@@ -60,7 +60,7 @@ class CatalogService {
         return {
             id: data.id,
             name: data.name,
-            parentId: data.parentCatalogId || null,
+            parent_catalog_id: data.parent_catalog_id || null,
             type: 'catalog',
         };
     }
@@ -137,30 +137,11 @@ class CatalogService {
         }
     }
 
-    async getAllCatalogs(): Promise<{ public: CatalogItem[]; mine: CatalogItem[]; deputy: CatalogItem[] }> {
-        try {
-            const [publicCatalogs, mineCatalogs, deputyCatalogs] = await Promise.all([
-                this.getPublicCatalogs(),
-                this.getMysCatalogs(),
-                this.getDeputyCatalogs(),
-            ]);
-
-            return {
-                public: publicCatalogs,
-                mine: mineCatalogs,
-                deputy: deputyCatalogs,
-            };
-        } catch (error) {
-            console.error('[CatalogService] Ошибка при загрузке всех каталогов:', error);
-            throw error;
-        }
-    }
-
     async createPublicCatalog(name: string, parentCatalogId?: string): Promise<CatalogItem> {
         try {
             const body: any = { name };
             if (parentCatalogId) {
-                body.parentCatalogId = parentCatalogId;
+                body.parent_catalog_id = parentCatalogId;
             }
 
             const response = await this.fetchWithTimeout(`${apiUrl}/api/Catalogs/create-public`, {

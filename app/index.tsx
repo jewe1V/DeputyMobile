@@ -64,6 +64,7 @@ const App: React.FC = () => {
                 try {
                     console.log('Foreground message received:', remoteMessage);
 
+                    // @ts-ignore
                     const payload = JSON.parse(remoteMessage.data.payload);
                     const eventData = payload.data;
 

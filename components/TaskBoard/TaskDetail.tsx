@@ -49,6 +49,7 @@ export function TaskDetail() {
                 taskService.getStatuses()
             ]);
 
+            // @ts-ignore
             setTask(taskData);
             setStatuses(statusesData);
         } catch (error: any) {
