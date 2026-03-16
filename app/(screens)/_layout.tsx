@@ -1,26 +1,12 @@
-import { AuthManager } from "@/components/LoginScreen/LoginScreen";
 import { BlurView } from "expo-blur";
 import { Tabs, router } from "expo-router";
 import { Calendar, Folder, House, ListTodo } from "lucide-react-native";
-import React, { useEffect } from "react";
+import React from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import {toastConfig} from "@/components/Toast/toastConfig";
-import Toast from "react-native-toast-message";
 
 export default () => {
     const insets = useSafeAreaInsets();
-
-    useEffect(() => {
-        const checkToken = async () => {
-            await AuthManager.initialize();
-            let isTokenValid = AuthManager.isTokenValid();
-            if (!isTokenValid) {
-                router.replace("/");
-            }
-        };
-        checkToken();
-    }, []);
 
     return (
         <>

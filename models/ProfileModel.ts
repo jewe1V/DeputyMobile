@@ -12,6 +12,7 @@ export interface Profile {
     job_title: string;
     full_name: string;
     roles: Role[];
+    user_roles: Role[];
     documents: Document[];
     events: Event[];
     events_organized: Event[];
