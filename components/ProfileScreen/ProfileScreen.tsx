@@ -24,6 +24,7 @@ import {AuthTokenManager} from '@/components/LoginScreen/LoginScreen';
 import { styles } from './style';
 import {Profile} from '@/models/ProfileModel';
 import { LinearGradient } from 'expo-linear-gradient';
+import {useLocalSearchParams} from "expo-router";
 
 
 interface AvatarProps {
@@ -44,6 +45,7 @@ const getInitials = (name: string) => {
 };
 
 export function ProfileScreen() {
+    const { id } = useLocalSearchParams<{ id?: string }>();
     const navigation = useNavigation();
     const insets = useSafeAreaInsets();
     const [profile, setProfile] = useState<Profile | null>(null);
@@ -54,12 +56,9 @@ export function ProfileScreen() {
     const loadProfile = useCallback(async () => {
         try {
             const token = AuthTokenManager.getToken();
-            if (!token) {
-                setProfile(null);
-                return;
-            }
+            const url = id ? `${apiUrl}/api/Auth/${id}` : `${apiUrl}/api/Auth/current`;
 
-            const response = await fetch(`${apiUrl}/api/Auth/current`, {
+            const response = await fetch(url, {
                 headers: {
                     'Accept': 'application/json',
                     'Authorization': `Bearer ${token}`

@@ -210,12 +210,7 @@ export function Dashboard() {
     }
 
     // Собираем все мероприятия из объекта events_by_status в один плоский массив
-    const allUpcomingEvents = [
-        ...(data.events_by_status?.Going || []),
-        ...(data.events_by_status?.NotAnswered || []),
-        ...(data.events_by_status?.Unknown || [])
-    ].slice(0, 3); // берем первые 3
-
+    const allUpcomingEvents = [...(data.events_by_status?.Going || [])].slice(0, 3);
     // Берем первые 3 задачи
     const displayTasks : Task[] = data.tasks?.slice(0, 3) || [];
 

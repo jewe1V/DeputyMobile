@@ -525,7 +525,7 @@ const styles = StyleSheet.create({
         maxHeight: '90%',
     },
     pickerModalContent: {
-        minHeight: '70%',
+        minHeight: '90%',
     },
     modalHeader: {
         flexDirection: 'row',

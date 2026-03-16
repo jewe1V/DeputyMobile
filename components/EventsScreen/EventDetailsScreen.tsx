@@ -17,6 +17,7 @@ import { EventAttendanceModal } from "@/components/EventsScreen/EventAttendanceM
 import { downloadAsync, documentDirectory, cacheDirectory } from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import Toast from "react-native-toast-message";
+import { showLocation } from 'react-native-map-link';
 
 // Обновленные интерфейсы под новую структуру данных
 interface Attachment {
@@ -148,20 +149,27 @@ const EventDetailsScreen: React.FC = () => {
     };
 
     const openMaps = () => {
+        const locationParams = {
+            title: location.address,
+            dialogTitle: 'Открыть в навигаторе',
+            dialogMessage: 'Выберите приложение для построения маршрута',
+            cancelText: 'Отмена',
+        };
+
         if (location.coordinates) {
             const { lat, lon } = location.coordinates;
-            const url = Platform.select({
-                ios: `maps://app?daddr=${lat},${lon}`,
-                android: `google.navigation:q=${lat},${lon}`,
+            showLocation({
+                ...locationParams,
+                latitude: lat,
+                longitude: lon,
+                appsWhiteList: ['yandex-maps', 'google-maps', 'dgis', 'apple-maps']
             });
-            if (url) Linking.openURL(url);
-        } else {
-            const encodedAddress = encodeURIComponent(location.address);
-            const url = Platform.select({
-                ios: `maps://app?q=${encodedAddress}`,
-                android: `geo:0,0?q=${encodedAddress}`,
+        }
+        else if (location.address) {
+            showLocation({
+                ...locationParams,
+                address: location.address
             });
-            if (url) Linking.openURL(url);
         }
     };
 
@@ -340,9 +348,9 @@ const EventDetailsScreen: React.FC = () => {
                     {/* Участники */}
                     {event.attendees && event.attendees.length > 0 && (
                         <View style={styles.card}>
-                            <Text style={styles.sectionTitle}>Участники ({event.attendees.length})</Text>
+                            <Text style={styles.sectionTitle}>Участники ({event.attendees.filter(attendee => attendee.status === 'Yes').length})</Text>
                             {event.attendees.map((attendee) => (
-                                <View key={attendee.user_id} style={styles.attendeeRow}>
+                                <TouchableOpacity key={attendee.user_id} style={styles.attendeeRow} onPress={() => router.push({ pathname: '/(screens)/ProfileScreen', params: { id: attendee.user_id } })}>
                                     <View style={styles.avatar}>
                                         <Text style={styles.avatarText}>{getInitials(attendee.user_full_name)}</Text>
                                     </View>
@@ -355,7 +363,7 @@ const EventDetailsScreen: React.FC = () => {
                                             </Text>
                                         </View>
                                     </View>
-                                </View>
+                                </TouchableOpacity>
                             ))}
                         </View>
                     )}
