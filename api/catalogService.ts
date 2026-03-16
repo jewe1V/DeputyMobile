@@ -1,4 +1,4 @@
-import { AuthTokenManager } from '@/components/LoginScreen/LoginScreen';
+import { AuthManager } from '@/components/LoginScreen/LoginScreen';
 import { apiUrl } from './api';
 
 export interface CatalogApiResponse {
@@ -19,7 +19,7 @@ export interface CatalogItem {
 
 class CatalogService {
     private getAuthHeaders() {
-        const token = AuthTokenManager.getToken();
+        const token = AuthManager.getToken();
         return {
             'Content-Type': 'application/json',
             'Authorization': token ? `Bearer ${token}` : '',
@@ -77,9 +77,9 @@ class CatalogService {
             }
 
             const data = await response.json();
-            
+
             let catalogsData = Array.isArray(data) ? data : (data?.data || []);
-            const catalogs = Array.isArray(catalogsData) 
+            const catalogs = Array.isArray(catalogsData)
                 ? this.buildTree(catalogsData.map(item => this.adaptCatalog(item)))
                 : [];
             return catalogs;
@@ -101,9 +101,9 @@ class CatalogService {
             }
 
             const data = await response.json();
-            
+
             let catalogsData = Array.isArray(data) ? data : (data?.data || []);
-            const catalogs = Array.isArray(catalogsData) 
+            const catalogs = Array.isArray(catalogsData)
                 ? this.buildTree(catalogsData.map(item => this.adaptCatalog(item)))
                 : [];
             return catalogs;
@@ -125,9 +125,9 @@ class CatalogService {
             }
 
             const data = await response.json();
-            
+
             let catalogsData = Array.isArray(data) ? data : (data?.data || []);
-            const catalogs = Array.isArray(catalogsData) 
+            const catalogs = Array.isArray(catalogsData)
                 ? this.buildTree(catalogsData.map(item => this.adaptCatalog(item)))
                 : [];
             return catalogs;

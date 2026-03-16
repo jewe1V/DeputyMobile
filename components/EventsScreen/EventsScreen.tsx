@@ -15,7 +15,7 @@ import { apiUrl } from "@/api/api";
 import {Plus} from "lucide-react-native";
 import {LinearGradient} from "expo-linear-gradient";
 import {router} from "expo-router";
-import {AuthTokenManager} from "@/components/LoginScreen/LoginScreen";
+import {AuthManager} from "@/components/LoginScreen/LoginScreen";
 import {Select} from "@/components/ui/Select";
 import {SchedulePopup} from "@/components/EventsScreen/SchedulePopup";
 
@@ -36,7 +36,7 @@ const EventsScreen: React.FC = () => {
 
     const loadEvents = useCallback(async (year: number, month: number, isRefresh = false, isOnlyMy = false) => {
         try {
-            const token = AuthTokenManager.getToken();
+            const token = AuthManager.getToken();
             if (!isRefresh) setLoading(true);
 
             // Сохраняем, какой месяц мы загрузили

@@ -1,11 +1,10 @@
-import { AuthTokenManager } from '@/components/LoginScreen/LoginScreen';
+import { AuthManager } from '@/components/LoginScreen/LoginScreen';
 import { apiUrl } from './api';
 
 export interface CreateTaskPayload {
   title: string;
   description: string;
-  startDate: string;
-  expectedEndDate: string;
+  expected_end_date: string;
   priority: number;
   status: string;
 }
@@ -23,7 +22,7 @@ export interface Task {
 
 class TaskService {
   private getAuthHeaders() {
-    const token = AuthTokenManager.getToken();
+    const token = AuthManager.getToken();
     return {
       'Content-Type': 'application/json',
       'Authorization': token ? `Bearer ${token}` : '',
@@ -97,7 +96,6 @@ class TaskService {
 
   async getTaskById(id: string): Promise<Task> {
     try {
-      console.log('[TaskService] Получение задачи с ID:', id);
       const response = await this.fetchWithTimeout(`${apiUrl}/api/task/get-task/${id}`, {
         method: 'GET',
         headers: this.getAuthHeaders(),

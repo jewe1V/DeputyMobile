@@ -1,4 +1,4 @@
-import { AuthTokenManager } from "@/components/LoginScreen/LoginScreen";
+import { AuthManager } from "@/components/LoginScreen/LoginScreen";
 import { BlurView } from "expo-blur";
 import { Tabs, router } from "expo-router";
 import { Calendar, Folder, House, ListTodo } from "lucide-react-native";
@@ -13,8 +13,8 @@ export default () => {
 
     useEffect(() => {
         const checkToken = async () => {
-            await AuthTokenManager.initialize();
-            let isTokenValid = AuthTokenManager.isTokenValid();
+            await AuthManager.initialize();
+            let isTokenValid = AuthManager.isTokenValid();
             if (!isTokenValid) {
                 router.replace("/");
             }

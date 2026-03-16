@@ -1,253 +1,36 @@
-import { Platform, StyleSheet } from "react-native";
+import { StyleSheet } from 'react-native';
 
 export const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#ffffff',
-    },
-    header: {
-        borderBottomLeftRadius: 24,
-        borderBottomRightRadius: 24,
-        paddingBottom: 20,
-        paddingHorizontal: 16,
-        paddingTop: Platform.OS === 'ios' ? 80 : 60,
-    },
-    headerContent: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-    },
-    headerButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        flexShrink: 0,  // Не сжимается
-    },
-    headerTitleContainer: {
-        flex: 1,  // Занимает доступное пространство
-        marginRight: 12,
-        marginLeft: 24,// Отступы от кнопок
-        justifyContent: 'center',
-        minHeight: 40,
-    },
-    taskTitle: {
-        color: '#FFF',
-        fontSize: 20,
-        fontWeight: 600,
-        lineHeight: 24,
-        maxWidth: '100%',
-    },
-    statusBadge: {
-        marginTop: 8,
-        alignSelf: 'flex-start',
-        paddingHorizontal: 8,
-        paddingVertical: 2,
-        borderRadius: 16,
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
-        backgroundColor: '#fdfffe',
-    },
-    statusBadgeText: {
-        fontSize: 12,
-        color: '#30823a',
-    },
-
-    scrollView: {
-        flex: 1,
-    },
-    scrollContent: {
-        paddingBottom: 24,
-    },
-    section: {
-        backgroundColor: '#FFFFFF',
-        padding: 16,
-    },
-    sectionTitle: {
-        fontSize: 16,
-        fontWeight: '500',
-        color: '#272c33',
-        marginBottom: 12,
-    },
-    statusGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 8,
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    statusButton: {
-        flex: 1,
-        minWidth: '45%',
-        paddingVertical: 10,
-        borderRadius: 8,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    statusButtonText: {
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    metadataItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-        marginBottom: 16,
-    },
-    priorityDot: {
-        width: 12,
-        height: 12,
-        borderRadius: 6,
-    },
-    metadataContent: {
-        flex: 1,
-    },
-    metadataLabel: {
-        fontSize: 12,
-        color: '#6B7280',
-        marginBottom: 2,
-    },
-    metadataValue: {
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    metadataRow: {
-        gap: 16,
-    },
-    dateItem: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        gap: 12,
-    },
-    dateContent: {
-        flex: 1,
-    },
-    dateLabel: {
-        fontSize: 12,
-        color: '#6B7280',
-        marginBottom: 2,
-    },
-    dateValue: {
-        fontSize: 14,
-        color: '#111827',
-        lineHeight: 20,
-    },
-    overdueText: {
-        color: '#DC2626',
-        fontWeight: '500',
-    },
-    overdueDays: {
-        fontSize: 12,
-        color: '#DC2626',
-    },
-    descriptionText: {
-        fontSize: 14,
-        color: '#6B7280',
-        lineHeight: 20,
-    },
-    participantsContainer: {
-        gap: 16,
-    },
-    participantItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-    },
-    avatar: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    avatarText: {
-        color: '#FFFFFF',
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    participantInfo: {
-        flex: 1,
-    },
-    participantName: {
-        fontSize: 14,
-        fontWeight: '500',
-        color: '#111827',
-        marginBottom: 2,
-    },
-    participantRole: {
-        fontSize: 12,
-        color: '#6B7280',
-    },
-    tagsContainer: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 8,
-    },
-    tagItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        backgroundColor: '#F3F4F6',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 20,
-    },
-    tagText: {
-        fontSize: 12,
-        fontWeight: '500',
-        color: '#374151',
-    },
-    commentsHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        marginBottom: 12,
-    },
-    commentsPlaceholder: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 32,
-        backgroundColor: '#F9FAFB',
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
-        borderStyle: 'dashed',
-    },
-    commentsPlaceholderTitle: {
-        fontSize: 14,
-        color: '#6B7280',
-        marginTop: 12,
-        marginBottom: 4,
-    },
-    commentsPlaceholderSubtitle: {
-        fontSize: 12,
-        color: '#9CA3AF',
-    },
-    bottomSpacer: {
-        height: 80,
-    },
-    actionsContainer: {
-        backgroundColor: '#FFFFFF',
-        paddingHorizontal: 16,
-        paddingBottom: 24,
-    },
-    actionButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 12,
-        borderRadius: 8,
-        borderWidth: 1,
-    },
-    deleteButton: {
-        backgroundColor: '#FFFFFF',
-        borderColor: '#FCA5A5',
-    },
-    deleteButtonText: {
-        fontSize: 14,
-        fontWeight: '500',
-        color: '#DC2626',
-        marginLeft: 8,
-    },
+    container: { flex: 1 },
+    loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    header: { paddingHorizontal: 20, paddingBottom: 50, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
+    headerTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+    backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255, 255, 255, 0.2)', justifyContent: 'center', alignItems: 'center' },
+    headerActions: { flexDirection: 'row' },
+    iconButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255, 255, 255, 0.2)', justifyContent: 'center', alignItems: 'center' },
+    headerContent: { flex: 1 },
+    headerTitle: { fontSize: 22, fontWeight: '700', color: '#FFFFFF', marginBottom: 10 },
+    statusTag: { alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 8 },
+    statusTagText: { fontSize: 12, fontWeight: '600' },
+    content: { padding: 16, marginTop: -30 },
+    card: { backgroundColor: '#fff', borderRadius: 20, padding: 16, marginBottom: 16, elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } },
+    timeRow: { flexDirection: 'row', alignItems: 'center' },
+    timeContent: { flex: 1 },
+    timeDividerVertical: { width: 1, height: 30, backgroundColor: '#e5e7eb', marginHorizontal: 15 },
+    label: { fontSize: 11, color: '#6b7280', textTransform: 'uppercase', marginBottom: 4 },
+    value: { fontSize: 14, fontWeight: '600', color: '#1e293b' },
+    sectionTitle: { fontSize: 16, fontWeight: '700', color: '#1e293b', marginBottom: 12 },
+    description: { fontSize: 15, color: '#4b5563', lineHeight: 22, marginBottom: 15 },
+    priorityBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f1f5f9', padding: 8, borderRadius: 10, alignSelf: 'flex-start' },
+    dot: { width: 8, height: 8, borderRadius: 4, marginRight: 8 },
+    priorityText: { fontSize: 13, fontWeight: '500' },
+    attendeeRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+    avatar: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+    avatarText: { fontWeight: '700', color: '#166534' },
+    attendeeInfo: { flex: 1 },
+    attendeeName: { fontSize: 14, fontWeight: '600', color: '#1e293b' },
+    statusText: { fontSize: 12, color: '#64748b' },
+    statusGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    statusButton: { paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb', backgroundColor: '#fff' },
+    statusButtonText: { fontSize: 13, fontWeight: '500', color: '#64748b' }
 });

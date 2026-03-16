@@ -20,7 +20,7 @@ import { styles } from './style';
 import Animated, { FadeInDown, FadeInRight} from 'react-native-reanimated';
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import {AuthTokenManager} from "@/components/LoginScreen/LoginScreen";
+import {AuthManager} from "@/components/LoginScreen/LoginScreen";
 import { apiUrl } from '@/api/api';
 import {Event} from "@/models/EventModel"
 import {EventCard} from "@/components/EventsScreen/EventCard";
@@ -63,7 +63,7 @@ export function Dashboard() {
             setIsLoading(true);
             setError(null);
 
-            const token = AuthTokenManager.getToken();
+            const token = AuthManager.getToken();
 
             if (!token) {
                 setError('Не найден токен авторизации');

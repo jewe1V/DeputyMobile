@@ -5,7 +5,7 @@ import {
     Platform, Alert
 } from 'react-native';
 import { useLocalSearchParams, router } from "expo-router";
-import { AuthTokenManager } from "@/components/LoginScreen/LoginScreen";
+import { AuthManager } from "@/components/LoginScreen/LoginScreen";
 import { apiUrl } from "@/api/api";
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -62,7 +62,7 @@ const EventDetailsScreen: React.FC = () => {
 
     const loadEvent = useCallback(async (isRefresh = false) => {
         try {
-            const token = AuthTokenManager.getToken();
+            const token = AuthManager.getToken();
 
             const response = await fetch(`${apiUrl}/api/Events/${id}`, {
                 headers: {
@@ -177,7 +177,7 @@ const EventDetailsScreen: React.FC = () => {
         try {
             if (!serverUrl) return;
 
-            const token = AuthTokenManager.getToken();
+            const token = AuthManager.getToken();
             const fileExtension = serverUrl.split('.').pop() || 'dat';
             const localFileName = fileName.includes('.') ? fileName : `${fileName}.${fileExtension}`;
 

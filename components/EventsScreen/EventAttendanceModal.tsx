@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { X, Upload, Check, FileText, AlertCircle, Folder } from 'lucide-react-native';
-import { AuthTokenManager } from '@/components/LoginScreen/LoginScreen';
+import { AuthManager } from '@/components/LoginScreen/LoginScreen';
 import { apiUrl } from '@/api/api';
 import { catalogService, CatalogItem } from '@/api/catalogService';
 import { ChevronRight } from 'lucide-react-native';
@@ -129,7 +129,7 @@ export const EventAttendanceModal: React.FC<Props> = ({
             setUploading(true);
             setDocumentError(null);
 
-            const token = AuthTokenManager.getToken();
+            const token = AuthManager.getToken();
             const file = selectedFile.assets[0];
 
             const formData = new FormData();
@@ -184,7 +184,7 @@ export const EventAttendanceModal: React.FC<Props> = ({
             setSubmitting(true);
             setError(null);
 
-            const token = AuthTokenManager.getToken();
+            const token = AuthManager.getToken();
 
             const body: any = {
                 status: selectedStatus

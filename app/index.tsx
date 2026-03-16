@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {SafeAreaProvider} from "react-native-safe-area-context";
-import {AuthTokenManager} from "@/components/LoginScreen/LoginScreen";
+import {AuthManager} from "@/components/LoginScreen/LoginScreen";
 import {useRouter, useSegments} from 'expo-router';
 import {requestUserPermission, registerDeviceToken, getFCMToken} from "@/api/fcmService"
 import { getMessaging, onMessage, onTokenRefresh } from '@react-native-firebase/messaging';
@@ -34,11 +34,11 @@ const App: React.FC = () => {
         YamapInstance.init("123");
 
         // Проверка авторизации
-        const token = AuthTokenManager.getToken();
+        const token = AuthManager.getToken();
         setIsAuthenticated(!!token);
 
         // Слушатель изменений токена авторизации
-        return AuthTokenManager.addListener((token) => {
+        return AuthManager.addListener((token) => {
             setIsAuthenticated(!!token);
         });
     }, []);
@@ -54,7 +54,7 @@ const App: React.FC = () => {
             if (!hasPermission) return;
 
             const fcmToken = await getFCMToken();
-            const authToken = AuthTokenManager.getToken();
+            const authToken = AuthManager.getToken();
 
             if (fcmToken && authToken) {
                 await registerDeviceToken(authToken, fcmToken);
@@ -93,7 +93,7 @@ const App: React.FC = () => {
 
             unsubscribeOnTokenRefresh = onTokenRefresh(messagingInstance, async (newToken) => {
                 console.log('FCM Token refreshed:', newToken);
-                const authToken = AuthTokenManager.getToken();
+                const authToken = AuthManager.getToken();
                 if (authToken) {
                     await registerDeviceToken(authToken, newToken);
                 }

@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { router } from "expo-router";
 import { apiUrl } from "@/api/api";
-import { AuthTokenManager } from "@/components/LoginScreen/LoginScreen";
+import { AuthManager } from "@/components/LoginScreen/LoginScreen";
 import { LinearGradient } from "expo-linear-gradient";
 import LocationPickerModal from "./LocationPickerModal";
 import Toast from "react-native-toast-message";
@@ -96,7 +96,7 @@ export default function CreateEventScreen() {
             return;
         }
 
-        const token = AuthTokenManager.getToken();
+        const token = AuthManager.getToken();
         if (!token) {
             Toast.show({
                 type: 'error',

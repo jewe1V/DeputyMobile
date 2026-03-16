@@ -1,7 +1,3 @@
-import { taskService } from '@/api/taskService';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { ArrowLeft, Calendar, ChevronRight } from 'lucide-react-native';
 import React, { useState, useEffect } from 'react';
 import {
     ActivityIndicator,
@@ -13,15 +9,15 @@ import {
     TextInput,
     TouchableOpacity,
     View,
+    StyleSheet,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
-import { styles } from './task-form-style';
-
-type RootStackParamList = {
-    TaskForm: { id?: string };
-};
+import { router } from "expo-router";
+import { taskService } from '@/api/taskService';
 
 const PRIORITY_MAP = [
     { id: 1, label: 'Низкий' },
@@ -33,21 +29,23 @@ const PRIORITY_MAP = [
 
 export function TaskForm() {
     const insets = useSafeAreaInsets();
-    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
     // Поля формы
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
-    const [priority, setPriority] = useState<number>(2); // По умолчанию "Средний" (2)
+    const [priority, setPriority] = useState<number | null>(null);
     const [dueDate, setDueDate] = useState<Date | null>(null);
 
-    // Статусы из API
+    // Статусы
     const [statuses, setStatuses] = useState<{name: string}[]>([]);
-    const [selectedStatus, setSelectedStatus] = useState<string>('');
+    const [selectedStatus, setSelectedStatus] = useState<string>("");
 
+    // Состояния UI
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
+    const [isStatusSelectOpen, setIsStatusSelectOpen] = useState(false);
+    const [isPrioritySelectOpen, setIsPrioritySelectOpen] = useState(false);
 
     useEffect(() => {
         loadStatuses();
@@ -55,11 +53,9 @@ export function TaskForm() {
 
     const loadStatuses = async () => {
         try {
+
             const data = await taskService.getStatuses();
             setStatuses(data);
-            // Если есть статус "создана", выбираем его по умолчанию
-            const initial = data.find(s => s.name.toLowerCase() === 'создана') || data[0];
-            if (initial) setSelectedStatus(initial.name);
         } catch (e) {
             Toast.show({ type: 'error', text1: 'Ошибка загрузки статусов' });
         } finally {
@@ -69,25 +65,23 @@ export function TaskForm() {
 
     const handleSubmit = async () => {
         if (!title.trim() || !description.trim() || !dueDate || !selectedStatus) {
-            Toast.show({ type: 'error', text1: 'Заполните все поля' });
+            Toast.show({ type: 'error', text1: 'Заполните все обязательные поля' });
             return;
         }
 
         setIsSubmitting(true);
         try {
-            // Формируем payload точно по вашему образцу CURL
             const payload = {
                 title: title.trim(),
                 description: description.trim(),
-                startDate: new Date().toISOString(),
-                expectedEndDate: dueDate.toISOString(),
-                priority: priority, // Число 1-5
-                status: selectedStatus, // Строка
+                expected_end_date: dueDate.toISOString(),
+                priority: priority,
+                status: selectedStatus,
             };
 
             await taskService.createTask(payload);
             Toast.show({ type: 'success', text1: 'Задача создана' });
-            navigation.goBack();
+            router.push("/(screens)/TaskBoardScreen");
         } catch (error) {
             Toast.show({ type: 'error', text1: 'Ошибка при сохранении' });
         } finally {
@@ -95,123 +89,179 @@ export function TaskForm() {
         }
     };
 
+    const formatDateForDisplay = (date: Date) => {
+        return date.toLocaleString('ru-RU', {
+            day: 'numeric',
+            month: 'long',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
+
     if (isLoading) {
         return (
-            <View style={[styles.container, { justifyContent: 'center' }]}>
+            <View style={[styles.container, { justifyContent: 'center', backgroundColor: '#fff' }]}>
                 <ActivityIndicator size="large" color="#2A6E3F" />
             </View>
         );
     }
 
     return (
-        <View style={[styles.container, { paddingTop: insets.top }]}>
-            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+        <KeyboardAvoidingView
+            style={{ flex: 1, backgroundColor: '#fff' }}
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+        >
+            <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
-            {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                    <ArrowLeft size={24} color="#111827" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Новая задача</Text>
-                <View style={{ width: 40 }} />
-            </View>
-
-            <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                style={{ flex: 1 }}
+            <ScrollView
+                contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + 20 }]}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
             >
-                <ScrollView
-                    showsVerticalScrollIndicator={false}
-                    contentContainerStyle={[
-                        styles.scrollContent,
-                        { paddingBottom: insets.bottom + 20 } // Динамический отступ снизу
-                    ]}
+                <LinearGradient
+                    colors={['#2A6E3F', '#349339']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={[styles.header, { paddingTop: insets.top + 20 }]}
                 >
-                    <Text style={styles.sectionLabel}>Информация</Text>
-                    <View style={styles.inputGroup}>
-                        <TextInput
-                            style={styles.minimalInput}
-                            value={title}
-                            onChangeText={setTitle}
-                            placeholder="Введите название"
-                            placeholderTextColor="#9CA3AF"
-                        />
-                        <View style={styles.divider} />
-                        <TextInput
-                            style={[styles.minimalInput, styles.textArea]}
-                            value={description}
-                            onChangeText={setDescription}
-                            placeholder="Введите описание"
-                            placeholderTextColor="#9CA3AF"
-                            multiline
-                        />
-                    </View>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                        <Ionicons name="arrow-back" size={24} color="#fff" />
+                    </TouchableOpacity>
+                    <Text style={styles.headerTitle}>Новая задача</Text>
+                </LinearGradient>
 
-                    <Text style={styles.sectionLabel}>Срок исполнения</Text>
-                    <TouchableOpacity
-                        style={styles.listAction}
-                        onPress={() => setDatePickerVisibility(true)}
-                    >
-                        <View style={styles.listActionContent}>
-                            <Calendar size={20} color="#6B7280" />
-                            <Text style={[styles.listActionText, !dueDate && { color: '#9CA3AF' }]}>
-                                {dueDate
-                                    ? dueDate.toLocaleString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
-                                    : 'Укажите дату и время'}
-                            </Text>
-                        </View>
-                        <ChevronRight size={20} color="#D1D5DB" />
+                <View style={styles.card}>
+                    <TextInput
+                        style={styles.input}
+                        value={title}
+                        onChangeText={setTitle}
+                        placeholder="Название *"
+                        placeholderTextColor="#999"
+                    />
+
+                    <TextInput
+                        style={[styles.input, styles.textArea]}
+                        multiline
+                        numberOfLines={8}
+                        value={description}
+                        onChangeText={setDescription}
+                        placeholder="Описание *"
+                        placeholderTextColor="#999"
+                        textAlignVertical="top"
+                    />
+
+                    <TouchableOpacity style={styles.unifiedInput} onPress={() => setDatePickerVisibility(true)}>
+                        <Text style={dueDate ? styles.inputText : styles.placeholderText}>
+                            {dueDate ? formatDateForDisplay(dueDate) : "Выберите срок исполнения *"}
+                        </Text>
                     </TouchableOpacity>
 
-                    <Text style={styles.sectionLabel}>Статус</Text>
-                    <View style={styles.chipContainer}>
-                        {statuses.map((s) => (
-                            <TouchableOpacity
-                                key={s.name}
-                                onPress={() => setSelectedStatus(s.name)}
-                                style={[styles.chip, selectedStatus === s.name && styles.chipActive]}
-                            >
-                                <Text style={[styles.chipText, selectedStatus === s.name && styles.chipTextActive]}>
-                                    {s.name}
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-
-                    <Text style={styles.sectionLabel}>Приоритет (1-5)</Text>
-                    <View style={styles.chipContainer}>
-                        {PRIORITY_MAP.map((p) => (
-                            <TouchableOpacity
-                                key={p.id}
-                                onPress={() => setPriority(p.id)}
-                                style={[styles.chip, priority === p.id && styles.chipActive]}
-                            >
-                                <Text style={[styles.chipText, priority === p.id && styles.chipTextActive]}>
-                                    {p.label}
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-
-                    {/* Кнопки теперь в общем потоке ScrollView */}
-                    <View style={styles.footer}>
+                    {/* Выбор статуса */}
+                    <View style={[styles.selectWrapper, { zIndex: 1000 }]}>
                         <TouchableOpacity
-                            style={[styles.primaryButton, isSubmitting && { opacity: 0.7 }]}
-                            onPress={handleSubmit}
-                            disabled={isSubmitting}
+                            style={styles.selectTrigger}
+                            onPress={() => {
+                                setIsStatusSelectOpen(!isStatusSelectOpen);
+                                setIsPrioritySelectOpen(false);
+                            }}
                         >
-                            {isSubmitting ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.primaryButtonText}>Создать задачу</Text>}
+                            <Text style={!selectedStatus ? styles.placeholderText : styles.selectValue}>
+                                {selectedStatus || 'Статус *'}
+                            </Text>
+                            <Ionicons
+                                name={isStatusSelectOpen ? "chevron-up" : "chevron-down"}
+                                size={20}
+                                color="#6b7280"
+                            />
                         </TouchableOpacity>
 
-                        <TouchableOpacity
-                            style={styles.secondaryButton}
-                            onPress={() => navigation.goBack()}
-                        >
-                            <Text style={styles.secondaryButtonText}>Отмена</Text>
-                        </TouchableOpacity>
+                        {isStatusSelectOpen && (
+                            <View style={styles.selectDropdown}>
+                                {statuses.map((item) => (
+                                    <TouchableOpacity
+                                        key={item.name}
+                                        style={[
+                                            styles.selectItem,
+                                            selectedStatus === item.name && styles.selectItemSelected
+                                        ]}
+                                        onPress={() => {
+                                            setSelectedStatus(item.name);
+                                            setIsStatusSelectOpen(false);
+                                        }}
+                                    >
+                                        <Text style={[
+                                            styles.selectItemText,
+                                            selectedStatus === item.name && styles.selectItemTextSelected
+                                        ]}>
+                                            {item.name}
+                                        </Text>
+                                        {selectedStatus === item.name && (
+                                            <Ionicons name="checkmark" size={18} color="#0f6319" />
+                                        )}
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        )}
                     </View>
-                </ScrollView>
-            </KeyboardAvoidingView>
+
+                    {/* Выбор приоритета (типа) */}
+                    <View style={[styles.selectWrapper, { zIndex: 900 }]}>
+                        <TouchableOpacity
+                            style={styles.selectTrigger}
+                            onPress={() => {
+                                setIsPrioritySelectOpen(!isPrioritySelectOpen);
+                                setIsStatusSelectOpen(false);
+                            }}
+                        >
+                            {/* Здесь применяем цвет плейсхолдера, если значение null */}
+                            <Text style={!priority ? styles.placeholderText : styles.selectValue}>
+                                {priority ? PRIORITY_MAP.find(p => p.id === priority)?.label : 'Приоритет *'}
+                            </Text>
+                            <Ionicons
+                                name={isPrioritySelectOpen ? "chevron-up" : "chevron-down"}
+                                size={20}
+                                color="#6b7280"
+                            />
+                        </TouchableOpacity>
+
+                        {isPrioritySelectOpen && (
+                            <View style={styles.selectDropdown}>
+                                {PRIORITY_MAP.map((item) => (
+                                    <TouchableOpacity
+                                        key={item.id}
+                                        style={[
+                                            styles.selectItem,
+                                            priority === item.id && styles.selectItemSelected
+                                        ]}
+                                        onPress={() => {
+                                            setPriority(item.id);
+                                            setIsPrioritySelectOpen(false);
+                                        }}
+                                    >
+                                        <Text style={[
+                                            styles.selectItemText,
+                                            priority === item.id && styles.selectItemTextSelected
+                                        ]}>
+                                            {item.label}
+                                        </Text>
+                                        {priority === item.id && (
+                                            <Ionicons name="checkmark" size={18} color="#0f6319" />
+                                        )}
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        )}
+                    </View>
+
+                    <TouchableOpacity
+                        style={[styles.publishButton, isSubmitting && styles.publishButtonDisabled]}
+                        onPress={handleSubmit}
+                        disabled={isSubmitting}
+                    >
+                        {isSubmitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.publishButtonText}>Создать</Text>}
+                    </TouchableOpacity>
+                </View>
+            </ScrollView>
 
             <DateTimePickerModal
                 isVisible={isDatePickerVisible}
@@ -222,6 +272,147 @@ export function TaskForm() {
                 confirmTextIOS="Выбрать"
                 cancelTextIOS="Отмена"
             />
-        </View>
+        </KeyboardAvoidingView>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flexGrow: 1,
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderBottomLeftRadius: 24,
+        borderBottomRightRadius: 24,
+        paddingBottom: 20,
+        paddingHorizontal: 20,
+        paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    },
+    backButton: {
+        marginRight: 10,
+        padding: 4,
+    },
+    headerTitle: {
+        fontSize: 20,
+        fontWeight: "700",
+        color: "#fff",
+    },
+    card: {
+        borderRadius: 16,
+        padding: 20,
+        marginBottom: 20,
+    },
+    input: {
+        backgroundColor: "#f7f7f7",
+        borderWidth: 1,
+        borderColor: "#ddd",
+        borderRadius: 10,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        fontSize: 15,
+        marginBottom: 14,
+        marginTop: 8,
+    },
+    textArea: {
+        textAlignVertical: "top",
+    },
+    unifiedInput: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        backgroundColor: "#f7f7f7",
+        borderWidth: 1,
+        borderColor: "#ddd",
+        borderRadius: 10,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        marginBottom: 14,
+        marginTop: 8,
+    },
+    inputText: {
+        fontSize: 15,
+        color: "#333",
+        flex: 1,
+    },
+    placeholderText: {
+        fontSize: 15,
+        color: "#9ca3af",
+        flex: 1,
+    },
+    publishButton: {
+        backgroundColor: "#0f6319",
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        paddingVertical: 14, // Немного увеличил высоту кнопки
+        borderRadius: 10,
+        marginTop: 25,
+    },
+    publishButtonDisabled: {
+        backgroundColor: "#9ca3af",
+    },
+    publishButtonText: {
+        color: "#fff",
+        fontSize: 16,
+        fontWeight: "600",
+    },
+    // Стили для Select
+    selectWrapper: {
+        marginBottom: 14,
+        marginTop: 8,
+        position: 'relative',
+    },
+    selectTrigger: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        backgroundColor: "#f7f7f7",
+        borderWidth: 1,
+        borderColor: "#ddd",
+        borderRadius: 10,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+    },
+    selectValue: {
+        fontSize: 15,
+        color: "#333",
+        flex: 1,
+    },
+    selectDropdown: {
+        position: 'absolute',
+        top: '100%',
+        left: 0,
+        right: 0,
+        backgroundColor: '#fff',
+        borderWidth: 1,
+        borderColor: '#ddd',
+        borderRadius: 10,
+        marginTop: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    selectItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 12,
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f0f0f0',
+    },
+    selectItemSelected: {
+        backgroundColor: '#f0f7f0',
+    },
+    selectItemText: {
+        fontSize: 15,
+        color: '#333',
+    },
+    selectItemTextSelected: {
+        color: '#0f6319',
+        fontWeight: '500',
+    },
+});

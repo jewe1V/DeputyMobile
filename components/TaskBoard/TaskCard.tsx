@@ -1,8 +1,7 @@
-import { styles } from "@/components/TaskBoard/task-board-style";
-import { Task } from "@/models/TaskBoardModel";
-import { Calendar, Clock } from "lucide-react-native";
 import React from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity, View, StyleSheet } from "react-native";
+import { Calendar, Layers, Users } from "lucide-react-native";
+import { Task } from "@/models/TaskBoardModel";
 
 interface TaskCardProps {
     task: Task;
@@ -11,121 +10,188 @@ interface TaskCardProps {
 
 export function TaskCard({ task, onPress }: TaskCardProps) {
     const expectedEndDate = new Date(task.expected_end_date);
-    const startDate = new Date(task.created_at);
-    const today = new Date();
-    const daysLeft = Math.ceil((expectedEndDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    const isOverdue = daysLeft < 0 && task.status !== 'completed';
-    const isUrgent = daysLeft <= 2 && daysLeft >= 0 && task.status !== 'completed';
-    const priority = priorityConfig[task.priority] || priorityConfig.low;
+    const isOverdue = new Date() > expectedEndDate && task.status !== 'completed';
 
-    const truncatedDescription = task.description.length > 70
-        ? task.description.substring(0, 70) + '...'
-        : task.description;
-
-    // Форматирование даты
     const formatDate = (date: Date) => {
-        return date.toLocaleDateString('ru-RU', {
-            day: '2-digit',
-            month: '2-digit',
-        });
+        return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
     };
 
     return (
         <TouchableOpacity
-            style={styles.taskCard}
+            style={styles.card}
             onPress={onPress}
-            activeOpacity={0.7}
+            activeOpacity={0.8}
         >
-            {/* Заголовок */}
-            <Text style={styles.taskTitle} numberOfLines={2}>
-                {task.title}
-            </Text>
-
-            {/* Приоритет с точкой */}
-            <View style={styles.priorityContainer}>
-                <View
-                    style={[
-                        styles.priorityDot,
-                        { backgroundColor: priority.dotColor },
-                    ]}
-                />
-                <Text style={styles.priorityText}>
-                    Приоритет: {priority.label}
-                </Text>
-            </View>
-
-            {/* Сроки */}
-            <View style={styles.datesContainer}>
-                <View style={styles.dateItem}>
-                    <Calendar size={14} color="#9CA3AF" />
-                    <Text style={styles.dateText}>
-                        Создана: {formatDate(startDate)}
+            <View style={styles.content}>
+                <View style={styles.topRow}>
+                    <Text style={styles.title} numberOfLines={1}>
+                        {task.title}
                     </Text>
-                </View>
-                <View style={styles.dateItem}>
-                    <Clock size={14} color={isOverdue ? '#EF4444' : isUrgent ? '#F97316' : '#9CA3AF'} />
-                    <Text style={[
-                        styles.dateText,
-                        isOverdue && styles.overdueText,
-                        isUrgent && styles.urgentText
-                    ]}>
-                        Дедлайн: {formatDate(expectedEndDate)}
-                        {isOverdue && ' (просрочено)'}
-                    </Text>
-                </View>
-            </View>
-
-            {/* Описание */}
-            <Text style={styles.description} numberOfLines={3}>
-                {truncatedDescription}
-            </Text>
-
-            {/* Исполнитель и статус */}
-            <View style={styles.footer}>
-                <Text style={styles.assigneeText}>
-                    Исполнители: {task.users && task.users.length > 0 ? task.users.map((u: any) => u.fullName || u.name).join(', ') : 'не назначены'}
-                </Text>
-                {isOverdue && task.status !== 'completed' && (
-                    <View style={styles.overdueBadge}>
-                        <Text style={styles.overdueBadgeText}>Просрочено</Text>
+                    <View style={styles.deadlineBlock}>
+                        <Calendar size={12} color={isOverdue ? "#cf001f" : "#6B7280"} />
+                        <Text style={[styles.deadlineText, isOverdue && styles.overdueText]}>
+                            {formatDate(expectedEndDate)}
+                        </Text>
                     </View>
-                )}
+                </View>
+
+                {/* Описание — максимально сжато */}
+                <Text style={styles.description} numberOfLines={1}>
+                    {task.description || "Нет описания задачи"}
+                </Text>
+
+                {/* Инфо-панель: Приоритет и Исполнители */}
+                <View style={styles.infoPanel}>
+                    <View style={styles.tagGroup}>
+                        <View style={styles.priorityTag}>
+                            <Layers size={12} color="#2A6E3F" />
+                            <Text style={styles.priorityLabel}>
+                                {priorityConfig[task.priority as keyof typeof priorityConfig]?.label || 'medium'}
+                            </Text>
+                        </View>
+
+                        {isOverdue && (
+                            <View style={styles.overdueTag}>
+                                <Text style={styles.overdueTagText}>просрочено</Text>
+                            </View>
+                        )}
+                    </View>
+                    <View style={styles.assignees}>
+                        {task.users && task.users.length > 0 ? (
+                            <View style={styles.userBadge}>
+                                <Users size={12} color="#6B7280" />
+                                <Text style={styles.userCount}>{task.users.length}</Text>
+                            </View>
+                        ) : (
+                            <Text style={styles.noAssignee}>Не назначена</Text>
+                        )}
+                    </View>
+                </View>
             </View>
         </TouchableOpacity>
     );
 }
 
-// Исправленный тип для priorityConfig
-interface PriorityConfig {
-    label: string;
-    color: string;
-    dotColor: string;
-}
-
-const priorityConfig: Record<TaskPriority, { label: string; color: string; dotColor: string }> = {
-    low: {
-        label: 'Низкий',
-        color: '#9CA3AF',
-        dotColor: '#9CA3AF'
-    },
-    medium: {
-        label: 'Средний',
-        color: '#3B82F6',
-        dotColor: '#3B82F6'
-    },
-    high: {
-        label: 'Высокий',
-        color: '#F97316',
-        dotColor: '#F97316'
-    },
-    urgent: {
-        label: 'Срочный',
-        color: '#EF4444',
-        dotColor: '#EF4444'
-    },
-    critical: {
-        label: 'Критический',
-        color: '#7F1D1D',
-        dotColor: '#7F1D1D'
-    }
+const priorityConfig = {
+    low: { label: 'Низкий' },
+    medium: { label: 'Средний' },
+    high: { label: 'Высокий' },
+    urgent: { label: 'Срочный' },
+    critical: { label: 'Критический' }
 };
+
+const styles = StyleSheet.create({
+    card: {
+        backgroundColor: '#FFFFFF',
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        borderRadius: 14,
+        marginBottom: 8, // Минимальный отступ между карточками
+    },
+    content: {
+        paddingVertical: 12,
+        paddingHorizontal: 14,
+    },
+    topRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 4,
+    },
+    title: {
+        fontSize: 15,
+        fontWeight: '700',
+        color: '#1F2937',
+        flex: 1,
+        marginRight: 10,
+    },
+    deadlineBlock: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    deadlineText: {
+        fontSize: 12,
+        color: '#6B7280',
+        fontWeight: '500',
+    },
+    overdueText: {
+        color: '#1F2937',
+        fontWeight: '700',
+        textDecorationLine: 'underline', // Тонкий акцент вместо красного цвета
+    },
+    description: {
+        fontSize: 13,
+        color: '#6B7280',
+        marginBottom: 10,
+    },
+    infoPanel: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    tagGroup: {
+        flexDirection: 'row',
+        gap: 6,
+    },
+    priorityTag: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: '#F0FDF4', // Очень легкий зеленый фон
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 6,
+        borderWidth: 1,
+        borderColor: '#DCFCE7',
+    },
+    priorityLabel: {
+        fontSize: 11,
+        fontWeight: '600',
+        color: '#2A6E3F',
+        textTransform: 'lowercase',
+    },
+    overdueTag: {
+        backgroundColor: '#F9FAFB',
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 6,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+    },
+    overdueTagText: {
+        fontSize: 11,
+        color: '#374151',
+        fontWeight: '600',
+    },
+    assignees: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    userBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: '#F3F4F6',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 6,
+    },
+    userCount: {
+        fontSize: 11,
+        fontWeight: '600',
+        color: '#4B5563',
+    },
+    noAssignee: {
+        fontSize: 11,
+        color: '#9CA3AF',
+        fontStyle: 'italic',
+    },
+    dateText: {
+        fontSize: 12,
+        color: '#2A6E3F',
+    },
+    overdueText: {
+        color: 'rgba(207,0,31,0.8)',
+    },
+});

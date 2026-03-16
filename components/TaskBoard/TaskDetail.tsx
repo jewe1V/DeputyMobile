@@ -1,454 +1,208 @@
-import { taskService } from '@/api/taskService';
-import { SkeletonLoader } from "@/components/ui/SkeletonLoader";
-import { Task, TaskPriority, TaskStatus } from '@/data/types';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+    View,
+    Text,
+    ScrollView,
+    TouchableOpacity,
+    StatusBar,
+    Alert,
+    ActivityIndicator,
+    RefreshControl
+} from 'react-native';
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
 import {
-    AlertCircle,
     ArrowLeft,
-    Calendar,
-    ChevronLeft,
-    Clock,
     Edit,
-    RotateCcw,
     Trash2,
+    Calendar,
+    Clock,
+    AlertCircle,
+    User,
+    CheckCircle2
 } from 'lucide-react-native';
-import React, { useCallback, useEffect, useState } from 'react';
-import {
-    Alert,
-    ScrollView,
-    StatusBar,
-    Text,
-    TouchableOpacity,
-    View
-} from 'react-native';
 import Toast from 'react-native-toast-message';
-import { styles } from './task-detail-style';
-import {priorityConfig, statusConfig} from '@/consts';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-
-const StatusButton = ({
-                          status,
-                          isActive,
-                          onPress,
-                      }: {
-    status: TaskStatus;
-    isActive: boolean;
-    onPress: () => void;
-}) => {
-    const config = statusConfig[status];
-
-    return (
-        <TouchableOpacity
-            style={[
-                styles.statusButton,
-                isActive
-                    ? {
-                        backgroundColor: config.bgColor,
-                        borderColor: config.borderColor,
-                        borderWidth: 2,
-                    }
-                    : {
-                        backgroundColor: '#FFFFFF',
-                        borderColor: '#E5E7EB',
-                        borderWidth: 2,
-                    },
-            ]}
-            onPress={onPress}
-        >
-            <Text
-                style={[
-                    styles.statusButtonText,
-                    isActive
-                        ? { color: config.textColor, fontWeight: '600' }
-                        : { color: '#6B7280' },
-                ]}
-            >
-                {config.label}
-            </Text>
-        </TouchableOpacity>
-    );
-};
+import { taskService } from '@/api/taskService';
+import { Task, TaskStatus } from '@/data/types';
+import { priorityConfig, statusConfig } from '@/consts';
+import { styles } from './task-detail-style'; // Обнови стили ниже
 
 export function TaskDetail() {
     const { id } = useLocalSearchParams<{ id: string }>();
+    const insets = useSafeAreaInsets();
+
     const [task, setTask] = useState<Task | null>(null);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [currentStatus, setCurrentStatus] = useState<TaskStatus>('created');
+    const [refreshing, setRefreshing] = useState(false);
 
     const loadTask = useCallback(async () => {
-        if (!id) {
-            setLoading(false);
-            setError('ID задачи не найден');
-            return;
-        }
-
-        console.log('[TaskDetail] Загрузка задачи с ID:', id);
-        setLoading(true);
-        setError(null);
+        if (!id) return;
         try {
-            const apiData = await taskService.getTaskById(id);
-            console.log('[TaskDetail] Данные задачи получены:', apiData);
-            const adaptedTask: Task = {
-                id: apiData.id,
-                authorName: apiData.authorName,
-                authorId: apiData.authorId,
-                title: apiData.title,
-                description: apiData.description,
-                status: (apiData.status || 'created') as TaskStatus,
-                priority: (apiData.priority === 0 ? 'low' : apiData.priority === 1 ? 'medium' : apiData.priority === 2 ? 'high' : 'urgent') as TaskPriority,
-                createdAt: apiData.startDate || new Date().toISOString(),
-                dueDate: apiData.expectedEndDate || new Date().toISOString(),
-                tags: apiData.tags || [],
-                users: apiData.users || [],
-            };
-            setTask(adaptedTask);
-            setCurrentStatus(adaptedTask.status);
-            console.log('[TaskDetail] Задача успешно загружена');
+            const data = await taskService.getTaskById(id);
+            setTask(data);
         } catch (error: any) {
-            console.error('[TaskDetail] Ошибка при загрузке задачи:', error);
-            const errorMessage = error?.message || 'Не удалось загрузить задачу';
-            setError(errorMessage);
-            setTask(null);
+            Toast.show({ type: 'error', text1: 'Ошибка загрузки', text2: error.message });
         } finally {
             setLoading(false);
+            setRefreshing(false);
         }
     }, [id]);
 
-    useEffect(() => {
+    useEffect(() => { loadTask(); }, [loadTask]);
+
+    const onRefresh = () => {
+        setRefreshing(true);
         loadTask();
-    }, [loadTask]);
-
-    if (loading) {
-        return (
-            <View style={styles.container}>
-                <StatusBar backgroundColor="#2A6E3F" barStyle="light-content" />
-                <View style={[styles.header, { backgroundColor: '#2A6E3F' }]}>
-                    <TouchableOpacity onPress={() => router.push("/TaskBoardScreen")}>
-                        <ChevronLeft size={24} color="#FFFFFF" />
-                    </TouchableOpacity>
-                    <Text style={styles.taskTitle}>Загрузка...</Text>
-                </View>
-                <SkeletonLoader count={3} itemHeight={80} itemMargin={16} />
-            </View>
-        );
-    }
-
-    if (error) {
-        return (
-            <View style={styles.container}>
-                <StatusBar backgroundColor="#2A6E3F" barStyle="light-content" />
-                <View style={[styles.header, { backgroundColor: '#2A6E3F' }]}>
-                    <TouchableOpacity onPress={() => router.push("/TaskBoardScreen")}>
-                        <ChevronLeft size={24} color="#FFFFFF" />
-                    </TouchableOpacity>
-                    <Text style={styles.taskTitle}>Ошибка</Text>
-                </View>
-                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 }}>
-                    <AlertCircle size={48} color="#EF4444" style={{ marginBottom: 16 }} />
-                    <Text style={{ fontSize: 16, fontWeight: '600', textAlign: 'center', marginBottom: 8 }}>Ошибка загрузки</Text>
-                    <Text style={{ fontSize: 14, color: '#6B7280', textAlign: 'center', marginBottom: 24 }}>{error}</Text>
-                    <TouchableOpacity
-                        style={{
-                            backgroundColor: '#2A6E3F',
-                            paddingHorizontal: 24,
-                            paddingVertical: 12,
-                            borderRadius: 8,
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            gap: 8,
-                            marginBottom: 12,
-                        }}
-                        onPress={loadTask}
-                    >
-                        <RotateCcw size={16} color="#fff" />
-                        <Text style={{ color: '#fff', fontWeight: '600' }}>Повторить</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={{
-                            borderWidth: 2,
-                            borderColor: '#2A6E3F',
-                            paddingHorizontal: 24,
-                            paddingVertical: 12,
-                            borderRadius: 8,
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            gap: 8,
-                        }}
-                        onPress={() => router.push("/TaskBoardScreen")}
-                    >
-                        <ChevronLeft size={16} color="#2A6E3F" />
-                        <Text style={{ color: '#2A6E3F', fontWeight: '600' }}>Назад</Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-        );
-    }
-
-    if (!task) {
-        return (
-            <View style={styles.container}>
-                <StatusBar backgroundColor="#2A6E3F" barStyle="light-content" />
-                <View style={[styles.header, { backgroundColor: '#2A6E3F' }]}>
-                    <TouchableOpacity onPress={() => router.push("/TaskBoardScreen")}>
-                        <ChevronLeft size={24} color="#FFFFFF" />
-                    </TouchableOpacity>
-                    <Text style={styles.taskTitle}>Задача не найдена</Text>
-                </View>
-            </View>
-        );
-    }
-
-    const dueDate = new Date(task.dueDate || '');
-    const createdDate = new Date(task.createdAt || '');
-    const today = new Date();
-    const daysLeft = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    const isOverdue = daysLeft < 0 && currentStatus !== 'completed';
-
-    const getInitials = (name: string) => {
-        const parts = name.split(' ');
-        return parts.length >= 2 ? `${parts[0][0]}${parts[1][0]}` : name[0];
     };
 
-    const formatDateTime = (date: Date) => {
-        return date.toLocaleDateString('ru-RU', {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-        });
-    };
-
-    const handleStatusChange = (newStatus: TaskStatus) => {
-        setCurrentStatus(newStatus);
-        Toast.show({
-            type: 'success',
-            text1: 'Статус изменён',
-            text2: `Задача теперь "${statusConfig[newStatus].label}"`,
-        });
-    };
-
-    const handleEdit = () => {
-        router.push({pathname: '/NewTaskScreen', params: { id: task.id, isEdit: 1 }});
+    const handleStatusChange = async (newStatus: TaskStatus) => {
+        try {
+            // logic: await taskService.updateStatus(id, newStatus);
+            setTask(prev => prev ? { ...prev, status: newStatus } : null);
+            Toast.show({ type: 'success', text1: 'Статус обновлен' });
+        } catch (e) {
+            Toast.show({ type: 'error', text1: 'Не удалось обновить статус' });
+        }
     };
 
     const handleDelete = () => {
-        Alert.alert(
-            'Удалить задачу',
-            'Вы уверены, что хотите удалить эту задачу? Это действие нельзя отменить.',
-            [
-                { text: 'Отмена', style: 'cancel' },
-                {
-                    text: 'Удалить',
-                    style: 'destructive',
-                    onPress: () => {
-                        Toast.show({
-                            type: 'success',
-                            text1: 'Задача удалена',
-                        });
-                        router.push('/TaskBoardScreen');
-                    },
-                },
-            ]
-        );
+        Alert.alert('Удаление', 'Вы уверены?', [
+            { text: 'Отмена', style: 'cancel' },
+            {
+                text: 'Удалить',
+                style: 'destructive',
+                onPress: async () => {
+                    await taskService.deleteTask(id as string);
+                    router.back();
+                }
+            },
+        ]);
     };
 
+    if (loading) return (
+        <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#2A6E3F" />
+        </View>
+    );
+
+    if (!task) return <View style={styles.container}><Text>Задача не найдена</Text></View>;
+
+    const config = statusConfig[task.status];
+    const priority = priorityConfig[task.priority];
+
     return (
-        <View style={styles.container}>
-            <LinearGradient
-                style={styles.header}
-                colors={['#2A6E3F', '#349339']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-            >
-                <View style={styles.headerContent}>
-                    <TouchableOpacity onPress={() => router.push("/TaskBoardScreen")}>
-                        <ArrowLeft size={24} color="#FFFFFF" />
-                    </TouchableOpacity>
-                    <View style={styles.headerTitleContainer}>
-                        <Text
-                            style={styles.taskTitle}
-                            numberOfLines={5}
-                            ellipsizeMode="tail"
-                        >
-                            {task.title}
-                        </Text>
-                        <View style={styles.statusBadge}>
-                            <Text style={styles.statusBadgeText}>
-
-                            </Text>
-                        </View>
-                    </View>
-                    <TouchableOpacity
-                        style={styles.headerButton}
-                        onPress={handleEdit}
-                    >
-                        <Edit size={20} color="#FFFFFF" />
-                    </TouchableOpacity>
-                </View>
-            </LinearGradient>
-
+        <View style={{ flex: 1, backgroundColor: '#f8fafc' }}>
+            <StatusBar barStyle="light-content" />
 
             <ScrollView
-                style={styles.scrollView}
-                contentContainerStyle={styles.scrollContent}
+                style={styles.container}
+                contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
                 showsVerticalScrollIndicator={false}
             >
-                {/* Описание */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Описание</Text>
-                    <Text style={styles.descriptionText}>{task.description}</Text>
-                </View>
+                {/* Header аналогичный Events */}
+                <LinearGradient
+                    colors={['#2A6E3F', '#349339']}
+                    style={[styles.header, { paddingTop: insets.top + 15 }]}
+                >
+                    <View style={styles.headerTopRow}>
+                        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+                            <ArrowLeft size={24} color="white" />
+                        </TouchableOpacity>
 
-                {/* Блок метаданных */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Метаданные</Text>
+                        <View style={styles.headerActions}>
+                            <TouchableOpacity style={styles.iconButton} onPress={() => router.push({pathname: '/NewTaskScreen', params: { id, isEdit: 1 }})}>
+                                <Edit size={20} color="white" />
+                            </TouchableOpacity>
+                            <TouchableOpacity style={[styles.iconButton, { marginLeft: 10 }]} onPress={handleDelete}>
+                                <Trash2 size={20} color="#ff8a8a" />
+                            </TouchableOpacity>
+                        </View>
+                    </View>
 
-                    {/* Приоритет */}
-                    <View style={styles.metadataItem}>
-                        <View
-                            style={[
-                                styles.priorityDot,
-                                { backgroundColor: priorityConfig[task.priority].dotColor },
-                            ]}
-                        />
-                        <View style={styles.metadataContent}>
-                            <Text style={styles.metadataLabel}>Приоритет</Text>
-                            <Text
-                                style={[
-                                    styles.metadataValue,
-                                    { color: priorityConfig[task.priority].textColor },
-                                ]}
-                            >
-                                {priorityConfig[task.priority].label}
+                    <View style={styles.headerContent}>
+                        <Text style={styles.headerTitle} numberOfLines={3}>{task.title}</Text>
+                        <View style={[styles.statusTag, { backgroundColor: config.bgColor }]}>
+                            <Text style={[styles.statusTagText, { color: config.textColor }]}>{config.label}</Text>
+                        </View>
+                    </View>
+                </LinearGradient>
+
+                <View style={styles.content}>
+                    {/* Сроки (Time Row Style) */}
+                    <View style={styles.card}>
+                        <View style={styles.timeRow}>
+                            <View style={styles.timeContent}>
+                                <Text style={styles.label}>Создано</Text>
+                                <Text style={styles.value}>{new Date(task.createdAt).toLocaleDateString('ru-RU')}</Text>
+                            </View>
+                            <View style={styles.timeDividerVertical} />
+                            <View style={styles.timeContent}>
+                                <Text style={styles.label}>Крайний срок</Text>
+                                <Text style={[styles.value, { color: '#ef4444' }]}>{new Date(task.dueDate).toLocaleDateString('ru-RU')}</Text>
+                            </View>
+                        </View>
+                    </View>
+
+                    {/* Описание */}
+                    <View style={styles.card}>
+                        <Text style={styles.sectionTitle}>Описание</Text>
+                        <Text style={styles.description}>{task.description || 'Описание отсутствует'}</Text>
+
+                        <View style={styles.priorityBadge}>
+                            <View style={[styles.dot, { backgroundColor: priority.dotColor }]} />
+                            <Text style={[styles.priorityText, { color: priority.textColor }]}>
+                                Приоритет: {priority.label}
                             </Text>
                         </View>
                     </View>
 
-                    {/* Даты */}
-                    <View style={styles.metadataRow}>
-                        <View style={styles.dateItem}>
-                            <Calendar size={16} color="#9CA3AF" />
-                            <View style={styles.dateContent}>
-                                <Text style={styles.dateLabel}>Дата создания</Text>
-                                <Text style={styles.dateValue}>
-                                    {formatDateTime(createdDate)}
-                                </Text>
+                    {/* Исполнители (Attendee Style) */}
+                    <View style={styles.card}>
+                        <Text style={styles.sectionTitle}>Участники</Text>
+                        {/* Автор */}
+                        <View style={styles.attendeeRow}>
+                            <View style={[styles.avatar, { backgroundColor: '#e2e8f0' }]}>
+                                <User size={18} color="#64748b" />
+                            </View>
+                            <View style={styles.attendeeInfo}>
+                                <Text style={styles.attendeeName}>{task.authorName}</Text>
+                                <Text style={styles.statusText}>Постановщик</Text>
                             </View>
                         </View>
-
-                        <View style={styles.dateItem}>
-                            <Clock size={16} color={isOverdue ? '#EF4444' : '#9CA3AF'} />
-                            <View style={styles.dateContent}>
-                                <Text style={styles.dateLabel}>Крайний срок</Text>
-                                <Text style={[styles.dateValue, isOverdue && styles.overdueText]}>
-                                    {formatDateTime(dueDate)}
-                                    {isOverdue && (
-                                        <Text style={styles.overdueDays}>
-                                            {' '}(Просрочено на {Math.abs(daysLeft)} дн.)
-                                        </Text>
-                                    )}
-                                </Text>
-                            </View>
-                        </View>
-
-                        {task.completedAt && (
-                            <View style={styles.dateItem}>
-                                <Clock size={16} color="#10B981" />
-                                <View style={styles.dateContent}>
-                                    <Text style={styles.dateLabel}>Дата завершения</Text>
-                                    <Text style={[styles.dateValue, { color: '#065F46' }]}>
-                                        {formatDateTime(new Date(task.completedAt))}
-                                    </Text>
+                        {/* Список исполнителей */}
+                        {task.users?.map((user, idx) => (
+                            <View key={idx} style={styles.attendeeRow}>
+                                <View style={[styles.avatar, { backgroundColor: '#dcfce7' }]}>
+                                    <Text style={styles.avatarText}>{user.name?.charAt(0)}</Text>
+                                </View>
+                                <View style={styles.attendeeInfo}>
+                                    <Text style={styles.attendeeName}>{user.fullName || user.name}</Text>
+                                    <Text style={styles.statusText}>Исполнитель</Text>
                                 </View>
                             </View>
-                        )}
+                        ))}
                     </View>
-                </View>
 
-                {/* Сегментированный контрол для смены статуса */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Изменить статус задачи</Text>
+                    {/* Кнопки смены статуса (Action Group Style) */}
+                    <Text style={[styles.sectionTitle, { marginLeft: 8, marginBottom: 12 }]}>Обновить статус</Text>
                     <View style={styles.statusGrid}>
-                        <StatusButton
-                            status="created"
-                            isActive={currentStatus === 'created'}
-                            onPress={() => handleStatusChange('created')}
-                        />
-                        <StatusButton
-                            status="in_progress"
-                            isActive={currentStatus === 'in_progress'}
-                            onPress={() => handleStatusChange('in_progress')}
-                        />
-                        <StatusButton
-                            status="approval"
-                            isActive={currentStatus === 'approval'}
-                            onPress={() => handleStatusChange('approval')}
-                        />
-                        <StatusButton
-                            status="completed"
-                            isActive={currentStatus === 'completed'}
-                            onPress={() => handleStatusChange('completed')}
-                        />
-                    </View>
-                </View>
-
-                {/* Участники */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Участники</Text>
-
-                    <View style={styles.participantsContainer}>
-                        {/* Исполнители из массива users */}
-                        {task.users && task.users.length > 0 && (
-                            <>
-                                {task.users.map((user: any, index: number) => (
-                                    <View key={`user-${index}`} style={styles.participantItem}>
-                                        <View style={[styles.avatar, { backgroundColor: '#2A6E3F' }]}>
-                                            <Text style={styles.avatarText}>
-                                                {getInitials(user.fullName || user.name || '')}
-                                            </Text>
-                                        </View>
-                                        <View style={styles.participantInfo}>
-                                            <Text style={styles.participantName}>
-                                                {user.fullName || user.name}
-                                            </Text>
-                                            <Text style={styles.participantRole}>Исполнитель</Text>
-                                        </View>
-                                    </View>
-                                ))}
-                            </>
-                        )}
-
-                        {/* Постановщик */}
-                        <View style={styles.participantItem}>
-                            <View style={[styles.avatar, { backgroundColor: '#E5E7EB' }]}>
-                                <Text style={[styles.avatarText, { color: '#6B7280' }]}>
-                                    {getInitials(task.authorName || '')}
+                        {(['in_progress', 'approval', 'completed'] as TaskStatus[]).map((s) => (
+                            <TouchableOpacity
+                                key={s}
+                                style={[styles.statusButton, task.status === s && { backgroundColor: statusConfig[s].bgColor, borderColor: statusConfig[s].borderColor }]}
+                                onPress={() => handleStatusChange(s)}
+                            >
+                                <Text style={[styles.statusButtonText, task.status === s && { color: statusConfig[s].textColor }]}>
+                                    {statusConfig[s].label}
                                 </Text>
-                            </View>
-                            <View style={styles.participantInfo}>
-                                <Text style={styles.participantName}>
-                                    {task.authorName}
-                                </Text>
-                                <Text style={styles.participantRole}>Постановщик</Text>
-                            </View>
-                        </View>
+                            </TouchableOpacity>
+                        ))}
                     </View>
                 </View>
             </ScrollView>
-
-            {/* Действия */}
-            <View style={styles.actionsContainer}>
-                <TouchableOpacity
-                    style={[styles.actionButton, styles.deleteButton]}
-                    onPress={handleDelete}
-                >
-                    <Trash2 size={16} color="#DC2626" />
-                    <Text style={styles.deleteButtonText}>Удалить задачу</Text>
-                </TouchableOpacity>
-            </View>
         </View>
     );
 }

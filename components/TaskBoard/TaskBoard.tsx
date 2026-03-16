@@ -84,7 +84,7 @@ export function TaskBoard() {
     }
 
     const handleTaskPress = (id: string) => {
-        router.push({ pathname: '/TaskDetailScreen', params: { id } });
+        router.push({ pathname: '/(forms)/TaskDetailScreen', params: { id: id } });
     };
 
     const handleNewTask = () => {

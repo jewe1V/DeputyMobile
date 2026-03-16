@@ -20,7 +20,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {apiUrl} from '@/api/api'
-import {AuthTokenManager} from '@/components/LoginScreen/LoginScreen';
+import {AuthManager} from '@/components/LoginScreen/LoginScreen';
 import { styles } from './style';
 import {Profile} from '@/models/ProfileModel';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -55,7 +55,7 @@ export function ProfileScreen() {
     // Логика загрузки данных (вынесена в useCallback для стабильности)
     const loadProfile = useCallback(async () => {
         try {
-            const token = AuthTokenManager.getToken();
+            const token = AuthManager.getToken();
             const url = id ? `${apiUrl}/api/Auth/${id}` : `${apiUrl}/api/Auth/current`;
 
             const response = await fetch(url, {
@@ -66,7 +66,7 @@ export function ProfileScreen() {
             });
 
             if (response.status === 401) {
-                await AuthTokenManager.clearToken();
+                await AuthManager.clearToken();
                 setProfile(null);
                 return;
             }
@@ -85,7 +85,7 @@ export function ProfileScreen() {
 
     // Единый эффект для подписки на токен и первичной загрузки
     useEffect(() => {
-        const unsubscribe = AuthTokenManager.addListener((newToken) => {
+        const unsubscribe = AuthManager.addListener((newToken) => {
             if (newToken) {
                 loadProfile();
             } else {
@@ -110,7 +110,7 @@ export function ProfileScreen() {
             {
                 text: 'Выйти',
                 style: 'destructive',
-                onPress: async () => await AuthTokenManager.clearToken()
+                onPress: async () => await AuthManager.clearToken()
             },
         ]);
     };

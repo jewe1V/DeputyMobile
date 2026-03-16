@@ -17,8 +17,9 @@ import {
 } from 'react-native';
 import { styles } from './style';
 
-class AuthTokenManager {
+class AuthManager {
     private static token: string | null = null;
+    private static role: string | null = null;
     private static tokenExpiryTimer: NodeJS.Timeout | null = null;
     private static dailyCheckTimer: NodeJS.Timeout | null = null;
     private static tokenListeners: ((token: string | null) => void)[] = [];
@@ -233,7 +234,7 @@ class AuthTokenManager {
     }
 }
 
-AuthTokenManager.initialize();
+AuthManager.initialize();
 
 interface User {
     id: string;
@@ -300,7 +301,7 @@ const LoginScreen = () => {
 
             const data: AuthResponse = await response.json();
 
-            await AuthTokenManager.setToken(data.token);
+            await AuthManager.setToken(data.token);
             await AsyncStorage.setItem('userData', JSON.stringify(data.user));
 
             console.log('Успешная авторизация, токен сохранен в глобальное хранилище');
@@ -364,5 +365,5 @@ const LoginScreen = () => {
     );
 };
 
-export { AuthTokenManager, LoginScreen };
+export { AuthManager, LoginScreen };
 

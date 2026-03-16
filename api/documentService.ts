@@ -1,4 +1,4 @@
-import { AuthTokenManager } from '@/components/LoginScreen/LoginScreen';
+import { AuthManager } from '@/components/LoginScreen/LoginScreen';
 import { apiUrl } from './api';
 
 export interface DocumentApiResponse {
@@ -40,7 +40,7 @@ export interface Document {
 
 class DocumentService {
     private getAuthHeaders() {
-        const token = AuthTokenManager.getToken();
+        const token = AuthManager.getToken();
         return {
             'Content-Type': 'application/json',
             'Authorization': token ? `Bearer ${token}` : '',
@@ -133,7 +133,7 @@ class DocumentService {
             formData.append('StartDate', startDate || '');
             formData.append('EndDate', endDate || '');
 
-            const token = AuthTokenManager.getToken();
+            const token = AuthManager.getToken();
             const response = await fetch(
                 `${apiUrl}/api/Documents/upload`,
                 {

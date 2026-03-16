@@ -17,7 +17,7 @@ import { styles } from './notifications-page';
 import { router } from 'expo-router';
 import { LinearGradient } from "expo-linear-gradient";
 import { Select } from "@/components/ui/Select";
-import { AuthTokenManager } from "@/components/LoginScreen/LoginScreen";
+import { AuthManager } from "@/components/LoginScreen/LoginScreen";
 import {Notification, NotificationType} from "@/models/NotificationModel";
 import {apiUrl} from "@/api/api"
 
@@ -49,7 +49,7 @@ export function Notifications() {
     const fetchNotifications = async () => {
         try {
             setError(null);
-            const token = await AuthTokenManager.getToken();
+            const token = await AuthManager.getToken();
 
             if (!token) {
                 throw new Error('Токен авторизации не найден');

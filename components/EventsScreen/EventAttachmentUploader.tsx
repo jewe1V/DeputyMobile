@@ -15,7 +15,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { X, Upload, FileText, Folder, ChevronRight, AlertCircle, ChevronDown } from 'lucide-react-native';
 import { catalogService, CatalogItem } from '@/api/catalogService';
 import { apiUrl } from '@/api/api';
-import { AuthTokenManager } from '@/components/LoginScreen/LoginScreen';
+import { AuthManager } from '@/components/LoginScreen/LoginScreen';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 
@@ -180,7 +180,7 @@ export const EventAttachmentUploader: React.FC<Props> = ({
             setUploading(true);
             setError(null);
 
-            const token = AuthTokenManager.getToken();
+            const token = AuthManager.getToken();
             const file = selectedFile.assets[0];
 
             const formData = new FormData();
