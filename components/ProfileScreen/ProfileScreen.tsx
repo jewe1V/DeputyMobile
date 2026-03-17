@@ -23,7 +23,7 @@ import {AuthManager} from '@/components/LoginScreen/LoginScreen';
 import { styles } from './style';
 import {ProfileScreenDto} from '@/models/ProfileModel';
 import { LinearGradient } from 'expo-linear-gradient';
-import {useLocalSearchParams} from "expo-router";
+import {router, useLocalSearchParams} from "expo-router";
 
 
 interface AvatarProps {
@@ -102,7 +102,10 @@ export function ProfileScreen() {
             {
                 text: 'Выйти',
                 style: 'destructive',
-                onPress: async () => await AuthManager.clearAuth()
+                onPress: async () => {
+                    await AuthManager.clearAuth()
+                    router.push("/login")
+                }
             },
         ]);
     };
