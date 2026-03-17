@@ -27,9 +27,10 @@ export function TaskCard({ task, onPress }: TaskCardProps) {
                     <Text style={styles.title} numberOfLines={1}>
                         {task.title}
                     </Text>
-                    <View style={styles.deadlineBlock}>
-                        <Calendar size={12} color={isOverdue ? "#cf001f" : "#6B7280"} />
-                        <Text style={[styles.deadlineText, isOverdue && styles.overdueText]}>
+                    {/* ОБНОВЛЕНО: Используем styles.deadlineBlockOverdue вместо inline массива стилей для чистоты */}
+                    <View style={[styles.deadlineBlock, isOverdue && styles.deadlineBlockOverdue]}>
+                        <Calendar size={12} color={isOverdue ? "#B91C1C" : "#6B7280"} />
+                        <Text style={[styles.deadlineText, isOverdue && styles.deadlineTextOverdue]}>
                             {formatDate(expectedEndDate)}
                         </Text>
                     </View>
@@ -115,14 +116,23 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 4,
+        paddingHorizontal: 6,
+        borderRadius: 6,
     },
     deadlineText: {
-        fontSize: 12,
+        fontSize: 10,
         color: '#6B7280',
         fontWeight: '500',
     },
-    overdueText: {
-        color: 'rgba(207,0,31,0.8)',
+    deadlineBlockOverdue: {
+        // Мягкий кораллово-красный фон
+        backgroundColor: '#FEE2E2',
+        borderColor: '#FECACA',
+        borderWidth: 1,
+    },
+    deadlineTextOverdue: {
+        color: '#B91C1C',
+        fontWeight: '700',
     },
     description: {
         fontSize: 13,
