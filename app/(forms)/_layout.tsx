@@ -19,6 +19,10 @@ const StackLayout = () => {
                 name="NotificationScreen"
                 options={{ headerShown: false }}
             />
+            <Stack.Screen
+                name="CreateUserScreen"
+                options={{ headerShown: false }}
+            />
         </Stack>
     );
 }

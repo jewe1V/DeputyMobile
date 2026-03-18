@@ -1,12 +1,14 @@
 import { BlurView } from "expo-blur";
 import { Tabs, router } from "expo-router";
-import { Calendar, Folder, House, ListTodo } from "lucide-react-native";
+import {Calendar, Folder, House, ListTodo, User} from "lucide-react-native";
 import React from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {AuthManager} from "@/components/LoginScreen/LoginScreen";
 
 export default () => {
     const insets = useSafeAreaInsets();
+    const role = AuthManager.getRole();
 
     return (
         <>
@@ -59,7 +61,7 @@ export default () => {
                         tabBarIcon: ({ color, focused }) => (
                             <View style={[styles.fullTabWrapper, focused && styles.activeWrapper]}>
                                 <House size={22} color={color}/>
-                                <Text style={[styles.labelStyle, { color }]}>главная</Text>
+                                <Text style={[styles.labelStyle, {color}]}>главная</Text>
                             </View>
                         ),
                     }}
@@ -71,7 +73,7 @@ export default () => {
                         tabBarIcon: ({ color, focused }) => (
                             <View style={[styles.fullTabWrapper, focused && styles.activeWrapper]}>
                                 <Calendar size={22} color={color}/>
-                                <Text style={[styles.labelStyle, { color }]}>события</Text>
+                                <Text style={[styles.labelStyle, {color}]}>события</Text>
                             </View>
                         ),
                     }}
@@ -83,7 +85,7 @@ export default () => {
                         tabBarIcon: ({ color, focused }) => (
                             <View style={[styles.fullTabWrapper, focused && styles.activeWrapper]}>
                                 <ListTodo size={22} color={color}/>
-                                <Text style={[styles.labelStyle, { color }]}>задачи</Text>
+                                <Text style={[styles.labelStyle, {color}]}>задачи</Text>
                             </View>
                         ),
                     }}
@@ -95,16 +97,36 @@ export default () => {
                         tabBarIcon: ({ color, focused }) => (
                             <View style={[styles.fullTabWrapper, focused && styles.activeWrapper]}>
                                 <Folder size={22} color={color}/>
-                                <Text style={[styles.labelStyle, { color }]}>каталог</Text>
+                                <Text style={[styles.labelStyle, {color}]}>каталог</Text>
                             </View>
                         ),
                     }}
                 />
+                {role === "Admin" ? (
+                    <Tabs.Screen
+                        name="UserListScreen"
+                        options={{
+                            tabBarIcon: ({ color, focused }) => (
+                                <View style={[styles.fullTabWrapper, focused && styles.activeWrapper]}>
+                                    <User size={22} color={color}/>
+                                    <Text style={[styles.labelStyle, {color}]}>аккаунты</Text>
+                                </View>
+                            ),
+                        }}
+                    />
+                ) : (
+                    <Tabs.Screen
+                        name="UserListScreen"
+                        options={{
+                            href: null,
+                        }}
+                    />
+                )}
 
                 <Tabs.Screen name="EventDetailsScreen" options={{ href: null }} />
                 <Tabs.Screen name="CreateEventScreen" options={{ href: null }} />
                 <Tabs.Screen name="TaskDetailScreen" options={{ href: null }} />
-                <Tabs.Screen name="ProfileScreen" options={{ href: null }} />
+                <Tabs.Screen name="ProfileScreen" options={{ href: null }} getId={({ params }) => params?.id} />
             </Tabs>
         </>
     );
@@ -116,11 +138,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         paddingVertical: 12,
-        paddingHorizontal: 17,
+        paddingHorizontal: Platform.OS === 'ios' ? 17 : 0,
         borderRadius: 18,
     },
     activeWrapper: {
-        backgroundColor: 'rgba(255, 255, 255, 0.1)', // На тёмном фоне лучше светлая подсветка
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
     },
     labelStyle: {
         fontSize: 10,

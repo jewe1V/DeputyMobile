@@ -11,7 +11,7 @@ export interface Profile {
     email: string;
     job_title: string;
     full_name: string;
-    roles: Role[];
+    roles: "Admin" | "Deputy" | "Helper";
     user_roles: Role[];
     documents: Document[];
     events: Event[];

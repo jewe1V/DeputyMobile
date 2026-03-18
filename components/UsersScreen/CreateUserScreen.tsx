@@ -16,8 +16,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-const API_URL = 'ВАШ_API_URL'; // Замените на актуальный
+import {apiUrl} from "@/api/api"
+import {Profile} from "@/models/ProfileModel";
+import {AuthManager} from "@/components/LoginScreen/LoginScreen";
 
 const CreateUserScreen = () => {
     const router = useRouter();
@@ -35,7 +36,8 @@ const CreateUserScreen = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isRoleSelectOpen, setIsRoleSelectOpen] = useState(false);
     const [isDeputySelectOpen, setIsDeputySelectOpen] = useState(false);
-    const [deputies, setDeputies] = useState([]);
+    const [deputies, setDeputies] = useState<Profile[]>([]);
+    const token = AuthManager.getToken();
 
     const roles = ['Admin', 'Deputy', 'Helper'];
 
@@ -46,9 +48,13 @@ const CreateUserScreen = () => {
 
     const fetchDeputies = async () => {
         try {
-            const response = await fetch(`${API_URL}/Auth/all`);
-            const data = await response.json();
-            // Фильтруем только тех, у кого есть роль Deputy
+            const response = await fetch(`${apiUrl}/api/Auth/all`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            const data: Profile[] = await response.json();
             const filtered = data.filter(u => u.roles && u.roles.includes('Deputy'));
             setDeputies(filtered);
         } catch (error) {
@@ -69,14 +75,14 @@ const CreateUserScreen = () => {
             job_title: jobTitle,
             full_name: fullName,
             password,
-            roles: [selectedRole], // Отправляем как список из одного элемента
+            roles: [selectedRole],
             deputy_id: selectedRole === 'Helper' ? selectedDeputy?.id : null
         };
 
         try {
-            const response = await fetch(`${API_URL}/api/Auth/create`, {
+            const response = await fetch(`${apiUrl}/api/Auth/create`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify(payload)
             });
 
@@ -114,7 +120,7 @@ const CreateUserScreen = () => {
                     <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                         <Ionicons name="arrow-back" size={24} color="#fff" />
                     </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Новый пользователь</Text>
+                    <Text style={styles.headerTitle}>Регистрация</Text>
                 </LinearGradient>
 
                 <View style={styles.card}>

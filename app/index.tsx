@@ -62,33 +62,46 @@ const App: React.FC = () => {
 
             unsubscribeOnMessage = onMessage(messagingInstance, async (remoteMessage) => {
                 try {
-                    console.log('Foreground message received:', remoteMessage);
+                    console.log('--- Новое сообщение ---');
+                    console.log('Data:', remoteMessage.data);
 
-                    // @ts-ignore
-                    const payload = JSON.parse(remoteMessage.data.payload);
-                    const eventData = payload.data;
+                    let headerTitle = 'Уведомление';
+                    let mainText = 'Нет заголовка';
+                    let subText = 'Время не указано';
 
-                    const headerTitle = payload.type === 'event'
-                        ? 'Напоминание о событии'
-                        : 'Напоминание о дедлайне';
+                    // 1. Проверяем, есть ли поле payload и нужно ли его парсить
+                    if (remoteMessage.data && typeof remoteMessage.data.payload === 'string') {
+                        try {
+                            const payload = JSON.parse(remoteMessage.data.payload);
+                            const eventData = payload.data || {};
 
-                    const tempDate = eventData.StartAt || 'Время не указано';
-                    console.log('Toast config:', toastConfig);
+                            headerTitle = payload.type === 'event' ? 'Напоминание о событии' : 'Напоминание о дедлайне';
+                            mainText = eventData.Title || 'Без названия';
+                            subText = eventData.StartAt || 'Время не указано';
+                        } catch (parseError) {
+                            console.warn("Payload пришел строкой, но это не JSON:", remoteMessage.data.payload);
+                        }
+                    }
+
+                    // 2. Если payload нет (как в твоем логе), берем данные напрямую из data или notification
+                    else {
+                        headerTitle = remoteMessage.notification?.title || 'Новое уведомление';
+                        mainText = remoteMessage.data?.description || remoteMessage.notification?.body || 'Текст отсутствует';
+                    }
+
+                    // 3. Показываем Toast только с проверенными данными
                     Toast.show({
                         type: 'customNotification',
                         text1: headerTitle,
                         position: 'top',
                         props: {
-                            title: eventData.Title || 'Без названия',
-                            time: tempDate
+                            title: mainText,
+                            time: subText
                         },
                     });
 
                 } catch (e) {
-                    console.error("Ошибка парсинга или вывода Toast:", e);
-
-                    // Резервный вариант, если всё совсем сломалось
-                    Alert.alert('Новое уведомление', 'Не удалось распарсить данные');
+                    console.error("Критическая ошибка в onMessage:", e);
                 }
             });
 

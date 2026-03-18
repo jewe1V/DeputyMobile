@@ -158,7 +158,7 @@ export function Dashboard() {
                                         <Text style={styles.userName}>Гость</Text>
                                     </View>
                                 </TouchableOpacity>
-                                <TouchableOpacity style={styles.notificationButton} onPress={() => router.push("/NotificationScreen")}>
+                                <TouchableOpacity style={styles.notificationButton}>
                                     <Bell size={20} color="white" />
                                 </TouchableOpacity>
                             </View>
