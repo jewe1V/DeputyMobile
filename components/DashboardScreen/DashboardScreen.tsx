@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     View,
     Text,
     ScrollView,
     TouchableOpacity,
-    ActivityIndicator,
+    RefreshControl,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
@@ -25,6 +25,7 @@ import {EventCard} from "@/components/EventsScreen/EventCard";
 import {Task} from "@/models/TaskBoardModel";
 import {formatDateToDay} from "@/utils";
 import {TaskCard} from "@/components/TaskBoard/TaskCard";
+import { SkeletonItem } from '@/components/ui/SkeletonLoader'; // Импортируем скелетон
 
 interface DashboardData {
     job_title: string;
@@ -51,14 +52,18 @@ export function Dashboard() {
     const [data, setData] = useState<DashboardData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [refreshing, setRefreshing] = useState(false);
 
     useEffect(() => {
-        fetchDashboardData();
+        fetchDashboardData(false);
     }, []);
 
-    const fetchDashboardData = async () => {
+    const fetchDashboardData = async (isRefresh = false) => {
         try {
-            setIsLoading(true);
+            // Если это не обновление, показываем полный экран загрузки
+            if (!isRefresh) {
+                setIsLoading(true);
+            }
             setError(null);
 
             const token = AuthManager.getToken();
@@ -92,9 +97,17 @@ export function Dashboard() {
             console.error(error);
             setError('Не удалось загрузить данные дашборда. Проверьте подключение к интернету');
         } finally {
-            setIsLoading(false);
+            if (!isRefresh) {
+                setIsLoading(false);
+            }
+            setRefreshing(false);
         }
     };
+
+    const onRefresh = useCallback(() => {
+        setRefreshing(true);
+        fetchDashboardData(true); // Передаем флаг, что это обновление
+    }, []);
 
     const getInitials = (name: string) => {
         if (!name) return '';
@@ -122,52 +135,95 @@ export function Dashboard() {
         }
     };
 
+    const HeaderSkeleton = () => (
+        <LinearGradient
+            colors={['#2A6E3F', '#349339']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.header, { paddingTop: insets.top + 15 }]}
+        >
+            <View style={styles.headerContent}>
+                <View style={styles.userInfoRow}>
+                    <TouchableOpacity style={styles.userProfileButton} disabled>
+                        <View style={styles.avatarContainer}>
+                            <SkeletonItem
+                                width={50}
+                                height={50}
+                                borderRadius={25}
+                                marginBottom={0}
+                            />
+                        </View>
+                        <View style={styles.userInfo}>
+                            <SkeletonItem
+                                width={80}
+                                height={14}
+                                borderRadius={4}
+                                marginBottom={8}
+                            />
+                            <SkeletonItem
+                                width={120}
+                                height={20}
+                                borderRadius={4}
+                                marginBottom={0}
+                            />
+                        </View>
+                    </TouchableOpacity>
+                    <View style={styles.notificationButton}>
+                        <SkeletonItem
+                            width={40}
+                            height={40}
+                            borderRadius={20}
+                            marginBottom={0}
+                        />
+                    </View>
+                </View>
+                <SkeletonItem
+                    width={150}
+                    height={18}
+                    borderRadius={4}
+                    marginBottom={8}
+                />
+                <SkeletonItem
+                    width={200}
+                    height={14}
+                    borderRadius={4}
+                    marginBottom={0}
+                />
+            </View>
+        </LinearGradient>
+    );
 
-
-    // Отображение загрузки
     if (isLoading) {
         return (
-            <View style={[styles.content, { flex: 1, justifyContent: 'center', alignItems: 'center' }]}>
-                <ActivityIndicator size="large" color="#2A6E3F" />
-                <Text style={{ marginTop: 10, color: '#666' }}>Загрузка данных...</Text>
-            </View>
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={['#2A6E3F']}
+                        tintColor="#2A6E3F"
+                    />
+                }
+            >
+                <HeaderSkeleton />
+            </ScrollView>
         );
     }
-
-    // Отображение ошибки
     if (error || !data) {
         return (
-            <ScrollView showsVerticalScrollIndicator={false}>
-                <View>
-                    <LinearGradient
-                        colors={['#2A6E3F', '#349339']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={[styles.header, { paddingTop: insets.top + 15 }]}
-                    >
-                        <View style={styles.headerContent}>
-                            <View style={styles.userInfoRow}>
-                                <TouchableOpacity style={styles.userProfileButton} onPress={() => router.push("/ProfileScreen")}>
-                                    <View style={styles.avatarContainer}>
-                                        <View style={styles.avatar}>
-                                            <Text style={styles.avatarText}>?</Text>
-                                        </View>
-                                    </View>
-                                    <View style={styles.userInfo}>
-                                        <Text style={styles.greeting}>Добрый день,</Text>
-                                        <Text style={styles.userName}>Гость</Text>
-                                    </View>
-                                </TouchableOpacity>
-                                <TouchableOpacity style={styles.notificationButton}>
-                                    <Bell size={20} color="white" />
-                                </TouchableOpacity>
-                            </View>
-                            <Text style={styles.jobTitle}>Сотрудник</Text>
-                            <Text style={styles.organization}>Городская Дума Екатеринбурга</Text>
-                        </View>
-                    </LinearGradient>
-                </View>
-
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={['#2A6E3F']}
+                        tintColor="#2A6E3F"
+                    />
+                }
+            >
+                <HeaderSkeleton />
                 <View style={[styles.content, { flex: 1, justifyContent: 'center', alignItems: 'center', minHeight: 300 }]}>
                     <View style={{
                         backgroundColor: '#FEF2F2',
@@ -186,7 +242,7 @@ export function Dashboard() {
                             {error || 'Не удалось загрузить данные'}
                         </Text>
                         <TouchableOpacity
-                            onPress={fetchDashboardData}
+                            onPress={onRefresh}
                             style={{
                                 backgroundColor: '#2A6E3F',
                                 paddingHorizontal: 20,
@@ -212,7 +268,19 @@ export function Dashboard() {
     const displayTasks : Task[] = data.tasks?.slice(0, 3) || [];
 
     return (
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <ScrollView
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+                <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={onRefresh}
+                    colors={['#2A6E3F']}
+                    tintColor="#2A6E3F"
+                    title="Обновление..."
+                    titleColor="#666"
+                />
+            }
+        >
             <View>
                 <LinearGradient
                     colors={['#2A6E3F', '#349339']}
@@ -239,7 +307,6 @@ export function Dashboard() {
                                 <Bell size={20} color="white" />
                             </TouchableOpacity>
                         </View>
-                        {/* Берем первую роль из массива как должность */}
                         <Text style={styles.jobTitle}>{data?.job_title || 'Сотрудник'}</Text>
                         <Text style={styles.organization}>Городская Дума Екатеринбурга</Text>
                     </View>
@@ -248,8 +315,6 @@ export function Dashboard() {
 
             <View style={styles.content}>
                 <View style={styles.statsGrid}>
-
-                    {/* --- КАРТОЧКА 1 --- */}
                     <Animated.View style={styles.statCardContainer} entering={FadeInDown.delay(200).duration(600).springify()}>
                         <LinearGradient colors={['#ffffff', '#fffafa']} style={styles.statCard}>
                             <View style={styles.statIcon}><Calendar size={20} color="black" /></View>
@@ -258,7 +323,6 @@ export function Dashboard() {
                         </LinearGradient>
                     </Animated.View>
 
-                    {/* --- КАРТОЧКА 2 --- */}
                     <Animated.View style={styles.statCardContainer} entering={FadeInDown.delay(400).duration(600).springify()}>
                         <LinearGradient colors={['#ffffff', '#fffafa']} style={styles.statCard}>
                             <View style={styles.statIcon}><CheckCircle2 size={20} color="black" /></View>
@@ -267,7 +331,6 @@ export function Dashboard() {
                         </LinearGradient>
                     </Animated.View>
 
-                    {/* --- КАРТОЧКА 3 --- */}
                     <Animated.View style={styles.statCardContainer} entering={FadeInDown.delay(600).duration(600).springify()}>
                         <LinearGradient colors={['#ffffff', '#fffafa']} style={styles.statCard}>
                             <View style={styles.statIcon}><AlertCircle size={20} color="black" /></View>
@@ -289,6 +352,7 @@ export function Dashboard() {
                         <View style={styles.cardsContainer}>
                             {displayTasks.map((task: any, index: number) => (
                                 <TaskCard
+                                    key={task.task_id || index}
                                     task={task}
                                     onPress={() => router.push({
                                         pathname: '/(forms)/TaskDetailScreen',
@@ -300,7 +364,6 @@ export function Dashboard() {
                     </Animated.View>
                 )}
 
-                {/* --- СЕКЦИЯ: ПРЕДСТОЯЩИЕ МЕРОПРИЯТИЯ (показываем всегда, если есть события) --- */}
                 {allUpcomingEvents.length > 0 && (
                     <Animated.View
                         entering={FadeInDown.delay(displayTasks.length > 0 ? 1000 : 700).duration(600)}
@@ -312,30 +375,29 @@ export function Dashboard() {
 
                         <View style={styles.cardsContainer}>
                             {allUpcomingEvents.map((event: Event, index: number) => {
-                            const showDate = index === 0 ||
-                            formatDate(event.start_at) !== formatDate(allUpcomingEvents[index - 1].start_at);
+                                const showDate = index === 0 ||
+                                    formatDate(event.start_at) !== formatDate(allUpcomingEvents[index - 1].start_at);
 
-                            return (
-                            <View key={event.id}>
-                            {showDate && (
-                                <Text style={styles.eventDate}>{formatDateToDay(event.start_at)}</Text>
-                            )}
-                            <EventCard
-                                event={event}
-                                index={index}
-                                onPress={() => router.push({
-                                    pathname: '/(screens)/EventDetailsScreen',
-                                    params: { id: event.id }
-                                })}
-                            />
-                        </View>
-                        );
-                        })}
+                                return (
+                                    <View key={event.id}>
+                                        {showDate && (
+                                            <Text style={styles.eventDate}>{formatDateToDay(event.start_at)}</Text>
+                                        )}
+                                        <EventCard
+                                            event={event}
+                                            index={index}
+                                            onPress={() => router.push({
+                                                pathname: '/(screens)/EventDetailsScreen',
+                                                params: { id: event.id }
+                                            })}
+                                        />
+                                    </View>
+                                );
+                            })}
                         </View>
                     </Animated.View>
                 )}
 
-                {/* --- ЗАГЛУШКА (когда нет ни задач, ни событий) --- */}
                 {displayTasks.length === 0 && allUpcomingEvents.length === 0 && (
                     <Animated.View
                         entering={FadeInDown.delay(700).duration(600)}
