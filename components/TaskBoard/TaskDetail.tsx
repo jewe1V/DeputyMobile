@@ -70,27 +70,28 @@ export function TaskDetail() {
     const userId = AuthManager.getUserId();
     const token = AuthManager.getToken ? AuthManager.getToken() : '';
 
-    const loadData = useCallback(async () => {
+    const loadData = useCallback(() => {
         if (!id) return;
-        try {
-            const [taskData, statusesData] = await Promise.all([
-                taskService.getTaskById(id),
-                taskService.getStatuses()
-            ]);
-
-            // @ts-ignore
-            setTask(taskData);
-            setStatuses(statusesData);
-        } catch (error: any) {
-            Toast.show({
-                type: 'error',
-                text1: 'Ошибка загрузки',
-                text2: error.message
-            });
-        } finally {
-            setLoading(false);
-            setRefreshing(false);
-        }
+        InteractionManager.runAfterInteractions(() => {
+            taskService.getTaskById(id)
+                .then(taskData => {
+                    // @ts-ignore
+                    setTask(taskData);
+                    setLoading(false);
+                })
+                .catch(error => {
+                    Toast.show({ type: 'error', text1: 'Ошибка', text2: 'Не удалось загрузить задачу' });
+                    setLoading(false);
+                })
+                .finally(() => {
+                    setRefreshing(false);
+                });
+            taskService.getStatuses()
+                .then(statusesData => {
+                    setStatuses(statusesData);
+                })
+                .catch(error => console.error("Ошибка загрузки статусов", error));
+        });
     }, [id]);
 
     useEffect(() => { loadData(); }, [loadData]);

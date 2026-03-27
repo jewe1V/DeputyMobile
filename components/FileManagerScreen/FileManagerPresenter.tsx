@@ -6,16 +6,13 @@ import {
     FileSpreadsheet,
     FileText,
     Folder,
-    Image as ImageIcon,
     Presentation,
     Archive,
     Music,
     Video,
-    Terminal,
-    Code
 } from 'lucide-react-native';
 
-import {JSX, useState} from 'react';
+import {JSX, useMemo, useState} from 'react';
 import {AuthManager} from "@/components/LoginScreen/LoginScreen";
 import {cacheDirectory, documentDirectory, downloadAsync} from "expo-file-system/legacy";
 import {apiUrl} from "@/api/api";
@@ -186,7 +183,7 @@ export const useFileManagerPresenter = () => {
             else if (selectedPath.id === 'root-mine') catalogType = 'mine';
             else if (selectedPath.id === 'root-deputy') catalogType = 'deputy';
 
-            handleOpenCatalog(catalogType, selectedPath.name);
+            await handleOpenCatalog(catalogType, selectedPath.name);
             return;
         }
 
@@ -528,14 +525,10 @@ export const useFileManagerPresenter = () => {
                     },
                     currentCatalogId
                 );
-
-
-                // Инвалидируем кэш для текущего каталога
                 const newCache = new Map(documentsCache);
                 newCache.delete(currentCatalogId);
                 setDocumentsCache(newCache);
 
-                // Загружаем обновленный список документов с сервера
                 const docs = await documentService.getDocumentsByCatalog(currentCatalogId);
                 setDocuments(docs);
 
@@ -571,9 +564,8 @@ export const useFileManagerPresenter = () => {
             const localFileName = fileName.includes('.') ? fileName : `${fileName}.${fileExtension}`;
 
             const baseDir = documentDirectory || cacheDirectory;
-            if (!baseDir) throw new Error("Директория недоступна");
 
-            const fileUri = baseDir.endsWith('/')
+            const fileUri = baseDir?.endsWith('/')
                 ? `${baseDir}${localFileName}`
                 : `${baseDir}/${localFileName}`;
 
@@ -652,13 +644,17 @@ export const useFileManagerPresenter = () => {
 
     const displayCatalogs = currentCatalog?.children || [];
 
-    const filteredCatalogs = displayCatalogs.filter((cat: CatalogItem) =>
-        cat.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredCatalogs = useMemo(() => {
+        return displayCatalogs.filter(cat =>
+            cat.name.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+    }, [displayCatalogs, searchQuery]);
 
-    const filteredDocuments = documents.filter((doc: Document) =>
-        doc.file_name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredDocuments = useMemo(() => {
+        return documents.filter(doc =>
+            doc.file_name.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+    }, [documents, searchQuery]);
 
     const state: FileManagerState = {
         currentCatalog,

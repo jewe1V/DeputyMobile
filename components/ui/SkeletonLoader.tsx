@@ -30,12 +30,12 @@ export const SkeletonItem: React.FC<SkeletonItemProps> = ({
                 Animated.timing(shimmerAnimation, {
                     toValue: 1,
                     duration: 1000,
-                    useNativeDriver: false,
+                    useNativeDriver: true,
                 }),
                 Animated.timing(shimmerAnimation, {
                     toValue: 0,
                     duration: 1000,
-                    useNativeDriver: false,
+                    useNativeDriver: true,
                 }),
             ])
         ).start();

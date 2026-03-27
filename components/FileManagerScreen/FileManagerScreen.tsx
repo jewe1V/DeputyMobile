@@ -32,12 +32,9 @@ export function FileManager() {
     const insets = useSafeAreaInsets();
     const userRole = AuthManager.getRole();
 
-    // Определяем, нужно ли показывать кнопку создания каталога
     const showCreateCatalogButton = useMemo(() => {
-        // Если нет текущего каталога (главный экран) - не показываем
         if (!state.currentCatalog) return false;
 
-        // Для публичного каталога - только Admin может создавать
         if (state.breadcrumbPath[0]?.name === 'Общий') {
             return userRole === "Admin";
         }
@@ -47,19 +44,14 @@ export function FileManager() {
     const showUploadButton = useMemo(() => {
         if (!state.currentCatalog) return false;
 
-        // Проверяем, находимся ли мы в корневом каталоге
         const isRootCatalog = state.currentCatalog.id.startsWith('root-');
 
-        // Проверяем, находимся ли мы в корне личного каталога
-        // (breadcrumb содержит только один элемент - корень)
         const isRootOfPersonalCatalog = state.breadcrumbPath.length === 1 &&
             state.breadcrumbPath[0]?.name === 'Личный';
 
-        // Проверяем, находимся ли мы в корне каталога депутата
         const isRootOfDeputyCatalog = state.breadcrumbPath.length === 1 &&
             state.breadcrumbPath[0]?.name === 'Каталог депутата';
 
-        // Если мы в любом корневом каталоге - не показываем кнопку загрузки
         if (isRootCatalog || isRootOfPersonalCatalog || isRootOfDeputyCatalog) {
             return false;
         }
@@ -83,7 +75,6 @@ export function FileManager() {
                     </Text>
                 </View>
                 <View style={styles.headerButtonsContainer}>
-                    {/* Кнопка создания каталога - показываем только когда нужно */}
                     {showCreateCatalogButton && (
                         <TouchableOpacity
                             style={styles.headerButton}
@@ -93,7 +84,6 @@ export function FileManager() {
                         </TouchableOpacity>
                     )}
 
-                    {/* Кнопка загрузки файлов - показываем только когда нужно */}
                     {showUploadButton && (
                         <TouchableOpacity
                             style={styles.headerButton}
