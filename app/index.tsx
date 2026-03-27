@@ -4,9 +4,7 @@ import {AuthManager} from "@/components/LoginScreen/LoginScreen";
 import {useRouter, useSegments} from 'expo-router';
 import {requestUserPermission, registerDeviceToken, getFCMToken} from "@/api/fcmService"
 import { getMessaging, onMessage, onTokenRefresh } from '@react-native-firebase/messaging';
-import {Alert} from "react-native";
 import {YamapInstance} from "react-native-yamap-plus";
-import {toastConfig} from "@/components/Toast/toastConfig";
 import Toast from "react-native-toast-message";
 
 function useProtectedRoute(isAuthenticated: boolean | null) {
@@ -31,8 +29,7 @@ const App: React.FC = () => {
 
     useEffect(() => {
         YamapInstance.setLocale('ru_RU');
-        YamapInstance.init("123");
-
+        YamapInstance.init(process.env.EXPO_PUBLIC_YAMAP_API_KEY!);
         // Проверка авторизации
         const token = AuthManager.getToken();
         setIsAuthenticated(!!token);

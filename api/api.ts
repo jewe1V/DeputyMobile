@@ -1,1 +1,1 @@
-export const apiUrl = "https://project-domain.ru";
+export const apiUrl = process.env.EXPO_PUBLIC_API_URL;
