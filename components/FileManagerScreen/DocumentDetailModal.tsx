@@ -131,7 +131,9 @@ export function DocumentDetailModal({ visible, document, onClose, onDelete }: Do
                     <View style={styles.documentDetailModalHeader}>
                         <Text style={styles.documentDetailModalTitle}>Информация</Text>
                         <TouchableOpacity onPress={onClose} disabled={deleting}>
+                            <View pointerEvents="none">
                             <X size={24} color="#1f2937" />
+                            </View>
                         </TouchableOpacity>
                     </View>
 

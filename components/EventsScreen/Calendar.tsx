@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
+import Animated, { FadeIn, LinearTransition } from 'react-native-reanimated';
 import { MoveLeft, MoveRight } from 'lucide-react-native';
 import { Event } from "@/models/EventModel";
 
@@ -62,19 +62,25 @@ export const Calendar: React.FC<CalendarProps> = ({ selectedDate, onSelectDate, 
                 {/* Header */}
                 <View style={styles.calendarHeader}>
                     <TouchableOpacity
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                         onPress={() => changeMonth(currentMonth === 0 ? 11 : currentMonth - 1, currentMonth === 0 ? currentYear - 1 : currentYear)}
                         style={styles.navButton}
                     >
+                        <View pointerEvents="none">
                         <MoveLeft size={22} color={"#0f6319"} />
+                        </View>
                     </TouchableOpacity>
 
                     <Text style={styles.calendarTitle}>{`${months[currentMonth]} ${currentYear}`}</Text>
 
                     <TouchableOpacity
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                         onPress={() => changeMonth(currentMonth === 11 ? 0 : currentMonth + 1, currentMonth === 11 ? currentYear + 1 : currentYear)}
                         style={styles.navButton}
                     >
+                        <View pointerEvents="none">
                         <MoveRight size={22} color={"#0f6319"} />
+                        </View>
                     </TouchableOpacity>
                 </View>
 

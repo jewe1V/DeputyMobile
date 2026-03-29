@@ -201,7 +201,9 @@ const EventDetailsScreen: React.FC = () => {
                     style={[styles.header, { paddingTop: insets.top + 15 }]}
                 >
                     <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+                        <View pointerEvents="none">
                         <ArrowLeft size={24} color="white" />
+                        </View>
                     </TouchableOpacity>
                     <View style={styles.headerContent}>
                         <Text style={styles.headerTitle} numberOfLines={2}>{event.title}</Text>

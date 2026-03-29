@@ -10,12 +10,14 @@ import {
     Platform,
     ActivityIndicator,
     Alert,
-    StatusBar
+    StatusBar,
+    InteractionManager
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Clipboard from 'expo-clipboard'; // Добавлен импорт буфера обмена
 import {apiUrl} from "@/api/api"
 import {Profile} from "@/models/ProfileModel";
 import {AuthManager} from "@/components/LoginScreen/LoginScreen";
@@ -30,20 +32,25 @@ const CreateUserScreen = () => {
     const [jobTitle, setJobTitle] = useState('');
     const [password, setPassword] = useState('');
     const [selectedRole, setSelectedRole] = useState(null);
-    const [selectedDeputy, setSelectedDeputy] = useState(null);
+    const [selectedDeputy, setSelectedDeputy] = useState<Profile>();
+    const [isReady, setIsReady] = useState(false);
 
     // Состояния UI
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isRoleSelectOpen, setIsRoleSelectOpen] = useState(false);
     const [isDeputySelectOpen, setIsDeputySelectOpen] = useState(false);
+    const [isPasswordVisible, setIsPasswordVisible] = useState(false); // Состояние видимости пароля
     const [deputies, setDeputies] = useState<Profile[]>([]);
     const token = AuthManager.getToken();
 
     const roles = ['Admin', 'Deputy', 'Helper'];
 
-    // Загрузка списка депутатов для привязки к помощнику
     useEffect(() => {
+        const task = InteractionManager.runAfterInteractions(() => {
+            setIsReady(true);
+        });
         fetchDeputies();
+        return () => task.cancel();
     }, []);
 
     const fetchDeputies = async () => {
@@ -60,6 +67,27 @@ const CreateUserScreen = () => {
         } catch (error) {
             console.error("Ошибка при загрузке депутатов:", error);
         }
+    };
+
+    // Генерация случайного пароля
+    const generatePassword = () => {
+        const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+        let newPassword = "";
+        for (let i = 0; i < 12; i++) {
+            newPassword += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        setPassword(newPassword);
+        setIsPasswordVisible(true); // Показываем сгенерированный пароль, чтобы его было видно
+    };
+
+    // Копирование пароля в буфер обмена
+    const copyPassword = async () => {
+        if (!password) {
+            Alert.alert("Внимание", "Сначала введите или сгенерируйте пароль");
+            return;
+        }
+        await Clipboard.setStringAsync(password);
+        Alert.alert("Успех", "Пароль скопирован в буфер обмена");
     };
 
     const handleSubmit = async () => {
@@ -98,6 +126,10 @@ const CreateUserScreen = () => {
             setIsSubmitting(false);
         }
     };
+
+    if (!isReady) {
+        return <View style={{flex: 1, backgroundColor: 'white'}} />;
+    }
 
     return (
         <KeyboardAvoidingView
@@ -150,14 +182,30 @@ const CreateUserScreen = () => {
                         placeholderTextColor="#999"
                     />
 
-                    <TextInput
-                        style={styles.input}
-                        value={password}
-                        onChangeText={setPassword}
-                        placeholder="Пароль *"
-                        secureTextEntry
-                        placeholderTextColor="#999"
-                    />
+                    {/* Обновленное поле пароля с кнопками */}
+                    <View style={styles.passwordContainer}>
+                        <TextInput
+                            style={[styles.passwordInput, { color: '#000' }]} // Принудительно черный цвет
+                            value={password}
+                            onChangeText={setPassword}
+                            placeholder="Пароль *"
+                            secureTextEntry={!isPasswordVisible}
+                            placeholderTextColor="#999"
+                            autoCapitalize="none"
+                            autoCorrect={false}
+                        />
+                        <View style={styles.passwordActions}>
+                            <TouchableOpacity onPress={generatePassword} style={styles.iconButton}>
+                                <Ionicons name="refresh-outline" size={20} color="#666" />
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={copyPassword} style={styles.iconButton}>
+                                <Ionicons name="copy-outline" size={20} color="#666" />
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={() => setIsPasswordVisible(!isPasswordVisible)} style={styles.iconButton}>
+                                <Ionicons name={isPasswordVisible ? "eye-off-outline" : "eye-outline"} size={20} color="#666" />
+                            </TouchableOpacity>
+                        </View>
+                    </View>
 
                     {/* Выбор Роли */}
                     <View style={[styles.selectWrapper, { zIndex: 1000 }]}>
@@ -273,7 +321,6 @@ const CreateUserScreen = () => {
     );
 };
 
-// Стили идентичны вашему примеру для соблюдения консистентности
 const styles = StyleSheet.create({
     container: { flexGrow: 1 },
     header: {
@@ -297,6 +344,31 @@ const styles = StyleSheet.create({
         fontSize: 15,
         marginBottom: 14,
         marginTop: 8,
+    },
+    // Новые стили для поля пароля
+    passwordContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: "#f7f7f7",
+        borderWidth: 1,
+        borderColor: "#ddd",
+        borderRadius: 10,
+        paddingHorizontal: 12,
+        marginBottom: 14,
+        marginTop: 8,
+    },
+    passwordInput: {
+        flex: 1,
+        paddingVertical: 10,
+        fontSize: 15,
+    },
+    passwordActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    iconButton: {
+        padding: 6,
+        marginLeft: 4,
     },
     placeholderText: { fontSize: 15, color: "#9ca3af", flex: 1 },
     selectValue: { fontSize: 15, color: "#333", flex: 1 },
@@ -338,7 +410,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 4,
         elevation: 3,
-        maxHeight: 200, // Чтобы список не улетал за экран
+        maxHeight: 200,
     },
     selectItem: {
         flexDirection: 'row',

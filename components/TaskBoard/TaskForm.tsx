@@ -152,7 +152,9 @@ export function TaskForm() {
                     style={[styles.header, { paddingTop: insets.top + 20 }]}
                 >
                     <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                        <View pointerEvents="none">
                         <Ionicons name="arrow-back" size={24} color="#fff" />
+                        </View>
                     </TouchableOpacity>
                     {/* Меняем заголовок в зависимости от режима */}
                     <Text style={styles.headerTitle}>

@@ -4,7 +4,8 @@ import {
     Text,
     ScrollView,
     TouchableOpacity,
-    RefreshControl,
+    RefreshControl, Platform,
+    InteractionManager,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
@@ -25,7 +26,7 @@ import {EventCard} from "@/components/EventsScreen/EventCard";
 import {Task} from "@/models/TaskBoardModel";
 import {formatDateToDay} from "@/utils";
 import {TaskCard} from "@/components/TaskBoard/TaskCard";
-import { SkeletonItem } from '@/components/ui/SkeletonLoader'; // Импортируем скелетон
+import { SkeletonItem } from '@/components/ui/SkeletonLoader';
 
 interface DashboardData {
     job_title: string;
@@ -53,14 +54,18 @@ export function Dashboard() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [refreshing, setRefreshing] = useState(false);
+    const [isReady, setIsReady] = useState(false);
 
     useEffect(() => {
+        const task = InteractionManager.runAfterInteractions(() => {
+            setIsReady(true);
+        });
         fetchDashboardData(false);
+        return () => task.cancel();
     }, []);
 
     const fetchDashboardData = async (isRefresh = false) => {
         try {
-            // Если это не обновление, показываем полный экран загрузки
             if (!isRefresh) {
                 setIsLoading(true);
             }
@@ -193,7 +198,7 @@ export function Dashboard() {
         </LinearGradient>
     );
 
-    if (isLoading) {
+    if (!isReady || isLoading) {
         return (
             <ScrollView
                 showsVerticalScrollIndicator={false}

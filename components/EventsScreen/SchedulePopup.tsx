@@ -6,7 +6,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { EventCard } from './EventCard';
 import { Event } from "@/models/EventModel";
-import {router} from "expo-router";
+import { router } from "expo-router";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -25,57 +25,52 @@ export const SchedulePopup: React.FC<SchedulePopupProps> = ({
                                                             }) => {
     const insets = useSafeAreaInsets();
 
-    // Анимация позиции шторки
+    // Начальная точка появления шторки (например, 40% от верха экрана)
+    const START_Y = SCREEN_HEIGHT * 0.2;
     const panY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
 
-    // Точки остановки шторки
-    const MIN_HEIGHT = SCREEN_HEIGHT * 0.4; // Начальная высота (40% экрана)
-    const MAX_HEIGHT = 0; // Полный экран
-
     const resetPositionAnim = Animated.timing(panY, {
-        toValue: MIN_HEIGHT,
+        toValue: START_Y,
         duration: 300,
-        useNativeDriver: false,
+        useNativeDriver: false, // Изменено на false
     });
 
-    const closeAnim = Animated.timing(panY, {
+    const closeAnim = (callback?: () => void) => Animated.timing(panY, {
         toValue: SCREEN_HEIGHT,
-        duration: 200,
-        useNativeDriver: false,
-    });
+        duration: 250,
+        useNativeDriver: false, // Изменено на false
+    }).start(callback);
 
-    const expandAnim = Animated.timing(panY, {
-        toValue: MAX_HEIGHT,
-        duration: 300,
-        useNativeDriver: false,
-    });
+    // Обработка нажатия на элемент
+    const handleEventPress = (eventId: string) => {
+        // Сначала запускаем анимацию закрытия, потом выполняем переход и onClose
+        closeAnim(() => {
+            onClose();
+            router.push({ pathname: '/(screens)/EventDetailsScreen', params: { id: eventId } });
+        });
+    };
 
-    // Обработка жестов
     const panResponder = useRef(
         PanResponder.create({
             onStartShouldSetPanResponder: () => true,
             onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dy) > 5,
             onPanResponderMove: (_, gestureState) => {
-                // Если тянем выше MAX_HEIGHT (0), добавляем сопротивление
-                if (gestureState.dy + MIN_HEIGHT < 0) return;
-                panY.setValue(gestureState.dy + MIN_HEIGHT);
+                // Теперь это не будет вызывать ошибку
+                if (gestureState.dy < 0) return;
+                panY.setValue(START_Y + gestureState.dy);
             },
             onPanResponderRelease: (_, gestureState) => {
-                if (gestureState.dy > 120) {
-                    // Сильный свайп вниз — закрываем
-                    closeAnim.start(onClose);
-                } else if (gestureState.dy < -100) {
-                    // Свайп вверх — разворачиваем
-                    expandAnim.start();
+                if (gestureState.dy > 150) {
+                    // Если протащили вниз достаточно сильно — закрываем
+                    closeAnim(onClose);
                 } else {
-                    // Возвращаем в исходное (40% экрана)
+                    // Иначе возвращаем в исходную точку (START_Y)
                     resetPositionAnim.start();
                 }
             },
         })
     ).current;
 
-    // Сброс позиции при открытии
     React.useEffect(() => {
         if (visible) {
             resetPositionAnim.start();
@@ -100,26 +95,26 @@ export const SchedulePopup: React.FC<SchedulePopupProps> = ({
         return `${percentage}%` as DimensionValue;
     }, [date, visible]);
 
-    const topStyle = {
-        transform: [{ translateY: panY }]
-    };
-
     return (
-        <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
+        <Modal visible={visible} transparent animationType="none" onRequestClose={() => closeAnim(onClose)}>
             <View style={styles.overlay}>
                 <TouchableOpacity
                     style={styles.dismiss}
                     activeOpacity={1}
-                    onPress={() => closeAnim.start(onClose)}
+                    onPress={() => closeAnim(onClose)}
                 />
 
                 <Animated.View
-                    style={[styles.sheet, topStyle, { paddingBottom: insets.bottom + 20 }]}
-                    {...panResponder.panHandlers}
+                    style={[
+                        styles.sheet,
+                        { transform: [{ translateY: panY }], paddingBottom: insets.bottom + 20 }
+                    ]}
                 >
-                    <View style={styles.dragIndicator} />
-
-                    <Text style={styles.title}>Расписание на {formattedDate}</Text>
+                    {/* Хендл для перетаскивания (только эта часть инициирует жест) */}
+                    <View {...panResponder.panHandlers} style={styles.dragArea}>
+                        <View style={styles.dragIndicator} />
+                        <Text style={styles.title}>Расписание на {formattedDate}</Text>
+                    </View>
 
                     <View style={styles.timelineContainer}>
                         <View style={styles.progressBarBg}>
@@ -141,7 +136,7 @@ export const SchedulePopup: React.FC<SchedulePopupProps> = ({
                                             <EventCard
                                                 event={ev}
                                                 index={idx}
-                                                onPress={() => router.push({ pathname: '/(screens)/EventDetailsScreen', params: { id: ev.id } })}
+                                                onPress={() => handleEventPress(ev.id)}
                                             />
                                         </View>
                                     ))
@@ -160,7 +155,6 @@ const styles = StyleSheet.create({
     overlay: {
         flex: 1,
         backgroundColor: 'rgba(0,0,0,0.5)',
-        justifyContent: 'flex-end',
     },
     dismiss: {
         flex: 1,
@@ -169,35 +163,39 @@ const styles = StyleSheet.create({
         position: 'absolute',
         left: 0,
         right: 0,
-        height: SCREEN_HEIGHT, // Полная высота для возможности развертывания
+        height: SCREEN_HEIGHT, // Оставляем высоту, чтобы фон не обрывался при движении вниз
         backgroundColor: '#fff',
         borderTopLeftRadius: 28,
         borderTopRightRadius: 28,
         paddingHorizontal: 20,
-        paddingTop: 12,
         elevation: 25,
         shadowColor: "#000",
         shadowOffset: { width: 0, height: -10 },
         shadowOpacity: 0.15,
         shadowRadius: 15,
     },
+    dragArea: {
+        paddingTop: 12,
+        paddingBottom: 4,
+        width: '100%',
+        alignItems: 'center',
+    },
     dragIndicator: {
         width: 40,
         height: 5,
         backgroundColor: '#E5E7EB',
         borderRadius: 2.5,
-        alignSelf: 'center',
         marginBottom: 16,
     },
     title: {
         fontSize: 18,
         fontWeight: '700',
         color: '#0b2340',
-        marginBottom: 20,
+        marginBottom: 10,
         textAlign: 'center'
     },
     timelineContainer: {
-        flex: 1, // Теперь контейнер занимает все место в шторке
+        flex: 1,
         flexDirection: 'row',
     },
     progressBarBg: {
@@ -224,7 +222,7 @@ const styles = StyleSheet.create({
         borderColor: '#fff',
     },
     scrollContent: {
-        paddingBottom: 100, // Запас для прокрутки
+        paddingBottom: 150,
     },
     cardWrapper: {
         marginBottom: 12,

@@ -5,7 +5,7 @@ import {
     StyleSheet,
     FlatList,
     ActivityIndicator,
-    RefreshControl, TouchableOpacity, Platform
+    RefreshControl, TouchableOpacity, Platform, InteractionManager
 } from 'react-native';
 import { Calendar } from '@/components/EventsScreen/Calendar';
 import { EventCard } from '@/components/EventsScreen/EventCard';
@@ -31,6 +31,7 @@ const EventsScreen: React.FC = () => {
 
     const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
     const [eventsFilter, setEventsFilter] = useState<'all' | 'mine' | 'past'>('all');
+    const [isReady, setIsReady] = useState(false);
 
     const insets = useSafeAreaInsets();
 
@@ -77,8 +78,14 @@ const EventsScreen: React.FC = () => {
 
     // Первичная загрузка и реакция на смену фильтра (мои/все)
     useEffect(() => {
+        const task = InteractionManager.runAfterInteractions(() => {
+            setIsReady(true);
+        });
+
         loadEvents(viewDate.year, viewDate.month, false, eventsFilter === 'mine');
-    }, [eventsFilter]); // Убрали loadEvents из зависимостей, чтобы избежать циклов
+
+        return () => task.cancel();
+    }, [eventsFilter]);
 
     const onRefresh = async () => {
         setRefreshing(true);
@@ -116,7 +123,6 @@ const EventsScreen: React.FC = () => {
     const handleDateSelect = useCallback((date: string) => {
         setSelectedDate(date);
 
-        // Ищем события на эту дату
         const dayEvents = events.filter(ev => ev.start_at.split('T')[0] === date);
 
         if (dayEvents.length > 0) {
@@ -124,6 +130,10 @@ const EventsScreen: React.FC = () => {
             setIsDayModalVisible(true);
         }
     }, [events]);
+
+    if (!isReady) {
+        return (<View style={{flex: 1, backgroundColor: '#f9f9f9' }}></View>);
+    }
 
     return (
         <View style={{flex: 1, backgroundColor: '#f9f9f9' }}>
@@ -138,12 +148,14 @@ const EventsScreen: React.FC = () => {
                     <Text style={styles.headerSubtitle}>Запланировано {filteredEvents.length}</Text>
                 </View>
                 <TouchableOpacity style={styles.newTaskButton} onPress={() => router.push("/CreateEventScreen")}>
+                    <View pointerEvents="none">
                     <Plus size={20} color="white" />
+                    </View>
                 </TouchableOpacity>
             </LinearGradient>
 
             {/* Блок фильтров */}
-            <LinearGradient colors={['#ebfdeb', '#fff']} style={styles.filtersSection}>
+            <View  style={styles.filtersSection}>
                 <View style={styles.filtersGrid}>
                     <View style={styles.filterGroup}>
                         <Text style={styles.filterLabel}>Отображение</Text>
@@ -169,7 +181,7 @@ const EventsScreen: React.FC = () => {
                         />
                     </View>
                 </View>
-            </LinearGradient>
+            </View>
 
             {viewMode === 'calendar' ? (
                 <View style={styles.calendarContainer}>
@@ -270,23 +282,28 @@ const styles = StyleSheet.create({
     // Новые стили для фильтров
     filtersSection: {
         padding: 12,
-        marginTop: -24, // Фильтр "налезает" на хидер
+        marginTop: -24,
         borderRadius: 20,
         marginHorizontal: 15,
-        backgroundColor: "transparent",
+        backgroundColor: "rgb(250,254,250)",
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
         shadowRadius: 4,
         elevation: 3,
         zIndex: 10,
+        overflow: 'visible',
     },
     filtersGrid: {
         flexDirection: 'row',
         gap: 8,
+        zIndex: 15,
+        overflow: 'visible'
     },
     filterGroup: {
         flex: 1,
+        zIndex: 11,
+        overflow: 'visible'
     },
     filterLabel: {
         fontSize: 12,

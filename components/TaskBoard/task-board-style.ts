@@ -38,7 +38,7 @@ export const styles = StyleSheet.create({
         marginTop: -24,
         borderRadius: 20,
         marginHorizontal: 15,
-        backgroundColor: "transparent"
+        backgroundColor: "rgb(250,254,250)",
     },
     filtersHeader: {
         flexDirection: 'row',
@@ -60,6 +60,7 @@ export const styles = StyleSheet.create({
     },
     selectContainer: {
         position: 'relative',
+        overflow: 'visible',
     },
     selectTrigger: {
         height: 36,
@@ -107,7 +108,6 @@ export const styles = StyleSheet.create({
     taskList: {
         padding: 16,
         paddingBottom: 100,
-        marginTop: -12,
     },
     taskCard: {
         backgroundColor: '#ffffff',

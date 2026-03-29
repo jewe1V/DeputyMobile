@@ -12,7 +12,7 @@ import {
     Platform
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
-import { X, Upload, FileText, Folder, ChevronRight, AlertCircle, ChevronDown } from 'lucide-react-native';
+import { X, Upload, FileText, Folder, ChevronRight, AlertCircle, ChevronDown, Home } from 'lucide-react-native';
 import { catalogService, CatalogItem } from '@/api/catalogService';
 import { apiUrl } from '@/api/api';
 import { AuthManager } from '@/components/LoginScreen/LoginScreen';
@@ -299,9 +299,11 @@ export const EventAttachmentUploader: React.FC<Props> = ({
                     <Folder size={20} color="#349339" />
                     <Text style={styles.catalogItemText}>{catalog.name}</Text>
                 </View>
+                <View pointerEvents="none">
                 {catalog.children && catalog.children.length > 0 && (
                     <ChevronRight size={20} color="#6b7280" />
                 )}
+                </View>
             </TouchableOpacity>
         ));
     };
@@ -319,7 +321,9 @@ export const EventAttachmentUploader: React.FC<Props> = ({
                     <View style={styles.modalHeader}>
                         <Text style={styles.modalTitle}>Выберите каталог</Text>
                         <TouchableOpacity onPress={() => setShowCatalogPicker(false)}>
+                            <View pointerEvents="none">
                             <X size={24} color="#374151" />
+                            </View>
                         </TouchableOpacity>
                     </View>
 
@@ -328,7 +332,9 @@ export const EventAttachmentUploader: React.FC<Props> = ({
                             style={styles.backButton}
                             onPress={navigateBack}
                         >
+                            <View pointerEvents="none">
                             <ChevronRight size={20} color="#349339" style={{ transform: [{ rotate: '180deg' }] }} />
+                            </View>
                             <Text style={styles.backButtonText}>Назад</Text>
                         </TouchableOpacity>
                     )}
@@ -340,9 +346,14 @@ export const EventAttachmentUploader: React.FC<Props> = ({
                             showsHorizontalScrollIndicator={false}
                             style={styles.breadcrumbContainer}
                         >
-                            <TouchableOpacity onPress={() => setCurrentPath([])}>
-                                <Text style={styles.breadcrumbRoot}>Корень</Text>
-                            </TouchableOpacity>
+                            <View style={styles.breadcrumbItem}>
+                                <TouchableOpacity onPress={() => setCurrentPath([])}>
+                                    <View pointerEvents="none" >
+                                        <Home color={"#349339"} size={16} />
+                                    </View>
+                                </TouchableOpacity>
+                            </View>
+
                             {currentPath.map((item, index) => (
                                 <View key={item.id} style={styles.breadcrumbItem}>
                                     <Text style={styles.breadcrumbSeparator}> / </Text>
@@ -374,7 +385,9 @@ export const EventAttachmentUploader: React.FC<Props> = ({
                     <View style={styles.modalHeader}>
                         <Text style={styles.modalTitle}>Прикрепить файл к событию</Text>
                         <TouchableOpacity onPress={handleClose}>
+                            <View pointerEvents="none">
                             <X size={24} color="#374151" />
+                            </View>
                         </TouchableOpacity>
                     </View>
 
@@ -440,7 +453,9 @@ export const EventAttachmentUploader: React.FC<Props> = ({
                                     ]}>
                                         {status ? FILE_STATUSES[status] : 'Статус обработки'}
                                     </Text>
+                                    <View pointerEvents="none">
                                     <ChevronDown size={20} color="#666" />
+                                    </View>
                                 </TouchableOpacity>
 
                                 {isStatusSelectOpen && (
@@ -716,11 +731,6 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: '#e5e7eb',
         maxHeight: 44,
-    },
-    breadcrumbRoot: {
-        fontSize: 14,
-        color: '#349339',
-        fontWeight: '500',
     },
     breadcrumbItem: {
         flexDirection: 'row',

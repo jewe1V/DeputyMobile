@@ -18,7 +18,7 @@ import {
     Text,
     TouchableOpacity,
     View,
-    RefreshControl
+    RefreshControl, InteractionManager
 } from 'react-native';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { styles } from './task-board-style';
@@ -38,6 +38,7 @@ export function TaskBoard() {
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const insets = useSafeAreaInsets();
+    const [isReady, setIsReady] = useState(false);
 
     const loadTasks = useCallback(async (isSilentRefresh = false) => {
         if (!isSilentRefresh) setLoading(true);
@@ -88,6 +89,10 @@ export function TaskBoard() {
     }, [loadTasks]);
 
     useEffect(() => {
+        const task = InteractionManager.runAfterInteractions(() => {
+            setIsReady(true);
+        });
+        return () => task.cancel();
         loadTasks();
     }, [loadTasks]);
 
@@ -122,6 +127,10 @@ export function TaskBoard() {
         { label: 'Созданные', value: 'authored' },
     ];
 
+    if (!isReady) {
+        return <View style={{flex: 1, backgroundColor: 'white'}} />;
+    }
+
     return (
         <View style={{ flex: 1, backgroundColor: '#fff' }}>
             <LinearGradient
@@ -137,12 +146,14 @@ export function TaskBoard() {
                     </Text>
                 </View>
                 <TouchableOpacity style={styles.newTaskButton} onPress={handleNewTask}>
+                    <View pointerEvents="none">
                     <Plus size={20} color="white" />
+                    </View>
                 </TouchableOpacity>
             </LinearGradient>
 
             {!error && (
-                <LinearGradient colors={['#ebfdeb', '#fff']} style={styles.filtersSection}>
+                <View style={styles.filtersSection}>
                     {/* Вернул оригинальную структуру сетки, добавив только еще один блок filterGroup */}
                     <View style={styles.filtersGrid}>
                         <View style={styles.filterGroup}>
@@ -170,7 +181,7 @@ export function TaskBoard() {
                             />
                         </View>
                     </View>
-                </LinearGradient>
+                </View>
             )}
 
             {error ? (

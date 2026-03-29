@@ -15,7 +15,8 @@ import {
     Text,
     TouchableOpacity,
     View,
-    RefreshControl
+    RefreshControl,
+    InteractionManager
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CatalogCard } from './CatalogCard';
@@ -25,12 +26,13 @@ import { useFileManagerPresenter } from './FileManagerPresenter';
 import { styles } from './file-manager-screen';
 import { CreateCatalogModal } from './CreateCatalogModal';
 import {AuthManager} from "@/components/LoginScreen/LoginScreen";
-import {useMemo} from "react";
+import {useEffect, useMemo, useState} from "react";
 
 export function FileManager() {
     const { state, handlers, computed } = useFileManagerPresenter();
     const insets = useSafeAreaInsets();
     const userRole = AuthManager.getRole();
+    const [isReady, setIsReady] = useState(false);
 
     const showCreateCatalogButton = useMemo(() => {
         if (!state.currentCatalog) return false;
@@ -59,6 +61,17 @@ export function FileManager() {
         return true;
     }, [state.currentCatalog, userRole, state.breadcrumbPath]);
 
+    useEffect(() => {
+        const task = InteractionManager.runAfterInteractions(() => {
+            setIsReady(true);
+        });
+        return () => task.cancel();
+    }, []);
+
+    if (!isReady) {
+        return <View style={{flex: 1, backgroundColor: 'white'}} />;
+    }
+
     return (
         <View style={styles.container}>
             {/* Header */}
@@ -80,7 +93,9 @@ export function FileManager() {
                             style={styles.headerButton}
                             onPress={handlers.handleOpenCreateModal}
                         >
+                            <View pointerEvents="none">
                             <FolderPlus size={24} color="#ffffff" />
+                            </View>
                         </TouchableOpacity>
                     )}
 
@@ -89,7 +104,9 @@ export function FileManager() {
                             style={styles.headerButton}
                             onPress={handlers.handleUploadFile}
                         >
+                            <View pointerEvents="none">
                             <Upload size={20} color="#ffffff" />
+                            </View>
                         </TouchableOpacity>
                     )}
                 </View>
@@ -107,7 +124,9 @@ export function FileManager() {
                             style={styles.breadcrumbButton}
                             onPress={() => handlers.handleBreadcrumbClick(-1)}
                         >
+                            <View pointerEvents="none">
                             <Home size={20} color="#2A6E3F" />
+                            </View>
                         </TouchableOpacity>
 
                         {state.breadcrumbPath.map((item, index) => (

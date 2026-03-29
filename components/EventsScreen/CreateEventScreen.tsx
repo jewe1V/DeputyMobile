@@ -201,6 +201,7 @@ export default function CreateEventScreen() {
                     style={[styles.header, { paddingTop: insets.top + 20 }]}
                 >
                     <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+
                         <Ionicons name="arrow-back" size={24} color="#fff" />
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>Новое событие</Text>

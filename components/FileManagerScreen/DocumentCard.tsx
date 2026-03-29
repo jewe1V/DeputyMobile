@@ -57,13 +57,17 @@ export function DocumentCard({ document, getFileIcon, getFileSize, onInfoPress, 
                 <View style={styles.documentActions}>
                     {/* Исправленный вызов функции */}
                     <TouchableOpacity style={styles.documentActionButton} onPress={onDownloadPress}>
+                        <View pointerEvents="none">
                         <Download size={17} color="#777d87" />
+                        </View>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.documentActionButton}
                         onPress={() => onInfoPress(document)}
                     >
+                        <View pointerEvents="none">
                         <Info size={18} color="#777d87" />
+                        </View>
                     </TouchableOpacity>
                 </View>
             </View>
