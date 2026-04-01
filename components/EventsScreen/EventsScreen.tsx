@@ -67,9 +67,12 @@ const EventsScreen: React.FC = () => {
         setViewMode(mode);
         const today = new Date();
 
+        if (mode === 'calendar' && eventsFilter === 'past') {
+            setEventsFilter('all');
+        }
+
         if (mode === 'list') {
             setSelectedDate(undefined);
-            // Если мы в календаре ушли в другой месяц, при переходе в список возвращаемся к текущему
             if (viewDate.month !== today.getMonth() || viewDate.year !== today.getFullYear()) {
                 loadEvents(today.getFullYear(), today.getMonth(), false, eventsFilter === 'mine');
             }
@@ -131,6 +134,21 @@ const EventsScreen: React.FC = () => {
         }
     }, [events]);
 
+    const filterItems = useMemo(() => {
+        if (viewMode === 'calendar') {
+            return [
+                { label: 'Все', value: 'all' },
+                { label: 'Мои', value: 'mine' },
+            ];
+        } else {
+            return [
+                { label: 'Предстоящие', value: 'all' }, // 'all' в вашем filteredEvents уже работает как "Предстоящие"
+                { label: 'Прошедшие', value: 'past' },
+                { label: 'Мои', value: 'mine' },
+            ];
+        }
+    }, [viewMode]);
+
     if (!isReady) {
         return (<View style={{flex: 1, backgroundColor: '#f9f9f9' }}></View>);
     }
@@ -145,7 +163,7 @@ const EventsScreen: React.FC = () => {
             >
                 <View style={styles.headerContent}>
                     <Text style={styles.headerTitle}>События</Text>
-                    <Text style={styles.headerSubtitle}>Запланировано {filteredEvents.length}</Text>
+                    <Text style={styles.headerSubtitle}>{viewMode === 'calendar' ? "Предстоит" : "Запланировано"} {filteredEvents.length}</Text>
                 </View>
                 <TouchableOpacity style={styles.newTaskButton} onPress={() => router.push("/CreateEventScreen")}>
                     <View pointerEvents="none">
@@ -173,11 +191,7 @@ const EventsScreen: React.FC = () => {
                         <Select
                             value={eventsFilter}
                             onValueChange={(v) => setEventsFilter(v as any)}
-                            items={[
-                                { label: 'Все', value: 'all' },
-                                { label: 'Мои', value: 'mine' },
-                                { label: 'Прошедшие', value: 'past' },
-                            ]}
+                            items={filterItems}
                         />
                     </View>
                 </View>

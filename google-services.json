@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "846021157599",
+    "project_id": "deputyapp-3c427",
+    "storage_bucket": "deputyapp-3c427.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:846021157599:android:3be71b73e9604ae71f3f6a",
+        "android_client_info": {
+          "package_name": "com.jewel12345.hackathonMobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyByzxVOgBGYBWPwdKr8Mvz_0UsYqmYvElw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
