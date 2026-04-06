@@ -45,6 +45,9 @@
           "ios": {
             "useFrameworks": "static",
             "buildReactNativeFromSource": true
+          },
+          "android": {
+            "minSdkVersion": 26
           }
         }
       ],

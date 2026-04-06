@@ -1,9 +1,9 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import {
     View, Text, StyleSheet, ScrollView, TouchableOpacity,
-    ActivityIndicator, RefreshControl, Alert
+    ActivityIndicator, RefreshControl, Alert, Modal
 } from 'react-native';
-import { useLocalSearchParams, router } from "expo-router";
+import {useLocalSearchParams, useNavigation, useRootNavigation, useRouter} from "expo-router";
 import { AuthManager } from "@/components/LoginScreen/LoginScreen";
 import { apiUrl } from "@/api/api";
 import { LinearGradient } from 'expo-linear-gradient';
@@ -13,11 +13,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowLeft, FileText, Download, CheckCircle2, XCircle, HelpCircle } from "lucide-react-native";
 import { EventAttachmentUploader } from "@/components/EventsScreen/EventAttachmentUploader";
 import { EventAttendanceModal } from "@/components/EventsScreen/EventAttendanceModal";
-import { downloadAsync, documentDirectory, cacheDirectory } from 'expo-file-system/legacy';
-import * as Sharing from 'expo-sharing';
-import Toast from "react-native-toast-message";
 import { showLocation } from 'react-native-map-link';
 import {useFileManagerPresenter} from "@/components/FileManagerScreen/FileManagerPresenter";
+import {formatDateTime} from "@/utils";
+import {AttendeeExcuseModal} from "@/components/EventsScreen/AttendeeExcuseModal";
+import { Directory, File } from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
+import { Image } from 'react-native';
+
 
 interface Attachment {
     id: string;
@@ -49,6 +52,126 @@ interface EventData {
     attachments: Attachment[];
     attendees: Attendee[];
 }
+interface ImageViewerModalProps {
+    visible: boolean;
+    imageUrl: string | null;
+    onClose: () => void;
+}
+
+const ImageViewerModal: React.FC<ImageViewerModalProps> = ({ visible, imageUrl, onClose }) => {
+    if (!imageUrl) return null;
+    const token = AuthManager.getToken();
+
+    return (
+        <Modal visible={visible} transparent={true} animationType="fade" onRequestClose={onClose}>
+            <View style={styles.imageViewerOverlay}>
+                <TouchableOpacity style={styles.imageViewerCloseButton} onPress={onClose}>
+                    <XCircle size={32} color="#fff" />
+                </TouchableOpacity>
+                <Image
+                    source={{ uri: imageUrl, headers: { Authorization: `Bearer ${token}` } }}
+                    style={styles.fullScreenImage}
+                    resizeMode="contain"
+                />
+            </View>
+        </Modal>
+    );
+};
+
+const AttachmentItem: React.FC<AttachmentItemProps> = ({ file, onImagePress }) => {
+    const [downloadProgress, setDownloadProgress] = useState(0);
+    const [isDownloading, setIsDownloading] = useState(false);
+    const token = AuthManager.getToken();
+
+    const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(file.url);
+
+    const downloadFile = async () => {
+        if (isDownloading) return;
+
+        try {
+            setIsDownloading(true);
+            setDownloadProgress(0);
+
+            const rawFileName = file.file_name || file.url.split('/').pop() || 'file';
+            const safeFileName = rawFileName.replace(/[^a-zA-Z0-9.\-_а-яА-Я]/g, '_');
+
+            // Use the correct constants from new API
+            const fileUri = `${FileSystem.documentDirectory}${safeFileName}`;
+
+            // New API uses downloadAsync directly
+            const downloadResult = await FileSystem.downloadAsync(
+                file.url,
+                fileUri,
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                    sessionType: FileSystem.FileSystemSessionType.BACKGROUND,
+                }
+            );
+
+            if (downloadResult && downloadResult.uri) {
+                await Sharing.shareAsync(downloadResult.uri);
+            }
+        } catch (error) {
+            console.error('Ошибка скачивания:', error);
+            Alert.alert('Ошибка', 'Не удалось скачать файл');
+        } finally {
+            setIsDownloading(false);
+            setDownloadProgress(0);
+        }
+    };
+
+    return (
+        <View style={styles.attachmentContainer}>
+            {isImage ? (
+                <TouchableOpacity
+                    style={styles.imagePreviewContainer}
+                    onPress={() => onImagePress(file.url)}
+                >
+                    <Image
+                        source={{ uri: file.url, headers: { Authorization: `Bearer ${token}` } }}
+                        style={styles.imagePreview}
+                    />
+                    <View style={styles.imagePreviewOverlay}>
+                        <Text style={styles.imagePreviewName} numberOfLines={1}>{file.file_name}</Text>
+                        <TouchableOpacity onPress={downloadFile} style={styles.downloadIconButton}>
+                            <Download size={20} color="#fff" />
+                        </TouchableOpacity>
+                    </View>
+                </TouchableOpacity>
+            ) : (
+                <TouchableOpacity
+                    style={[styles.fileRow, isDownloading && styles.fileRowDownloading]}
+                    onPress={downloadFile}
+                    disabled={isDownloading}
+                >
+                    <View style={styles.fileIconContainer}>
+                        <FileText size={20} color="#0f6319" />
+                    </View>
+                    <Text style={styles.fileName} numberOfLines={1} ellipsizeMode="middle">
+                        {file.file_name}
+                    </Text>
+                    {isDownloading ? (
+                        <Text style={styles.progressText}>{Math.round(downloadProgress * 100)}%</Text>
+                    ) : (
+                        <Download size={20} color="#6b7280" />
+                    )}
+                </TouchableOpacity>
+            )}
+
+            {/* Прогресс-бар загрузки (показывается и для файлов, и для картинок при скачивании) */}
+            {isDownloading && (
+                <View style={styles.progressBarBackground}>
+                    <View style={[styles.progressBarFill, { width: `${downloadProgress * 100}%` }]} />
+                </View>
+            )}
+        </View>
+    );
+};
+
+interface AttachmentItemProps {
+    file: Attachment;
+    onImagePress: (url: string) => void;
+}
 
 const EventDetailsScreen: React.FC = () => {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -59,6 +182,20 @@ const EventDetailsScreen: React.FC = () => {
     const [showUploader, setShowUploader] = useState(false);
     const [showAttendanceModal, setShowAttendanceModal] = useState(false);
     const { handlers } = useFileManagerPresenter();
+    const router = useRouter();
+    const [excuseModalVisible, setExcuseModalVisible] = useState(false);
+    const [selectedExcuseAttendee, setSelectedExcuseAttendee] = useState<Attendee | null>(null);
+    const [viewerVisible, setViewerVisible] = useState(false);
+    const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
+
+    const handleImagePress = (url: string) => {
+        setSelectedImageUrl(url);
+        setViewerVisible(true);
+    };
+
+    const handleBack = () => {
+        router.replace('/EventsScreen');
+    };
 
     const loadEvent = useCallback(async (isRefresh = false) => {
         try {
@@ -76,6 +213,7 @@ const EventDetailsScreen: React.FC = () => {
             }
 
             const data: EventData = await response.json();
+            console.log(data);
             setEvent(data);
         } catch (e) {
             console.error('Ошибка при загрузке события:', e);
@@ -108,7 +246,7 @@ const EventDetailsScreen: React.FC = () => {
             <View style={styles.errorContainer}>
                 <Ionicons name="alert-circle-outline" size={64} color="#dc2626" />
                 <Text style={styles.errorText}>Событие не найдено</Text>
-                <TouchableOpacity style={styles.errorButton} onPress={() => router.back()}>
+                <TouchableOpacity style={styles.errorButton} onPress={handleBack}>
                     <Text style={styles.errorButtonText}>Вернуться назад</Text>
                 </TouchableOpacity>
             </View>
@@ -127,17 +265,8 @@ const EventDetailsScreen: React.FC = () => {
     };
 
     const location = parseLocation(event.location);
-
-    const formatDate = (dateString: string) => {
-        const date = new Date(dateString);
-        return {
-            time: date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
-            day: date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })
-        };
-    };
-
-    const startDate = formatDate(event.start_at);
-    const endDate = formatDate(event.end_at);
+    const startDate = formatDateTime(event.start_at);
+    const endDate = formatDateTime(event.end_at);
 
     const getEventTypeLabel = (type: string) => {
         const types: Record<string, string> = {
@@ -173,11 +302,6 @@ const EventDetailsScreen: React.FC = () => {
         }
     };
 
-
-    const getInitials = (name: string) => {
-        return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-    };
-
     const getStatusIcon = (status: string) => {
         switch (status) {
             case 'Yes': return <CheckCircle2 size={18} color="#0f6319" />;
@@ -186,11 +310,16 @@ const EventDetailsScreen: React.FC = () => {
         }
     };
 
+    const getInitials = (name: string) => {
+        if (!name) return '';
+        return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    };
+
     return (
         <>
             <ScrollView
                 style={[styles.container, { backgroundColor: '#f8fafc' }]}
-                contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
+                contentContainerStyle={{ paddingBottom: insets.bottom + 30 }}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
                 showsVerticalScrollIndicator={false}
             >
@@ -200,9 +329,9 @@ const EventDetailsScreen: React.FC = () => {
                     end={{ x: 1, y: 1 }}
                     style={[styles.header, { paddingTop: insets.top + 15 }]}
                 >
-                    <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+                    <TouchableOpacity style={styles.backButton} onPress={handleBack}>
                         <View pointerEvents="none">
-                        <ArrowLeft size={24} color="white" />
+                            <ArrowLeft size={24} color="white" />
                         </View>
                     </TouchableOpacity>
                     <View style={styles.headerContent}>
@@ -265,19 +394,11 @@ const EventDetailsScreen: React.FC = () => {
                         <View style={styles.card}>
                             <Text style={styles.sectionTitle}>Материалы</Text>
                             {event.attachments.map((file) => (
-                                <TouchableOpacity
+                                <AttachmentItem
                                     key={file.id}
-                                    style={styles.fileRow}
-                                    onPress={() => handlers.handleDownloadDocument(file.file_name, file.url)}
-                                >
-                                    <View style={styles.fileIconContainer}>
-                                        <FileText size={20} color="#0f6319" />
-                                    </View>
-                                    <Text style={styles.fileName} numberOfLines={1} ellipsizeMode="middle">
-                                        {file.file_name}
-                                    </Text>
-                                    <Download size={20} color="#6b7280" />
-                                </TouchableOpacity>
+                                    file={file}
+                                    onImagePress={handleImagePress}
+                                />
                             ))}
                         </View>
                     )}
@@ -287,7 +408,18 @@ const EventDetailsScreen: React.FC = () => {
                         <View style={styles.card}>
                             <Text style={styles.sectionTitle}>Участники ({event.attendees.filter(attendee => attendee.status === 'Yes').length})</Text>
                             {event.attendees.map((attendee) => (
-                                <TouchableOpacity key={attendee.user_id} style={styles.attendeeRow} onPress={() => router.push({ pathname: '/(screens)/ProfileScreen', params: { id: attendee.user_id } })}>
+                                <TouchableOpacity
+                                    key={attendee.user_id}
+                                    style={styles.attendeeRow}
+                                    onPress={() => {
+                                        if (attendee.status === 'No') {
+                                            setSelectedExcuseAttendee(attendee);
+                                            setExcuseModalVisible(true);
+                                        } else {
+                                            router.push({ pathname: '/(screens)/ProfileScreen', params: { id: attendee.user_id } });
+                                        }
+                                    }}
+                                >
                                     <View style={styles.avatar}>
                                         <Text style={styles.avatarText}>{getInitials(attendee.user_full_name)}</Text>
                                     </View>
@@ -343,6 +475,17 @@ const EventDetailsScreen: React.FC = () => {
                 onClose={() => setShowAttendanceModal(false)}
                 onSuccess={loadEvent}
             />
+            <AttendeeExcuseModal
+                visible={excuseModalVisible}
+                onClose={() => setExcuseModalVisible(false)}
+                attendee={selectedExcuseAttendee}
+                onDownloadDocument={handlers.handleDownloadDocument}
+            />
+            <ImageViewerModal
+                visible={viewerVisible}
+                imageUrl={selectedImageUrl}
+                onClose={() => setViewerVisible(false)}
+            />
         </>
     );
 };
@@ -394,6 +537,78 @@ const styles = StyleSheet.create({
     actionGroup: { gap: 12, marginBottom: 20 },
     secondaryButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb' },
     secondaryButtonText: { fontSize: 15, fontWeight: '600', color: '#0f6319', marginLeft: 8 },
+    attachmentContainer: {
+        marginBottom: 12,
+    },
+    imagePreviewContainer: {
+        height: 120,
+        borderRadius: 12,
+        overflow: 'hidden',
+        backgroundColor: '#f1f5f9',
+    },
+    imagePreview: {
+        width: '100%',
+        height: '100%',
+    },
+    imagePreviewOverlay: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        flexDirection: 'row',
+        padding: 8,
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    imagePreviewName: {
+        color: '#fff',
+        fontSize: 12,
+        flex: 1,
+        marginRight: 8,
+    },
+    downloadIconButton: {
+        padding: 4,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        borderRadius: 8,
+    },
+    fileRowDownloading: {
+        opacity: 0.8,
+    },
+    progressText: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#0f6319',
+    },
+    progressBarBackground: {
+        height: 4,
+        backgroundColor: '#e5e7eb',
+        borderRadius: 2,
+        marginTop: 4,
+        overflow: 'hidden',
+    },
+    progressBarFill: {
+        height: '100%',
+        backgroundColor: '#0f6319',
+        borderRadius: 2,
+    },
+    imageViewerOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.9)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    imageViewerCloseButton: {
+        position: 'absolute',
+        top: 50,
+        right: 20,
+        zIndex: 10,
+        padding: 8,
+    },
+    fullScreenImage: {
+        width: '100%',
+        height: '80%',
+    },
 });
 
 export default EventDetailsScreen;

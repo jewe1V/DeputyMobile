@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Animated, { FadeIn, LinearTransition } from 'react-native-reanimated';
 import { MoveLeft, MoveRight } from 'lucide-react-native';
 import { Event } from "@/models/EventModel";
+import {getLocalDateKey, getTodayLocalKey} from "@/utils";
 
 interface CalendarProps {
     selectedDate: string | undefined;
@@ -10,6 +11,8 @@ interface CalendarProps {
     events: Event[];
     onMonthChange?: (year: number, month: number) => void;
 }
+
+
 
 export const Calendar: React.FC<CalendarProps> = ({ selectedDate, onSelectDate, events, onMonthChange }) => {
     const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
@@ -27,12 +30,13 @@ export const Calendar: React.FC<CalendarProps> = ({ selectedDate, onSelectDate, 
         const map: Record<string, Event[]> = {};
         if (!events) return map;
         events.forEach((event) => {
-            const dateKey = event.start_at.split('T')[0];
+            // Используем локальную дату
+            const dateKey = getLocalDateKey(event.start_at);
             if (!map[dateKey]) map[dateKey] = [];
             map[dateKey].push(event);
         });
         return map;
-    }, [events, currentMonth, currentYear]);
+    }, [events]);
 
     const calendarWeeks = useMemo(() => {
         const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
@@ -56,10 +60,11 @@ export const Calendar: React.FC<CalendarProps> = ({ selectedDate, onSelectDate, 
         return weeks;
     }, [currentMonth, currentYear]);
 
+    const todayKey = getTodayLocalKey();
+
     return (
         <Animated.View layout={LinearTransition} style={styles.calendar}>
             <View style={styles.container}>
-                {/* Header */}
                 <View style={styles.calendarHeader}>
                     <TouchableOpacity
                         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -67,7 +72,7 @@ export const Calendar: React.FC<CalendarProps> = ({ selectedDate, onSelectDate, 
                         style={styles.navButton}
                     >
                         <View pointerEvents="none">
-                        <MoveLeft size={22} color={"#0f6319"} />
+                            <MoveLeft size={22} color={"#0f6319"} />
                         </View>
                     </TouchableOpacity>
 
@@ -79,12 +84,11 @@ export const Calendar: React.FC<CalendarProps> = ({ selectedDate, onSelectDate, 
                         style={styles.navButton}
                     >
                         <View pointerEvents="none">
-                        <MoveRight size={22} color={"#0f6319"} />
+                            <MoveRight size={22} color={"#0f6319"} />
                         </View>
                     </TouchableOpacity>
                 </View>
 
-                {/* Сетка календаря (Всегда видна) */}
                 <Animated.View
                     key={`grid-${currentMonth}-${currentYear}`}
                     entering={FadeIn.duration(300)}
@@ -107,7 +111,7 @@ export const Calendar: React.FC<CalendarProps> = ({ selectedDate, onSelectDate, 
                                 const isSelected = selectedDate === dateStr;
                                 const dayEvents = eventsByDate[dateStr] || [];
                                 const hasEvents = dayEvents.length > 0;
-                                const isDayPast = new Date(dateStr + 'T23:59:59') < new Date();
+                                const isDayPast = dateStr < todayKey;
 
                                 return (
                                     <View key={day} style={styles.dayWrapper}>

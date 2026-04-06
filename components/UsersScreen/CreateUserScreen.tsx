@@ -236,6 +236,7 @@ const CreateUserScreen = () => {
                                             selectedRole === role && styles.selectItemSelected
                                         ]}
                                         onPress={() => {
+                                            // @ts-ignore
                                             setSelectedRole(role);
                                             setIsRoleSelectOpen(false);
                                         }}

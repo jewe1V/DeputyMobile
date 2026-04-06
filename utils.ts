@@ -7,6 +7,14 @@ export const formatDate = (dateString: string) => {
     });
 };
 
+export const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return {
+        time: date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+        day: date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })
+    };
+};
+
 export const formatDateToDay = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('ru-RU', {
@@ -48,4 +56,23 @@ export const getDaysUntilDue = (dueDate: string) => {
     const due = new Date(dueDate);
     const diffTime = due.getTime() - today.getTime();
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+};
+
+
+export const getLocalDateKey = (dateString: string): string => {
+    const date = new Date(dateString);
+    // Используем локальные методы, а не UTC
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+// Функция для получения сегодняшней локальной даты
+export const getTodayLocalKey = (): string => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 };

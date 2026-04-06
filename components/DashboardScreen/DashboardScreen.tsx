@@ -4,8 +4,7 @@ import {
     Text,
     ScrollView,
     TouchableOpacity,
-    RefreshControl, Platform,
-    InteractionManager,
+    RefreshControl,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
@@ -31,7 +30,6 @@ import { SkeletonItem } from '@/components/ui/SkeletonLoader';
 interface DashboardData {
     job_title: string;
     user_name: string;
-    roles: string[];
     event_count: number;
     urgent_event_count: number;
     task_count: number;
@@ -54,14 +52,9 @@ export function Dashboard() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [refreshing, setRefreshing] = useState(false);
-    const [isReady, setIsReady] = useState(false);
 
     useEffect(() => {
-        const task = InteractionManager.runAfterInteractions(() => {
-            setIsReady(true);
-        });
         fetchDashboardData(false);
-        return () => task.cancel();
     }, []);
 
     const fetchDashboardData = async (isRefresh = false) => {
@@ -96,7 +89,6 @@ export function Dashboard() {
             }
 
             const json = await response.json();
-            console.log(json.urgent_tasks);
             setData(json);
         } catch (error) {
             console.error(error);
@@ -198,7 +190,7 @@ export function Dashboard() {
         </LinearGradient>
     );
 
-    if (!isReady || isLoading) {
+    if (isLoading) {
         return (
             <ScrollView
                 showsVerticalScrollIndicator={false}
@@ -269,29 +261,35 @@ export function Dashboard() {
         );
     }
 
-    const allUpcomingEvents = [...(data.events_by_status?.Going || [])].slice(0, 3);
-    const displayTasks : Task[] = data.tasks?.slice(0, 3) || [];
+    const allUpcomingEvents = data.urgent_events || [];
+    const displayTasks : Task[] = data.urgent_tasks || [];
 
     return (
-        <ScrollView
-            showsVerticalScrollIndicator={false}
-            refreshControl={
-                <RefreshControl
-                    refreshing={refreshing}
-                    onRefresh={onRefresh}
-                    colors={['#2A6E3F']}
-                    tintColor="#2A6E3F"
-                    title="Обновление..."
-                    titleColor="#666"
-                />
-            }
-        >
-            <View>
+        <View style={{ flex: 1, paddingBottom: insets.bottom + 15 }}>
+
+            {/* 1. Статичная полоса, которая не скроллится (закрывает статус-бар) */}
+            {/* Используем верхний цвет градиента, чтобы не было видно стыка */}
+            <View style={{ height: insets.top, backgroundColor: '#2A6E3F' }} />
+
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={['#2A6E3F']}
+                        tintColor="#2A6E3F"
+                        title="Обновление..."
+                        titleColor="#666"
+                    />
+                }
+            >
+                {/* 2. Теперь хедер находится внутри ScrollView и скроллится */}
                 <LinearGradient
                     colors={['#2A6E3F', '#349339']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
-                    style={[styles.header, { paddingTop: insets.top + 15 }]}
+                    style={[styles.header, { paddingTop: 15 }]} // Убрали insets.top отсюда
                 >
                     <View style={styles.headerContent}>
                         <View style={styles.userInfoRow}>
@@ -316,108 +314,112 @@ export function Dashboard() {
                         <Text style={styles.organization}>Городская Дума Екатеринбурга</Text>
                     </View>
                 </LinearGradient>
-            </View>
 
-            <View style={styles.content}>
-                <View style={styles.statsGrid}>
-                    <Animated.View style={styles.statCardContainer} entering={FadeInDown.delay(200).duration(600).springify()}>
-                        <LinearGradient colors={['#ffffff', '#fffafa']} style={styles.statCard}>
-                            <View style={styles.statIcon}><Calendar size={20} color="black" /></View>
-                            <Text style={styles.statNumber}>{data.event_count || 0}</Text>
-                            <Text style={styles.statLabel}>Мероприятий</Text>
-                        </LinearGradient>
-                    </Animated.View>
+                {/* 3. Карточки статистики тоже внутри ScrollView */}
+                <View style={styles.statsWrapper}>
+                    <View style={styles.statsGrid}>
+                        <Animated.View style={styles.statCardContainer} entering={FadeInDown.delay(200).duration(600).springify()}>
+                            <LinearGradient colors={['#ffffff', '#fffafa']} style={styles.statCard}>
+                                <View style={styles.statIcon}><Calendar size={20} color="black" /></View>
+                                <Text style={styles.statNumber}>{data.event_count || 0}</Text>
+                                <Text style={styles.statLabel}>Мероприятий</Text>
+                            </LinearGradient>
+                        </Animated.View>
 
-                    <Animated.View style={styles.statCardContainer} entering={FadeInDown.delay(400).duration(600).springify()}>
-                        <LinearGradient colors={['#ffffff', '#fffafa']} style={styles.statCard}>
-                            <View style={styles.statIcon}><CheckCircle2 size={20} color="black" /></View>
-                            <Text style={styles.statNumber}>{data.task_count || 0}</Text>
-                            <Text style={styles.statLabel}>Задач</Text>
-                        </LinearGradient>
-                    </Animated.View>
+                        <Animated.View style={styles.statCardContainer} entering={FadeInDown.delay(400).duration(600).springify()}>
+                            <LinearGradient colors={['#ffffff', '#fffafa']} style={styles.statCard}>
+                                <View style={styles.statIcon}><CheckCircle2 size={20} color="black" /></View>
+                                <Text style={styles.statNumber}>{data.task_count || 0}</Text>
+                                <Text style={styles.statLabel}>Задач</Text>
+                            </LinearGradient>
+                        </Animated.View>
 
-                    <Animated.View style={styles.statCardContainer} entering={FadeInDown.delay(600).duration(600).springify()}>
-                        <LinearGradient colors={['#ffffff', '#fffafa']} style={styles.statCard}>
-                            <View style={styles.statIcon}><AlertCircle size={20} color="black" /></View>
-                            <Text style={styles.statNumber}>{data.urgent_tasks_count || 0}</Text>
-                            <Text style={styles.statLabel}>Срочных задач</Text>
-                        </LinearGradient>
-                    </Animated.View>
+                        <Animated.View style={styles.statCardContainer} entering={FadeInDown.delay(600).duration(600).springify()}>
+                            <LinearGradient colors={['#ffffff', '#fffafa']} style={styles.statCard}>
+                                <View style={styles.statIcon}><AlertCircle size={20} color="black" /></View>
+                                <Text style={styles.statNumber}>{data.urgent_tasks_count || 0}</Text>
+                                <Text style={styles.statLabel}>Срочных задач</Text>
+                            </LinearGradient>
+                        </Animated.View>
+                    </View>
                 </View>
 
-                {displayTasks.length > 0 && (
-                    <Animated.View
-                        entering={FadeInDown.delay(700).duration(600)}
-                        style={styles.section}
-                    >
-                        <View style={styles.sectionHeader}>
-                            <Text style={styles.sectionTitle}>Мои задачи</Text>
-                        </View>
+                {/* Основной контент */}
+                <View style={styles.content}>
+                    {displayTasks.length > 0 && (
+                        <Animated.View
+                            entering={FadeInDown.delay(700).duration(600)}
+                            style={styles.section}
+                        >
+                            <View style={styles.sectionHeader}>
+                                <Text style={styles.sectionTitle}>Мои задачи</Text>
+                            </View>
 
-                        <View style={styles.cardsContainer}>
-                            {displayTasks.map((task: any, index: number) => (
-                                <TaskCard
-                                    key={task.task_id || index}
-                                    task={task}
-                                    onPress={() => router.push({
-                                        pathname: '/(forms)/TaskDetailScreen',
-                                        params: { id: task.task_id }
-                                    })}
-                                />
-                            ))}
-                        </View>
-                    </Animated.View>
-                )}
+                            <View style={styles.cardsContainer}>
+                                {displayTasks.map((task: any, index: number) => (
+                                    <TaskCard
+                                        key={task.task_id || index}
+                                        task={task}
+                                        onPress={() => router.push({
+                                            pathname: '/(forms)/TaskDetailScreen',
+                                            params: { id: task.task_id }
+                                        })}
+                                    />
+                                ))}
+                            </View>
+                        </Animated.View>
+                    )}
 
-                {allUpcomingEvents.length > 0 && (
-                    <Animated.View
-                        entering={FadeInDown.delay(displayTasks.length > 0 ? 1000 : 700).duration(600)}
-                        style={styles.section}
-                    >
-                        <View style={styles.sectionHeader}>
-                            <Text style={styles.sectionTitle}>Предстоящие мероприятия</Text>
-                        </View>
+                    {allUpcomingEvents.length > 0 && (
+                        <Animated.View
+                            entering={FadeInDown.delay(displayTasks.length > 0 ? 1000 : 700).duration(600)}
+                            style={styles.section}
+                        >
+                            <View style={styles.sectionHeader}>
+                                <Text style={styles.sectionTitle}>Предстоящие мероприятия</Text>
+                            </View>
 
-                        <View style={styles.cardsContainer}>
-                            {allUpcomingEvents.map((event: Event, index: number) => {
-                                const showDate = index === 0 ||
-                                    formatDate(event.start_at) !== formatDate(allUpcomingEvents[index - 1].start_at);
+                            <View style={styles.cardsContainer}>
+                                {allUpcomingEvents.map((event: Event, index: number) => {
+                                    const showDate = index === 0 ||
+                                        formatDate(event.start_at) !== formatDate(allUpcomingEvents[index - 1].start_at);
 
-                                return (
-                                    <View key={event.id}>
-                                        {showDate && (
-                                            <Text style={styles.eventDate}>{formatDateToDay(event.start_at)}</Text>
-                                        )}
-                                        <EventCard
-                                            event={event}
-                                            index={index}
-                                            onPress={() => router.push({
-                                                pathname: '/(screens)/EventDetailsScreen',
-                                                params: { id: event.id }
-                                            })}
-                                        />
-                                    </View>
-                                );
-                            })}
-                        </View>
-                    </Animated.View>
-                )}
+                                    return (
+                                        <View key={event.id}>
+                                            {showDate && (
+                                                <Text style={styles.eventDate}>{formatDateToDay(event.start_at)}</Text>
+                                            )}
+                                            <EventCard
+                                                event={event}
+                                                index={index}
+                                                onPress={() => router.push({
+                                                    pathname: '/(screens)/EventDetailsScreen',
+                                                    params: { id: event.id }
+                                                })}
+                                            />
+                                        </View>
+                                    );
+                                })}
+                            </View>
+                        </Animated.View>
+                    )}
 
-                {displayTasks.length === 0 && allUpcomingEvents.length === 0 && (
-                    <Animated.View
-                        entering={FadeInDown.delay(700).duration(600)}
-                        style={[styles.section]}
-                    >
-                        <View style={styles.emptyContainer}>
-                            <CheckCircle2 size={48} color="#3bb625" />
-                            <Text style={styles.emptyMainTitle}>Нет активных задач</Text>
-                            <Text style={styles.emptyMainSubtitle}>
-                                Идеальный момент, чтобы просто побыть в покое и насладиться тишиной
-                            </Text>
-                        </View>
-                    </Animated.View>
-                )}
-            </View>
-        </ScrollView>
+                    {displayTasks.length === 0 && allUpcomingEvents.length === 0 && (
+                        <Animated.View
+                            entering={FadeInDown.delay(700).duration(600)}
+                            style={[styles.section]}
+                        >
+                            <View style={styles.emptyContainer}>
+                                <CheckCircle2 size={48} color="#3bb625" />
+                                <Text style={styles.emptyMainTitle}>Нет активных задач</Text>
+                                <Text style={styles.emptyMainSubtitle}>
+                                    Идеальный момент, чтобы просто побыть в покое и насладиться тишиной
+                                </Text>
+                            </View>
+                        </Animated.View>
+                    )}
+                </View>
+            </ScrollView>
+        </View>
     );
 }

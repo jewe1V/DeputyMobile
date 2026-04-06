@@ -16,6 +16,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { UserX, LogOut, Mail, Shield, Calendar, ListTodo, ChevronRight } from 'lucide-react-native';
+import {Profile} from "@/models/ProfileModel";
 
 
 interface AvatarProps {
@@ -40,7 +41,7 @@ export function ProfileScreen() {
     const navigation = useNavigation();
     const router = useRouter();
     const insets = useSafeAreaInsets();
-    const [profile, setProfile] = useState<any | null>(null); // Замените any на ProfileScreenDto
+    const [profile, setProfile] = useState<Profile | null>(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
@@ -134,7 +135,7 @@ export function ProfileScreen() {
                 >
                     <View style={styles.headerTopRow}>
                         <Text style={styles.headerTitle}>Профиль</Text>
-                        {!id && ( // Показываем кнопку выхода, если это свой профиль
+                        {!id && (
                             <TouchableOpacity style={styles.iconButton} onPress={handleLogout}>
                                 <LogOut size={20} color="white" />
                             </TouchableOpacity>
@@ -214,7 +215,7 @@ export function ProfileScreen() {
 
                         <TouchableOpacity
                             style={styles.actionItem}
-                            onPress={() => navigation.navigate('CatalogScreen' as never)}
+                            onPress={() => navigation.navigate('TaskBoardScreen' as never)}
                         >
                             <View style={[styles.actionIcon, { backgroundColor: '#f0fdf4' }]}>
                                 <ListTodo size={20} color="#16a34a" />

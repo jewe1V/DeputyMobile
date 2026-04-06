@@ -130,7 +130,7 @@ class TaskService {
 
   async deleteTask(id: string) {
     try {
-      await this.fetchWithTimeout(`${apiUrl}/api/task/gdelete/${id}`, {
+      await this.fetchWithTimeout(`${apiUrl}/api/task/delete/${id}`, {
         method: 'DELETE',
         headers: this.getAuthHeaders(),
       });

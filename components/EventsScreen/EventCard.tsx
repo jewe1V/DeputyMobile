@@ -2,7 +2,6 @@ import React, { useRef, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, Animated, TouchableOpacity } from 'react-native';
 import { Event } from "@/models/EventModel";
 
-// Стили типов событий
 const getEventTypeStyles = (type: string, isPast: boolean) => {
     if (isPast) return { label: 'Завершено', color: '#6e7378', bg: '#f1f5f9' };
     switch (type) {
@@ -15,7 +14,7 @@ const getEventTypeStyles = (type: string, isPast: boolean) => {
 interface EventCardProps {
     event: Event;
     index?: number;
-    onPress?: (event: Event) => void; // Опционально для открытия деталей извне
+    onPress?: (event: Event) => void;
 }
 
 export const EventCard: React.FC<EventCardProps> = ({ event, index = 0, onPress }) => {

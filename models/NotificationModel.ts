@@ -4,6 +4,7 @@ export type NotificationType = "Event" | "Task";
 
 export interface Notification {
     id: string;
+    notifable_id: string;
     user_id: string;
     title: string;
     description: string;

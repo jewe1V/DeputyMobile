@@ -1,16 +1,15 @@
-import React, {useState, useEffect, useMemo} from 'react';
+import React, {useState, useEffect, useMemo, useCallback} from 'react';
 import {
     View,
     Text,
     TouchableOpacity,
     FlatList,
-    ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import {
     ArrowLeft,
     Bell,
-    Calendar,
+    Calendar, ChevronRight,
     ClipboardList,
 } from 'lucide-react-native';
 import { styles } from './notifications-page';
@@ -20,6 +19,9 @@ import { Select } from "@/components/ui/Select";
 import { AuthManager } from "@/components/LoginScreen/LoginScreen";
 import {Notification, NotificationType} from "@/models/NotificationModel";
 import {apiUrl} from "@/api/api"
+import {useSafeAreaInsets} from "react-native-safe-area-context";
+import {NotificationSkeletonItem} from "@/components/NotificationsPage/NotificationSkeletonItem";
+import {SkeletonItem} from "@/components/ui/SkeletonLoader";
 
 const notificationConfig: Record<NotificationType, { icon: any; iconColor: string }> = {
     Task: {
@@ -33,7 +35,7 @@ const notificationConfig: Record<NotificationType, { icon: any; iconColor: strin
 };
 
 const filterOptions = [
-    { label: 'Все уведомления', value: 'all' },
+    { label: 'Все', value: 'all' },
     { label: 'Задачи', value: 'Task' },
     { label: 'События', value: 'Event' },
 ];
@@ -45,48 +47,62 @@ export function Notifications() {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const insets = useSafeAreaInsets();
 
-    const fetchNotifications = async () => {
+    const fetchNotifications = useCallback(async () => {
         try {
+            if (!refreshing) setLoading(true);
             setError(null);
+
             const token = await AuthManager.getToken();
 
-            if (!token) {
-                throw new Error('Токен авторизации не найден');
-            }
-
-            const response = await fetch(`${apiUrl}/api/Notify/all`, {
+            const response = await fetch(`${apiUrl}/api/Notify/my`, {
                 method: 'GET',
                 headers: {
-                    'accept': '*/*',
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`,
                 },
             });
 
             if (!response.ok) {
-                throw new Error(`Ошибка сервера: ${response.status}`);
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || `Ошибка сервера: ${response.status}`);
             }
 
-            const data: Notification[] = await response.json();
+            const data = await response.json();
 
             setNotifications(data);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Не удалось загрузить уведомления');
-            console.error('Error fetching notifications:', err);
+            console.error('Fetch Error:', err);
         } finally {
             setLoading(false);
             setRefreshing(false);
         }
+    }, [refreshing]);
+
+    const parseDescription = (desc: any): string => {
+        if (typeof desc !== 'string') return '';
+        if (desc.startsWith('{')) {
+            try {
+                const parsed = JSON.parse(desc);
+                return parsed.message || parsed.text || 'Новое уведомление';
+            } catch (e) {
+                return 'Новое уведомление';
+            }
+        }
+        return desc;
     };
+
+    const handleRefresh = useCallback(() => {
+        setRefreshing(true);
+        fetchNotifications();
+    }, [fetchNotifications]);
 
     useEffect(() => {
         fetchNotifications();
     }, []);
-
-    const handleRefresh = () => {
-        setRefreshing(true);
-        fetchNotifications();
-    };
 
     const formatTime = (dateString: string) => {
         const date = new Date(dateString);
@@ -106,14 +122,9 @@ export function Notifications() {
 
     const handleNotificationClick = (notification: Notification) => {
         if (notification.notify_type === 'Task') {
-            router.push('/TaskBoardScreen');
-        } else if (notification.notify_type === 'Event') {
-            router.push('/EventsScreen');
+            router.push({ pathname: '/(screens)/TaskBoardScreen', params: { id: notification.notifable_id }});
         } else {
-            router.push({
-                pathname: '/NotificationDetailScreen',
-                params: { id: notification.id, notification: JSON.stringify(notification) }
-            });
+            router.push({ pathname: '/(screens)/EventDetailsScreen', params: { id: notification.notifable_id }});
         }
     };
 
@@ -123,29 +134,48 @@ export function Notifications() {
     }, [notifications, filterType]);
 
     const renderNotificationItem = ({ item }: { item: Notification }) => {
-        const config = notificationConfig[item.notify_type] || { icon: Bell, iconColor: '#9CA3AF' };
+        const config = notificationConfig[item.notify_type] || { icon: Bell };
         const Icon = config.icon;
 
         return (
-            <TouchableOpacity onPress={() => handleNotificationClick(item)} style={styles.notificationItem}>
-                <View style={styles.notificationContent}>
-                    <View style={styles.iconContainer}>
-                        <Icon size={20} color={"#268356"} />
+            <TouchableOpacity
+                onPress={() => handleNotificationClick(item)}
+                style={[
+                    styles.notificationItem,
+                ]}
+            >
+                <View style={styles.row}>
+
+                    {/* Иконка */}
+                    <View style={styles.iconWrapper}>
+                        <Icon size={20} color="#268356" />
                     </View>
 
-                    <View style={styles.textContainer}>
-                        <View style={styles.headerRow}>
-                            <Text style={styles.title}>{item.title}</Text>
+                    {/* Контент */}
+                    <View style={styles.content}>
+
+                        {/* Верхняя строка */}
+                        <View style={styles.topRow}>
+                            <Text style={styles.title} numberOfLines={2}>
+                                {item.title}
+                            </Text>
+
+                            <Text style={styles.time}>
+                                {formatTime(item.notify_date)}
+                            </Text>
                         </View>
-                        <Text style={styles.message} numberOfLines={2}>
-                            {typeof item.description === 'string' && item.description.startsWith('{')
+
+                        {/* Описание */}
+                        <Text style={styles.description} numberOfLines={2}>
+                            {typeof item.description === 'string' &&
+                            item.description.startsWith('{')
                                 ? 'Новое уведомление'
                                 : item.description}
                         </Text>
-                        <Text style={styles.time}>
-                            {formatTime(item.notify_date)}
-                        </Text>
                     </View>
+
+                    {/* Стрелка */}
+                    <ChevronRight size={18} color="#9CA3AF" />
                 </View>
             </TouchableOpacity>
         );
@@ -174,25 +204,64 @@ export function Notifications() {
         </View>
     );
 
+    const NotificationsSkeleton = () => {
+        return (
+            <View>
+                {Array.from({ length: 6 }).map((_, index) => (
+                    <NotificationSkeletonItem key={index} />
+                ))}
+            </View>
+        );
+    };
+
     if (loading) {
         return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#2A6E3F" />
+            <View style={[styles.container, {paddingBottom: insets.bottom + 15}]}>
+                <LinearGradient
+                    colors={['#2A6E3F', '#349339']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={[styles.header, {paddingTop: insets.top + 15}]}
+                >
+                    <View style={styles.headerContent}>
+                        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+                            <View pointerEvents="none">
+                                <ArrowLeft size={24} color="white" />
+                            </View>
+                        </TouchableOpacity>
+                        <View style={styles.headerTitleContainer}>
+                            <Text style={styles.headerTitle}>Уведомления</Text>
+                        </View>
+                    </View>
+                </LinearGradient>
+
+                <LinearGradient colors={['#ebfdeb', '#fff']} style={styles.filtersSection}>
+                    <View style={styles.filtersGrid}>
+                        <View style={styles.filterGroup}>
+                            <SkeletonItem width={60} height={12} borderRadius={4} />
+                            <SkeletonItem width={'100%'} height={40} borderRadius={8} />
+                        </View>
+                    </View>
+                </LinearGradient>
+
+                <NotificationsSkeleton />
             </View>
         );
     }
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container]}>
             <LinearGradient
                 colors={['#2A6E3F', '#349339']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
-                style={styles.header}
+                style={[styles.header, {paddingTop: insets.top + 15}]}
             >
                 <View style={styles.headerContent}>
-                    <TouchableOpacity onPress={() => navigation.goBack()}>
-                        <ArrowLeft size={24} color="#FFFFFF" />
+                    <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+                        <View pointerEvents="none">
+                            <ArrowLeft size={24} color="white" />
+                        </View>
                     </TouchableOpacity>
                     <View style={styles.headerTitleContainer}>
                         <Text style={styles.headerTitle}>Уведомления</Text>

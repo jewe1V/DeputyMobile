@@ -44,31 +44,13 @@ export default function CreateEventScreen() {
         setCoords(locationData.coords);
     };
 
-    // Исправленные обработчики для DateTimePicker
     const handleStartDateConfirm = (date: Date) => {
-        // Создаем новую дату и устанавливаем в UTC
-        const utcDate = new Date(Date.UTC(
-            date.getFullYear(),
-            date.getMonth(),
-            date.getDate(),
-            date.getHours(),
-            date.getMinutes(),
-            date.getSeconds()
-        ));
-        setStartAt(utcDate);
+        setStartAt(date);
         setStartPickerVisible(false);
     };
 
     const handleEndDateConfirm = (date: Date) => {
-        const utcDate = new Date(Date.UTC(
-            date.getFullYear(),
-            date.getMonth(),
-            date.getDate(),
-            date.getHours(),
-            date.getMinutes(),
-            date.getSeconds()
-        ));
-        setEndAt(utcDate);
+        setEndAt(date);
         setEndPickerVisible(false);
     };
 
@@ -115,11 +97,11 @@ export default function CreateEventScreen() {
                 ? `${location.trim()}|${coords.lat},${coords.lon}`
                 : location.trim();
 
-            // Используем уже UTC даты
+            // Отправляем даты в ISO формате (они сохранят локальное время с указанием часового пояса)
             const eventData = {
                 title: title.trim(),
                 description: description.trim(),
-                start_at: startAt.toISOString(), // теперь это будет корректная UTC строка
+                start_at: startAt.toISOString(),
                 end_at: endAt.toISOString(),
                 location: locationString,
                 isPublic: isPublic,
@@ -162,6 +144,14 @@ export default function CreateEventScreen() {
         }
     };
 
+    const formatDateForDisplay = (date: Date | null) => {
+        if (!date) return "";
+        return `${date.toLocaleDateString("ru-RU")} ${date.toLocaleTimeString("ru-RU", {
+            hour: "2-digit",
+            minute: "2-digit",
+        })}`;
+    };
+
     const clearForm = () => {
         setTitle("");
         setDescription("");
@@ -171,16 +161,6 @@ export default function CreateEventScreen() {
         setEndAt(null);
         setEventType("Event");
         setIsPublic(true);
-    };
-
-    const formatDateForDisplay = (date: Date | null) => {
-        if (!date) return "";
-        // Для отображения конвертируем UTC обратно в локальное время
-        const localDate = new Date(date);
-        return `${localDate.toLocaleDateString("ru-RU")} ${localDate.toLocaleTimeString("ru-RU", {
-            hour: "2-digit",
-            minute: "2-digit",
-        })}`;
     };
 
     return (

@@ -83,6 +83,7 @@ const App: React.FC = () => {
                     // 2. Если payload нет (как в твоем логе), берем данные напрямую из data или notification
                     else {
                         headerTitle = remoteMessage.notification?.title || 'Новое уведомление';
+                        // @ts-ignore
                         mainText = remoteMessage.data?.description || remoteMessage.notification?.body || 'Текст отсутствует';
                     }
 

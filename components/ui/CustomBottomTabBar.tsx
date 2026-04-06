@@ -91,7 +91,6 @@ export function CustomBottomTabBar({ state, descriptors, navigation, insets, rol
                         default: return null;
                     }
 
-                    // 4. Рендерим анимированный компонент вкладки
                     return (
                         <TabButton
                             key={route.key}

@@ -18,6 +18,7 @@ import {router} from "expo-router";
 import {AuthManager} from "@/components/LoginScreen/LoginScreen";
 import {Select} from "@/components/ui/Select";
 import {SchedulePopup} from "@/components/EventsScreen/SchedulePopup";
+import {formatDate, formatDateTime, getLocalDateKey, getTodayLocalKey} from "@/utils";
 
 const EventsScreen: React.FC = () => {
     const now = new Date();
@@ -34,6 +35,17 @@ const EventsScreen: React.FC = () => {
     const [isReady, setIsReady] = useState(false);
 
     const insets = useSafeAreaInsets();
+
+    // Функция для получения названия месяца в родительном падеже
+    const getMonthInGenitive = (year: number, month: number): string => {
+        const monthsGenitive = [
+            'январе', 'феврале', 'марте', 'апреле', 'мае', 'июне',
+            'июле', 'августе', 'сентябре', 'октябре', 'ноябре', 'декабре'
+        ];
+        return monthsGenitive[month];
+    };
+
+    const currMonth = getMonthInGenitive(viewDate.year, viewDate.month);
 
     const loadEvents = useCallback(async (year: number, month: number, isRefresh = false, isOnlyMy = false) => {
         try {
@@ -53,6 +65,7 @@ const EventsScreen: React.FC = () => {
                 }
             );
             const data: Event[] = await response.json();
+            console.log(data);
             setEvents(data);
         } catch (e) {
             console.error('Ошибка при загрузке событий:', e);
@@ -79,7 +92,6 @@ const EventsScreen: React.FC = () => {
         }
     };
 
-    // Первичная загрузка и реакция на смену фильтра (мои/все)
     useEffect(() => {
         const task = InteractionManager.runAfterInteractions(() => {
             setIsReady(true);
@@ -94,29 +106,31 @@ const EventsScreen: React.FC = () => {
         setRefreshing(true);
         await loadEvents(viewDate.year, viewDate.month, true, eventsFilter === 'mine');
     };
-
+    const todayKey = getTodayLocalKey();
     const filteredEvents = useMemo(() => {
-        const todayStart = new Date();
-        todayStart.setHours(0, 0, 0, 0);
+        if (!events || !Array.isArray(events)) {
+            return [];
+        }
 
         if (viewMode === 'calendar' && selectedDate) {
-            return events.filter(ev => ev.start_at.split('T')[0] === selectedDate);
+            return events.filter(ev => getLocalDateKey(ev.start_at) === selectedDate);
         }
 
         return events.filter(ev => {
-            const eventDate = new Date(ev.start_at);
+            const eventDateKey = getLocalDateKey(ev.start_at);
+
             if (eventsFilter === 'past') {
-                return eventDate < todayStart;
+                return eventDateKey < todayKey;
             }
-            // Для "Все" и "Мои" показываем и будущие, и сегодняшние (даже если утро прошло)
-            return eventDate >= todayStart;
+            return eventDateKey >= todayKey;
         });
     }, [events, selectedDate, viewMode, eventsFilter]);
+
 
     const grouped = useMemo(() => {
         const map: Record<string, Event[]> = {};
         filteredEvents.forEach(event => {
-            const dateKey = event.start_at.split('T')[0];
+            const dateKey = getLocalDateKey(event.start_at);
             if (!map[dateKey]) map[dateKey] = [];
             map[dateKey].push(event);
         });
@@ -126,7 +140,7 @@ const EventsScreen: React.FC = () => {
     const handleDateSelect = useCallback((date: string) => {
         setSelectedDate(date);
 
-        const dayEvents = events.filter(ev => ev.start_at.split('T')[0] === date);
+        const dayEvents = events.filter(ev => getLocalDateKey(ev.start_at) === date);
 
         if (dayEvents.length > 0) {
             setSelectedDayEvents(dayEvents);
@@ -142,7 +156,7 @@ const EventsScreen: React.FC = () => {
             ];
         } else {
             return [
-                { label: 'Предстоящие', value: 'all' }, // 'all' в вашем filteredEvents уже работает как "Предстоящие"
+                { label: 'Предстоящие', value: 'all' },
                 { label: 'Прошедшие', value: 'past' },
                 { label: 'Мои', value: 'mine' },
             ];
@@ -163,11 +177,11 @@ const EventsScreen: React.FC = () => {
             >
                 <View style={styles.headerContent}>
                     <Text style={styles.headerTitle}>События</Text>
-                    <Text style={styles.headerSubtitle}>{viewMode === 'calendar' ? "Предстоит" : "Запланировано"} {filteredEvents.length}</Text>
+                    <Text style={styles.headerSubtitle}>{viewMode === 'calendar' ? "Предстоит" : `Запланировано в ${currMonth}`}: {filteredEvents.length}</Text>
                 </View>
                 <TouchableOpacity style={styles.newTaskButton} onPress={() => router.push("/CreateEventScreen")}>
                     <View pointerEvents="none">
-                    <Plus size={20} color="white" />
+                        <Plus size={20} color="white" />
                     </View>
                 </TouchableOpacity>
             </LinearGradient>
@@ -201,7 +215,7 @@ const EventsScreen: React.FC = () => {
                 <View style={styles.calendarContainer}>
                     <Calendar
                         selectedDate={selectedDate}
-                        onSelectDate={handleDateSelect} // Используем новую функцию
+                        onSelectDate={handleDateSelect}
                         events={events}
                         onMonthChange={(y, m) => loadEvents(y, m, false, eventsFilter === 'mine')}
                     />
@@ -218,11 +232,7 @@ const EventsScreen: React.FC = () => {
                             keyExtractor={([date]) => date}
                             renderItem={({ item }) => {
                                 const [date, dayEvents] = item;
-                                const formattedDate = new Date(date + 'T00:00:00').toLocaleDateString('ru-RU', {
-                                    day: '2-digit',
-                                    month: 'long',
-                                    year: 'numeric',
-                                });
+                                const formattedDate = formatDate(date);
                                 return (
                                     <View style={styles.groupBlock}>
                                         <View style={styles.dateBadge}>

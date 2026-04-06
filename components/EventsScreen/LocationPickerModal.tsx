@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
     View, Text, TextInput, TouchableOpacity, ScrollView,
     Modal, StyleSheet, Alert, ActivityIndicator
@@ -31,29 +31,45 @@ export default function LocationPickerModal({
                                             }: LocationPickerModalProps) {
     const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(null);
     const [location, setLocation] = useState("");
-    const [mapZoom, setMapZoom] = useState(INITIAL_REGION.zoom);
     const [searchQuery, setSearchQuery] = useState("");
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [isSearching, setIsSearching] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
+    // Новые стейты для отслеживания реального положения камеры и разрешений
+    const [currentCamera, setCurrentCamera] = useState({ lat: INITIAL_REGION.lat, lon: INITIAL_REGION.lon, zoom: INITIAL_REGION.zoom });
+    const [hasLocationPermission, setHasLocationPermission] = useState(false);
+
     const mapRef = useRef<any>(null);
     const insets = useSafeAreaInsets();
-    // @ts-ignore
-    const searchTimeout = useRef<NodeJS.Timeout>();
+    const searchTimeout = useRef<NodeJS.Timeout | null>(null);
+    const abortController = useRef<AbortController | null>(null);
 
-    // Сброс состояния при открытии модалки
+    // Сброс состояния и установка начальной точки при открытии модалки
     useEffect(() => {
         if (visible) {
+            // Тихо проверяем разрешения, чтобы понять, можно ли рендерить showUserPosition
+            Location.getForegroundPermissionsAsync().then(({ status }) => {
+                setHasLocationPermission(status === 'granted');
+            });
+
+            const startCoords = initialCoords || { lat: INITIAL_REGION.lat, lon: INITIAL_REGION.lon };
+            setCoords(startCoords);
+            setCurrentCamera(prev => ({ ...prev, lat: startCoords.lat, lon: startCoords.lon }));
+
             if (initialCoords) {
-                setCoords(initialCoords);
                 setLocation(initialLocation || "");
             } else {
-                const defaultCoords = { lat: INITIAL_REGION.lat, lon: INITIAL_REGION.lon };
-                setCoords(defaultCoords);
-                reverseGeocode(defaultCoords);
+                reverseGeocode(startCoords);
             }
-            setMapZoom(INITIAL_REGION.zoom);
+
+            // Центрируем карту один раз при открытии
+            setTimeout(() => {
+                if (mapRef.current) {
+                    mapRef.current.setCenter(startCoords, INITIAL_REGION.zoom);
+                }
+            }, 300);
+
         } else {
             // Очистка при закрытии
             setSearchQuery("");
@@ -61,23 +77,6 @@ export default function LocationPickerModal({
             setCoords(null);
         }
     }, [visible]);
-
-    // Центрирование карты с debounce
-    useEffect(() => {
-        if (!visible || !mapRef.current || !coords) return;
-
-        const timer = setTimeout(() => {
-            if (mapRef.current && coords) {
-                try {
-                    mapRef.current.setCenter(coords, mapZoom);
-                } catch (error) {
-                    console.error('Error centering map:', error);
-                }
-            }
-        }, 300);
-
-        return () => clearTimeout(timer);
-    }, [visible, coords, mapZoom]);
 
     const reverseGeocode = async (coords: { lat: number; lon: number }) => {
         if (!coords) return;
@@ -108,29 +107,27 @@ export default function LocationPickerModal({
             setIsLoading(true);
             const { status } = await Location.requestForegroundPermissionsAsync();
             if (status !== 'granted') {
-                Alert.alert("Ошибка", "Нет доступа к геолокации");
+                Alert.alert("Внимание", "Нет доступа к геолокации. Разрешите доступ в настройках.");
+                setHasLocationPermission(false);
                 return;
             }
 
-            const location = await Location.getCurrentPositionAsync({
+            setHasLocationPermission(true);
+
+            const userLoc = await Location.getCurrentPositionAsync({
                 accuracy: Location.Accuracy.Balanced
             });
 
             const newCoords = {
-                lat: location.coords.latitude,
-                lon: location.coords.longitude
+                lat: userLoc.coords.latitude,
+                lon: userLoc.coords.longitude
             };
 
             setCoords(newCoords);
             await reverseGeocode(newCoords);
 
-            // Обновляем центр карты
             if (mapRef.current) {
-                setTimeout(() => {
-                    if (mapRef.current) {
-                        mapRef.current.setCenter(newCoords, mapZoom);
-                    }
-                }, 100);
+                mapRef.current.setCenter(newCoords, 16);
             }
         } catch (error) {
             console.error('Get user location error:', error);
@@ -138,7 +135,7 @@ export default function LocationPickerModal({
         } finally {
             setIsLoading(false);
         }
-    }, [mapZoom]);
+    }, []);
 
     const searchPlaces = useCallback(async (query: string) => {
         if (!query.trim()) {
@@ -146,42 +143,87 @@ export default function LocationPickerModal({
             return;
         }
 
+        // Отменяем предыдущий запрос, если он был
+        if (abortController.current) {
+            abortController.current.abort();
+        }
+
+        // Создаем новый AbortController
+        abortController.current = new AbortController();
+
         setIsSearching(true);
         try {
             const response = await fetch(
-                `https://geocode-maps.yandex.ru/1.x/?apikey=ВАШ_КЛЮЧ_API&geocode=${encodeURIComponent(query)}&format=json&results=10`
+                `https://geocode-maps.yandex.ru/v1/?apikey=${process.env.EXPO_PUBLIC_GEOCODER_API_KEY}&geocode=${encodeURIComponent(`г. Екатеринбург, ${query}`)}&format=json`,
+                { signal: abortController.current.signal }
             );
+
             const data = await response.json();
 
-            const results = data.response.GeoObjectCollection.featureMember.map((item: any) => ({
-                name: item.GeoObject.name,
-                description: item.GeoObject.description,
-                lat: parseFloat(item.GeoObject.Point.pos.split(' ')[1]),
-                lon: parseFloat(item.GeoObject.Point.pos.split(' ')[0])
-            }));
+            // Проверяем, не был ли запрос отменен
+            if (abortController.current.signal.aborted) {
+                return;
+            }
 
-            setSearchResults(results);
-        } catch (error) {
+            if (data?.response?.GeoObjectCollection?.featureMember) {
+                const results = data.response.GeoObjectCollection.featureMember.map((item: any) => ({
+                    name: item.GeoObject.name || item.GeoObject.description || "Без названия",
+                    description: item.GeoObject.description,
+                    lat: parseFloat(item.GeoObject.Point.pos.split(' ')[1]),
+                    lon: parseFloat(item.GeoObject.Point.pos.split(' ')[0])
+                })).slice(0, 10); // Ограничиваем количество результатов до 10
+
+                setSearchResults(results);
+            } else {
+                setSearchResults([]);
+            }
+        } catch (error: any) {
+            // Игнорируем ошибки отмены запроса
+            if (error.name === 'AbortError') {
+                console.log('Search request aborted');
+                return;
+            }
             console.error('Search error:', error);
             setSearchResults([]);
         } finally {
-            setIsSearching(false);
+            if (!abortController.current?.signal.aborted) {
+                setIsSearching(false);
+            }
         }
     }, []);
 
-    // Debounced search
     const handleSearchChange = useCallback((text: string) => {
         setSearchQuery(text);
 
+        // Очищаем таймаут
         if (searchTimeout.current) {
             clearTimeout(searchTimeout.current);
         }
 
+        // Если текст пустой, сразу очищаем результаты
+        if (!text.trim()) {
+            setSearchResults([]);
+            setIsSearching(false);
+            return;
+        }
+
+        // Устанавливаем новый таймаут
         // @ts-ignore
         searchTimeout.current = setTimeout(() => {
             searchPlaces(text);
         }, 500);
     }, [searchPlaces]);
+
+    useEffect(() => {
+        return () => {
+            if (searchTimeout.current) {
+                clearTimeout(searchTimeout.current);
+            }
+            if (abortController.current) {
+                abortController.current.abort();
+            }
+        };
+    }, []);
 
     const selectSearchResult = useCallback((result: any) => {
         const newCoords = { lat: result.lat, lon: result.lon };
@@ -190,15 +232,8 @@ export default function LocationPickerModal({
         setSearchQuery(result.name);
         setSearchResults([]);
 
-        const newZoom = 15;
-        setMapZoom(newZoom);
-
         if (mapRef.current) {
-            setTimeout(() => {
-                if (mapRef.current) {
-                    mapRef.current.setCenter(newCoords, newZoom);
-                }
-            }, 100);
+            mapRef.current.setCenter(newCoords, 16);
         }
     }, []);
 
@@ -224,31 +259,28 @@ export default function LocationPickerModal({
         }
     }, []);
 
+    // Зум теперь работает относительно текущего центра экрана, а не маркера
     const handleZoomIn = useCallback(() => {
-        if (!mapRef.current || !coords) return;
-
-        const newZoom = Math.min(mapZoom + 1, 18);
-        setMapZoom(newZoom);
-
-        setTimeout(() => {
-            if (mapRef.current && coords) {
-                mapRef.current.setCenter(coords, newZoom);
-            }
-        }, 50);
-    }, [mapZoom, coords]);
+        if (!mapRef.current) return;
+        const newZoom = Math.min(currentCamera.zoom + 1, 18);
+        mapRef.current.setCenter({ lat: currentCamera.lat, lon: currentCamera.lon }, newZoom);
+    }, [currentCamera]);
 
     const handleZoomOut = useCallback(() => {
-        if (!mapRef.current || !coords) return;
+        if (!mapRef.current) return;
+        const newZoom = Math.max(currentCamera.zoom - 1, 3);
+        mapRef.current.setCenter({ lat: currentCamera.lat, lon: currentCamera.lon }, newZoom);
+    }, [currentCamera]);
 
-        const newZoom = Math.max(mapZoom - 1, 3);
-        setMapZoom(newZoom);
-
-        setTimeout(() => {
-            if (mapRef.current && coords) {
-                mapRef.current.setCenter(coords, newZoom);
-            }
-        }, 50);
-    }, [mapZoom, coords]);
+    const handleCameraPositionChanged = useCallback((e: any) => {
+        if (e.nativeEvent) {
+            setCurrentCamera({
+                lat: e.nativeEvent.point.lat,
+                lon: e.nativeEvent.point.lon,
+                zoom: e.nativeEvent.zoom
+            });
+        }
+    }, []);
 
     const clearSearch = useCallback(() => {
         setSearchQuery("");
@@ -283,10 +315,7 @@ export default function LocationPickerModal({
                             <ActivityIndicator size="small" color="#2A6E3F" style={{ marginLeft: 8 }} />
                         )}
                     </View>
-                    <TouchableOpacity
-                        style={styles.closeButton}
-                        onPress={onClose}
-                    >
+                    <TouchableOpacity style={styles.closeButton} onPress={onClose}>
                         <Ionicons name="close" size={24} color="#333" />
                     </TouchableOpacity>
                 </View>
@@ -294,10 +323,7 @@ export default function LocationPickerModal({
                 {/* Результаты поиска */}
                 {searchResults.length > 0 && (
                     <View style={styles.searchResults}>
-                        <ScrollView
-                            keyboardShouldPersistTaps="handled"
-                            showsVerticalScrollIndicator={false}
-                        >
+                        <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
                             {searchResults.map((result, index) => (
                                 <TouchableOpacity
                                     key={`${result.lat}-${result.lon}-${index}`}
@@ -323,15 +349,14 @@ export default function LocationPickerModal({
                 <Yamap
                     ref={mapRef}
                     style={styles.map}
-                    showUserPosition={true}
+                    showUserPosition={hasLocationPermission}
                     initialRegion={INITIAL_REGION}
                     onMapPress={handleMapPress}
                     onMapLongPress={handleMapPress}
+                    onCameraPositionChange={handleCameraPositionChanged}
                 >
                     {coords && (
-                        <Marker
-                            point={{ lat: coords.lat, lon: coords.lon }}
-                        >
+                        <Marker point={{ lat: coords.lat, lon: coords.lon }}>
                             <View style={styles.markerContainer}>
                                 <View style={styles.markerDot} />
                             </View>
@@ -341,22 +366,12 @@ export default function LocationPickerModal({
 
                 {/* Кнопки управления */}
                 <View style={styles.zoomControls}>
-                    <TouchableOpacity
-                        style={styles.zoomButton}
-                        onPress={handleZoomIn}
-                        activeOpacity={0.7}
-                        disabled={!coords}
-                    >
-                        <Ionicons name="add" size={24} color={coords ? "#333" : "#999"} />
+                    <TouchableOpacity style={styles.zoomButton} onPress={handleZoomIn} activeOpacity={0.7}>
+                        <Ionicons name="add" size={24} color="#333" />
                     </TouchableOpacity>
                     <View style={styles.zoomDivider} />
-                    <TouchableOpacity
-                        style={styles.zoomButton}
-                        onPress={handleZoomOut}
-                        activeOpacity={0.7}
-                        disabled={!coords}
-                    >
-                        <Ionicons name="remove" size={24} color={coords ? "#333" : "#999"} />
+                    <TouchableOpacity style={styles.zoomButton} onPress={handleZoomOut} activeOpacity={0.7}>
+                        <Ionicons name="remove" size={24} color="#333" />
                     </TouchableOpacity>
                 </View>
 
@@ -383,11 +398,7 @@ export default function LocationPickerModal({
                             </Text>
                         </View>
 
-                        <TouchableOpacity
-                            style={styles.confirmBtn}
-                            onPress={handleConfirmLocation}
-                            activeOpacity={0.7}
-                        >
+                        <TouchableOpacity style={styles.confirmBtn} onPress={handleConfirmLocation} activeOpacity={0.7}>
                             <Text style={styles.confirmBtnText}>Подтвердить</Text>
                         </TouchableOpacity>
                     </View>

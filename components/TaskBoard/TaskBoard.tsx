@@ -25,6 +25,7 @@ import { styles } from './task-board-style';
 import { AuthManager } from "@/components/LoginScreen/LoginScreen";
 
 type TaskMode = 'all' | 'my_tasks' | 'assigned' | 'authored';
+type StatusItem = { name: string; isDefault: boolean };
 
 export function TaskBoard() {
     const userRole = AuthManager.getRole();
@@ -34,11 +35,27 @@ export function TaskBoard() {
     const [filterStatus, setFilterStatus] = useState<string | 'all'>('all');
     const [sortBy, setSortBy] = useState<'date' | 'priority'>('date');
     const [tasks, setTasks] = useState<Task[]>([]);
+    const [statuses, setStatuses] = useState<StatusItem[]>([]); // Добавлен стейт для статусов
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const insets = useSafeAreaInsets();
     const [isReady, setIsReady] = useState(false);
+
+    // Загрузка статусов (1 раз при инициализации)
+    useEffect(() => {
+        const fetchStatuses = async () => {
+            try {
+                // @ts-ignore
+                const data = await taskService.getStatuses();
+                setStatuses(data);
+            } catch (err) {
+                console.error('Ошибка при загрузке статусов:', err);
+            }
+        };
+
+        fetchStatuses();
+    }, []);
 
     const loadTasks = useCallback(async (isSilentRefresh = false) => {
         if (!isSilentRefresh) setLoading(true);
@@ -92,9 +109,11 @@ export function TaskBoard() {
         const task = InteractionManager.runAfterInteractions(() => {
             setIsReady(true);
         });
+
+        // Исправлена ошибка: loadTasks() был после return и никогда не вызывался.
+        // Вызов убран, так как useFocusEffect ниже и так загрузит задачи при маунте экрана.
         return () => task.cancel();
-        loadTasks();
-    }, [loadTasks]);
+    }, []);
 
     useFocusEffect(
         useCallback(() => {
@@ -102,10 +121,12 @@ export function TaskBoard() {
         }, [loadTasks])
     );
 
+    // Фильтрация
     let filteredTasks = filterStatus === 'all'
         ? [...tasks]
-        : tasks.filter(task => task.status === filterStatus);
+        : tasks.filter(task => task.status.toLowerCase() === filterStatus.toLowerCase()); // Теперь статусы совпадают напрямую
 
+    // Сортировка
     if (sortBy === 'priority') {
         filteredTasks.sort((a, b) => a.priority - b.priority);
     } else {
@@ -125,6 +146,12 @@ export function TaskBoard() {
         { label: 'Мои задачи', value: 'my_tasks' },
         { label: 'Назначенные', value: 'assigned' },
         { label: 'Созданные', value: 'authored' },
+    ];
+
+    // Динамически формируем список статусов для селекта
+    const statusItems = [
+        { label: 'Все задачи', value: 'all' },
+        ...statuses.map(s => ({ label: s.name, value: s.name }))
     ];
 
     if (!isReady) {
@@ -147,14 +174,13 @@ export function TaskBoard() {
                 </View>
                 <TouchableOpacity style={styles.newTaskButton} onPress={handleNewTask}>
                     <View pointerEvents="none">
-                    <Plus size={20} color="white" />
+                        <Plus size={20} color="white" />
                     </View>
                 </TouchableOpacity>
             </LinearGradient>
 
             {!error && (
                 <View style={styles.filtersSection}>
-                    {/* Вернул оригинальную структуру сетки, добавив только еще один блок filterGroup */}
                     <View style={styles.filtersGrid}>
                         <View style={styles.filterGroup}>
                             <Text style={styles.filterLabel}>Источник</Text>
@@ -170,13 +196,7 @@ export function TaskBoard() {
                             <Select
                                 value={filterStatus}
                                 onValueChange={(v) => setFilterStatus(v as string | 'all')}
-                                items={[
-                                    { label: 'Все задачи', value: 'all' },
-                                    { label: 'Новые', value: 'created' },
-                                    { label: 'В работе', value: 'in_progress' },
-                                    { label: 'На согласовании', value: 'approval' },
-                                    { label: 'Завершенные', value: 'completed' },
-                                ]}
+                                items={statusItems} // Передаем динамический список
                                 placeholder="Статус"
                             />
                         </View>
@@ -224,7 +244,6 @@ export function TaskBoard() {
                                 <Clock size={32} color="#9CA3AF" />
                             </View>
                             <Text style={styles.emptyTitle}>Задач не найдено</Text>
-                            <Text style={styles.emptySubtitle}>Попробуйте изменить фильтры</Text>
                         </View>
                     }
                 />

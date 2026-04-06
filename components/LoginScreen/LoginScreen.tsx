@@ -19,7 +19,7 @@ import {Profile} from "@/models/ProfileModel"
 class AuthManager {
     private static token: string | null = null;
     private static role: string | null = null;
-    private static userId: string | null = null; // Добавлено
+    private static userId: string | null = null;
     private static listeners: ((token: string | null) => void)[] = [];
 
     static async initialize() {
@@ -28,7 +28,7 @@ class AuthManager {
                 AsyncStorage.getItem('authToken'),
                 AsyncStorage.getItem('userRole'),
                 AsyncStorage.getItem('authTokenExpiry'),
-                AsyncStorage.getItem('userId') // Добавлено
+                AsyncStorage.getItem('userId')
             ]);
 
             if (token && expiry) {
@@ -36,7 +36,7 @@ class AuthManager {
                 if (now < parseInt(expiry, 10)) {
                     this.token = token;
                     this.role = role;
-                    this.userId = userId; // Добавлено
+                    this.userId = userId;
                 } else {
                     await this.clearAuth();
                 }
@@ -48,7 +48,7 @@ class AuthManager {
 
     static getToken() { return this.token; }
     static getRole() { return this.role; }
-    static getUserId() { return this.userId; } // Новый метод
+    static getUserId() { return this.userId; }
 
     static async setAuth(token: string, userId: string, roles: string[], expiresInDays: number = 30) {
         this.token = token;

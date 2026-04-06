@@ -1,8 +1,5 @@
-import { BlurView } from "expo-blur";
-import { Tabs, router } from "expo-router";
-import {Calendar, Folder, House, ListTodo, User} from "lucide-react-native";
+import { Tabs } from "expo-router";
 import React from "react";
-import { Platform, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {AuthManager} from "@/components/LoginScreen/LoginScreen";
 import {CustomBottomTabBar} from "@/components/ui/CustomBottomTabBar";

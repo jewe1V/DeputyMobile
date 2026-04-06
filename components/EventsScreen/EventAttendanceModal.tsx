@@ -43,7 +43,7 @@ export const EventAttendanceModal: React.FC<Props> = ({
 
     const panY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
     const [uploadProgress, setUploadProgress] = useState(0);
-    const START_Y = SCREEN_HEIGHT * 0.4;
+    const START_Y = SCREEN_HEIGHT * 0.3;
     const token = AuthManager.getToken();
     const isImageFile = (fileName: string) => {
         const ext = fileName.split('.').pop()?.toLowerCase();
@@ -260,7 +260,7 @@ export const EventAttendanceModal: React.FC<Props> = ({
 
     return (
         <Modal visible={visible} transparent animationType="none" onRequestClose={() => closeAnim(onClose)}>
-            <View style={styles.overlay}>
+            <View style={[styles.overlay, {"paddingBottom": insets.bottom}]}>
                 <TouchableOpacity style={styles.dismiss} activeOpacity={1} onPress={() => closeAnim(onClose)} />
                 <Animated.View style={[styles.sheet, { transform: [{ translateY: panY }], paddingBottom: insets.bottom + 20 }]}>
                     <View {...panResponder.panHandlers} style={styles.dragArea}>

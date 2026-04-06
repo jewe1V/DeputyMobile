@@ -3,13 +3,13 @@ import {Platform, StyleSheet} from "react-native";
 export const styles = StyleSheet.create({
     container: {
           backgroundColor: '#ffffff',
+        flex: 1,
     },
     header: {
         borderBottomLeftRadius: 24,
         borderBottomRightRadius: 24,
         paddingBottom: 32,
         paddingHorizontal: 16,
-        paddingTop: Platform.OS === 'ios' ? 80 : 60,
     },
     headerContent: {
         flexDirection: 'row',
@@ -17,7 +17,7 @@ export const styles = StyleSheet.create({
     },
     headerTitleContainer: {
         marginRight: 12,
-        marginLeft: 24,
+        marginLeft: 8,
         justifyContent: 'center',
         minHeight: 40,
     },
@@ -100,46 +100,64 @@ export const styles = StyleSheet.create({
         color: '#FFFFFF',
     },
     listContent: {
-        flexGrow: 1,
     },
     notificationItem: {
-        padding: 16,
+        paddingVertical: 16,
+        paddingHorizontal: 16,
         borderBottomWidth: 1,
         borderBottomColor: '#E5E7EB',
     },
-    unreadNotification: {
-        backgroundColor: '#FFFFFF',
-    },
-    readNotification: {
-        backgroundColor: '#F9FAFB',
-    },
-    notificationContent: {
+    row: {
         flexDirection: 'row',
         alignItems: 'flex-start',
     },
-    iconContainer: {
+
+    iconWrapper: {
         width: 40,
         height: 40,
         borderRadius: 20,
+        backgroundColor: '#E6F4EA', // мягкий зелёный фон
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: 12,
     },
-    textContainer: {
+
+    content: {
         flex: 1,
         minWidth: 0,
+        marginRight: 8,
+    },
+
+    topRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: 4,
+    },
+
+    title: {
+        flex: 1,
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#111827',
+        marginRight: 8,
+    },
+
+    time: {
+        fontSize: 12,
+        color: '#6B7280',
+    },
+
+    description: {
+        fontSize: 14,
+        color: '#6B7280',
+        lineHeight: 20,
     },
     headerRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'flex-start',
         marginBottom: 4,
-    },
-    title: {
-        fontSize: 14,
-        fontWeight: '500',
-        flex: 1,
-        marginRight: 8,
     },
     unreadTitle: {
         color: '#111827',
@@ -220,4 +238,5 @@ export const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '600',
     },
+    backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255, 255, 255, 0.2)', justifyContent: 'center', alignItems: 'center', marginRight: 15 },
 });
