@@ -318,8 +318,7 @@ export function Dashboard() {
                     </View>
                 </LinearGradient>
 
-                {/* 3. Карточки статистики тоже внутри ScrollView */}
-                <View style={styles.statsWrapper}>
+                <View style={styles.content}>
                     <View style={styles.statsGrid}>
                         <Animated.View style={styles.statCardContainer} entering={FadeInDown.delay(200).duration(600).springify()}>
                             <LinearGradient colors={['#ffffff', '#fffafa']} style={styles.statCard}>
@@ -345,10 +344,6 @@ export function Dashboard() {
                             </LinearGradient>
                         </Animated.View>
                     </View>
-                </View>
-
-                {/* Основной контент */}
-                <View style={styles.content}>
                     {displayTasks.length > 0 && (
                         <Animated.View
                             entering={FadeInDown.delay(700).duration(600)}

@@ -77,16 +77,10 @@ export const styles = StyleSheet.create({
     },
     content: {
         paddingHorizontal: 15,
+        marginTop: -24,
         paddingBottom: 40,
     },
-    statsWrapper: {
-        marginTop: -30,
-        zIndex: 1,
-        marginBottom: -20,
-    },
     statsGrid: {
-        height: 115,
-        paddingHorizontal: 16,
         flexDirection: 'row',
         gap: 6,
         marginBottom: 16,
@@ -181,7 +175,6 @@ export const styles = StyleSheet.create({
     },
     section: {
         marginBottom: 24,
-        paddingTop: 10,
     },
     sectionHeader: {
         flexDirection: 'row',
