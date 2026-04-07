@@ -75,6 +75,7 @@ export function CustomBottomTabBar({ state, descriptors, navigation, insets, rol
                     // Фильтрация
                     if (options.href === null) return null;
                     if (route.name === "UserListScreen" && role !== "Admin") return null;
+                    if (route.name === "DepartmentsScreen" && role !== "Admin") return null;
 
                     const isFocused = state.index === index;
                     const color = isFocused ? "#11631b" : "#484f56";
