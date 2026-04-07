@@ -8,6 +8,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {BriefcaseBusiness, Building2} from "lucide-react-native";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
+const START_Y = SCREEN_HEIGHT * 0.15; // Стартовая позиция (отступ сверху)
+const SHEET_HEIGHT = SCREEN_HEIGHT - START_Y;
 
 type User = { id: string; full_name: string; email: string };
 type Department = { id: string; name: string };
@@ -124,7 +126,7 @@ export const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
                 <Animated.View
                     style={[
                         styles.sheet,
-                        { transform: [{ translateY: panY }], paddingBottom: insets.bottom + 20 }
+                        { transform: [{ translateY: panY }] }
                     ]}
                 >
                     <View {...panResponder.panHandlers} style={styles.dragArea}>
@@ -242,7 +244,7 @@ export const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
                     </ScrollView>
 
                     {/* Кнопки действий */}
-                    <View style={[styles.actionsContainer, {paddingBottom: insets.bottom + 10}]}>
+                    <View style={[styles.actionsContainer]}>
                         <TouchableOpacity
                             style={[styles.actionButton, styles.clearButton]}
                             onPress={() => {
@@ -256,7 +258,7 @@ export const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
                             style={[styles.actionButton, styles.confirmButton]}
                             onPress={handleConfirm}
                         >
-                            <Text style={styles.confirmButtonText}>Готово</Text>
+                            <Text style={styles.confirmButtonText}>Сохранить</Text>
                         </TouchableOpacity>
                     </View>
                 </Animated.View>
@@ -277,7 +279,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         left: 0,
         right: 0,
-        height: SCREEN_HEIGHT,
+        height: SHEET_HEIGHT,
         backgroundColor: '#fff',
         borderTopLeftRadius: 28,
         borderTopRightRadius: 28,

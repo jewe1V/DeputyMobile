@@ -69,6 +69,7 @@ export const AttendeeExcuseModal: React.FC<AttendeeExcuseModalProps> = ({ visibl
         if (visible) {
             resetPositionAnim.start();
         }
+        console.log(attendee);
     }, [visible]);
 
     if (!attendee) return null;
@@ -121,7 +122,7 @@ export const AttendeeExcuseModal: React.FC<AttendeeExcuseModalProps> = ({ visibl
                                     style={styles.documentPreviewCard}
                                     onPress={() => onDownloadDocument(
                                         'Документ_об_отсутствии',
-                                        `${apiUrl}/api/Documents/${attendee.excuse_document_id}`
+                                        `${apiUrl}/api/Documents/${attendee.excuse_document_name}`
                                     )}
                                 >
                                     <View style={styles.previewContent}>

@@ -78,29 +78,37 @@ export default function LocationPickerModal({
         }
     }, [visible]);
 
-    const reverseGeocode = async (coords: { lat: number; lon: number }) => {
+    const reverseGeocode = useCallback(async (coords: { lat: number; lon: number }) => {
         if (!coords) return;
 
         try {
-            const [address] = await Location.reverseGeocodeAsync({
-                latitude: coords.lat,
-                longitude: coords.lon
-            });
+            // Обратите внимание: Яндекс Геокодер принимает координаты строго в формате "долгота,широта" (lon,lat)
+            const response = await fetch(
+                `https://geocode-maps.yandex.ru/v1/?apikey=${process.env.EXPO_PUBLIC_GEOCODER_API_KEY}&geocode=${coords.lon},${coords.lat}&format=json`
+            );
 
-            if (address) {
-                const parts = [];
-                if (address.city) parts.push(address.city);
-                else if (address.region) parts.push(address.region);
-                if (address.street) parts.push(address.street);
-                if (address.name && address.name !== address.street) parts.push(address.name);
+            const data = await response.json();
+            const featureMember = data?.response?.GeoObjectCollection?.featureMember;
 
-                const formatted = parts.filter(Boolean).join(', ');
-                setLocation(formatted || "Выбранное место");
+            if (featureMember && featureMember.length > 0) {
+                // Берем первый (самый точный) результат
+                const geoObject = featureMember[0].GeoObject;
+                const addressName = geoObject.name; // Например: "улица Малышева, 53"
+                const addressDesc = geoObject.description; // Например: "Екатеринбург, Россия"
+
+                // Склеиваем название и описание (можно оставить только name, если нужно короче)
+                const fullAddress = [addressName, addressDesc].filter(Boolean).join(', ');
+                setLocation(fullAddress || "Выбранное место");
+            } else {
+                // Обязательно вызываем setLocation, даже если адрес не найден
+                setLocation("Выбранное место");
             }
         } catch (error) {
             console.error('Reverse geocode error:', error);
+            // Фолбэк на случай проблем с интернетом
+            setLocation("Выбранное место");
         }
-    };
+    }, []);
 
     const getUserLocation = useCallback(async () => {
         try {
@@ -257,7 +265,7 @@ export default function LocationPickerModal({
             setCoords({ lat, lon });
             reverseGeocode({ lat, lon });
         }
-    }, []);
+    }, [reverseGeocode]);
 
     // Зум теперь работает относительно текущего центра экрана, а не маркера
     const handleZoomIn = useCallback(() => {

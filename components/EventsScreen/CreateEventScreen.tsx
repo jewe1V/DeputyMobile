@@ -389,6 +389,25 @@ export default function CreateEventScreen() {
                             </View>
                         )}
                     </View>
+                    {/* Чекбокс публичности только для Админа */}
+                    {isAdmin && (
+                        <TouchableOpacity
+                            style={styles.checkboxContainer}
+                            onPress={() => {
+                                setIsPublic(!isPublic);
+                                // Очищаем приглашения при переключении на публичное
+                                if (!isPublic) {
+                                    setSelectedUserIds([]);
+                                    setSelectedDepartmentIds([]);
+                                }
+                            }}
+                        >
+                            <Text style={styles.checkboxLabel}>Публичное мероприятие</Text>
+                            <View style={[styles.checkbox, isPublic && styles.checkboxChecked]}>
+                                {isPublic && <Ionicons name="checkmark" size={18} color="#fff" />}
+                            </View>
+                        </TouchableOpacity>
+                    )}
 
                     {/* Блок выбора приглашений (показываем только для приватных событий) */}
                     {(!isPublic || !isAdmin) && (
@@ -416,25 +435,7 @@ export default function CreateEventScreen() {
                         </View>
                     )}
 
-                    {/* Чекбокс публичности только для Админа */}
-                    {isAdmin && (
-                        <TouchableOpacity
-                            style={styles.checkboxContainer}
-                            onPress={() => {
-                                setIsPublic(!isPublic);
-                                // Очищаем приглашения при переключении на публичное
-                                if (!isPublic) {
-                                    setSelectedUserIds([]);
-                                    setSelectedDepartmentIds([]);
-                                }
-                            }}
-                        >
-                            <Text style={styles.checkboxLabel}>Публичное мероприятие</Text>
-                            <View style={[styles.checkbox, isPublic && styles.checkboxChecked]}>
-                                {isPublic && <Ionicons name="checkmark" size={18} color="#fff" />}
-                            </View>
-                        </TouchableOpacity>
-                    )}
+
 
                     <TouchableOpacity
                         style={[styles.publishButton, isLoading && styles.publishButtonDisabled]}
