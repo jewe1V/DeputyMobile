@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
     View, Text, TextInput, TouchableOpacity, ScrollView,
     ActivityIndicator, KeyboardAvoidingView, Platform, StyleSheet
@@ -12,24 +12,42 @@ import { AuthManager } from "@/components/LoginScreen/LoginScreen";
 import { LinearGradient } from "expo-linear-gradient";
 import LocationPickerModal from "./LocationPickerModal";
 import Toast from "react-native-toast-message";
+import {ArrowLeft} from "lucide-react-native";
+import {PeoplePickerModal} from "@/components/EventsScreen/PeoplePickerModal";
+
+type User = { id: string; full_name: string; email: string };
+type Department = { id: string; name: string };
 
 export default function CreateEventScreen() {
+    const isAdmin = AuthManager.getRole() === "Admin";
+    const insets = useSafeAreaInsets();
+    const scrollViewRef = useRef<ScrollView>(null);
+
+    // Основные поля формы
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [location, setLocation] = useState("");
     const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(null);
     const [startAt, setStartAt] = useState<Date | null>(null);
     const [endAt, setEndAt] = useState<Date | null>(null);
+    const [eventType, setEventType] = useState<string>();
+    const [isPublic, setIsPublic] = useState(isAdmin); // По умолчанию true только для админов
+    const [isPeoplePickerVisible, setPeoplePickerVisible] = useState(false);
+
+    // Списки приглашений
+    const [users, setUsers] = useState<User[]>([]);
+    const [departments, setDepartments] = useState<Department[]>([]);
+    const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+    const [selectedDepartmentIds, setSelectedDepartmentIds] = useState<string[]>([]);
+
+    // Состояния UI
     const [isStartPickerVisible, setStartPickerVisible] = useState(false);
     const [isEndPickerVisible, setEndPickerVisible] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [isMapModalVisible, setMapModalVisible] = useState(false);
-    const [eventType, setEventType] = useState<string>();
-    const [isPublic, setIsPublic] = useState(true);
-    const [isTypeSelectOpen, setIsTypeSelectOpen] = useState(false);
 
-    const insets = useSafeAreaInsets();
-    const scrollViewRef = useRef<ScrollView>(null);
+    // Состояния Dropdown'ов
+    const [isTypeSelectOpen, setIsTypeSelectOpen] = useState(false);
 
     const eventTypes = [
         { label: 'Мероприятие', value: 'Event' },
@@ -38,6 +56,38 @@ export default function CreateEventScreen() {
     ];
 
     const selectedType = eventTypes.find(item => item.value === eventType);
+
+    useEffect(() => {
+        fetchUsersAndDepartments();
+    }, []);
+
+    const fetchUsersAndDepartments = async () => {
+        const token = AuthManager.getToken();
+        if (!token) return;
+
+        try {
+            const headers = {
+                accept: "application/json",
+                Authorization: `Bearer ${token}`,
+            };
+
+            const [depsRes, usersRes] = await Promise.all([
+                fetch(`${apiUrl}/api/Department/get-all`, { headers }),
+                fetch(`${apiUrl}/api/Auth/all`, { headers })
+            ]);
+
+            if (depsRes.ok) {
+                const depsData = await depsRes.json();
+                setDepartments(depsData);
+            }
+            if (usersRes.ok) {
+                const usersData = await usersRes.json();
+                setUsers(usersData);
+            }
+        } catch (error) {
+            console.error("Ошибка загрузки списков:", error);
+        }
+    };
 
     const handleLocationSelected = (locationData: { address: string; coords: { lat: number; lon: number } }) => {
         setLocation(locationData.address);
@@ -55,6 +105,7 @@ export default function CreateEventScreen() {
     };
 
     const handleCreate = async () => {
+        // Валидация обязательных полей
         if (!title.trim() || !startAt || !endAt || !eventType) {
             Toast.show({
                 type: 'error',
@@ -66,7 +117,6 @@ export default function CreateEventScreen() {
             return;
         }
 
-        // Сравниваем UTC даты
         if (endAt.getTime() <= startAt.getTime()) {
             Toast.show({
                 type: 'error',
@@ -74,6 +124,18 @@ export default function CreateEventScreen() {
                 text2: 'Дата окончания должна быть позже даты начала',
                 position: 'top',
                 visibilityTime: 3000,
+            });
+            return;
+        }
+
+        // Для приватных мероприятий проверяем наличие приглашенных
+        if (!isPublic && selectedUserIds.length === 0 && selectedDepartmentIds.length === 0) {
+            Toast.show({
+                type: 'error',
+                text1: 'Внимание',
+                text2: 'Для приватного мероприятия выберите пользователей или отделы',
+                position: 'top',
+                visibilityTime: 4000,
             });
             return;
         }
@@ -97,36 +159,80 @@ export default function CreateEventScreen() {
                 ? `${location.trim()}|${coords.lat},${coords.lon}`
                 : location.trim();
 
-            // Отправляем даты в ISO формате (они сохранят локальное время с указанием часового пояса)
-            const eventData = {
+            // Базовые данные события (без is_public)
+            const baseEventData = {
                 title: title.trim(),
                 description: description.trim(),
                 start_at: startAt.toISOString(),
                 end_at: endAt.toISOString(),
                 location: locationString,
-                isPublic: isPublic,
                 type: eventType,
             };
 
-            console.log("Отправляемые данные:", JSON.stringify(eventData, null, 2));
+            // Выбираем эндпоинт и формируем тело запроса в зависимости от типа события
+            let endpoint = "";
+            let requestBody = {};
 
-            const response = await fetch(`${apiUrl}/api/Events/create-public`, {
+            if (isPublic) {
+                // Публичное событие
+                endpoint = `${apiUrl}/api/Events/create-public`;
+                requestBody = baseEventData;
+                console.log("Создание публичного события");
+            } else {
+                // Приватное событие с приглашениями
+                endpoint = `${apiUrl}/api/Events/create-private`;
+                requestBody = {
+                    ...baseEventData,
+                    user_ids: selectedUserIds,
+                    department_ids: selectedDepartmentIds
+                };
+                console.log("Создание приватного события с приглашениями");
+            }
+
+            console.log("Эндпоинт:", endpoint);
+            console.log("Отправляемые данные:", JSON.stringify(requestBody, null, 2));
+
+            const response = await fetch(endpoint, {
                 method: "POST",
                 headers: {
-                    accept: "text/plain",
+                    "accept": "application/json",
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify(eventData),
+                body: JSON.stringify(requestBody),
             });
 
             const responseText = await response.text();
-            console.log(eventData);
             console.log("Ответ сервера:", response.status, responseText);
 
             if (!response.ok) {
-                throw new Error(responseText || "Ошибка создания события");
+                // Попытка распарсить ошибку
+                let errorMessage = responseText;
+                try {
+                    const errorJson = JSON.parse(responseText);
+                    errorMessage = errorJson.message || errorJson.title || responseText;
+                } catch {
+                    // Оставляем как есть
+                }
+                throw new Error(errorMessage || "Ошибка создания события");
             }
+
+            // Парсим успешный ответ если нужно
+            let result;
+            try {
+                result = JSON.parse(responseText);
+                console.log("Событие создано:", result);
+            } catch {
+                console.log("Событие создано (текстовый ответ):", responseText);
+            }
+
+            Toast.show({
+                type: 'success',
+                text1: 'Успешно',
+                text2: 'Событие успешно создано',
+                position: 'top',
+                visibilityTime: 3000,
+            });
 
             clearForm();
             router.push({ pathname: "/(screens)/EventsScreen", params: { refresh: "true" } });
@@ -159,8 +265,10 @@ export default function CreateEventScreen() {
         setCoords(null);
         setStartAt(null);
         setEndAt(null);
-        setEventType("Event");
-        setIsPublic(true);
+        setEventType(undefined);
+        setIsPublic(isAdmin);
+        setSelectedUserIds([]);
+        setSelectedDepartmentIds([]);
     };
 
     return (
@@ -180,14 +288,24 @@ export default function CreateEventScreen() {
                     end={{ x: 1, y: 1 }}
                     style={[styles.header, { paddingTop: insets.top + 20 }]}
                 >
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-
-                        <Ionicons name="arrow-back" size={24} color="#fff" />
+                    <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+                        <View pointerEvents="none">
+                            <ArrowLeft size={24} color="white" />
+                        </View>
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>Новое событие</Text>
                 </LinearGradient>
 
                 <View style={styles.card}>
+                    {!isAdmin && (
+                        <View style={styles.warningAlert}>
+                            <Ionicons name="information-circle-outline" size={24} color="#b45309" style={{ marginTop: 2 }}/>
+                            <Text style={styles.warningText}>
+                                Вы можете создавать только приватные мероприятия. Обязательно выберите пользователей или отделы для рассылки приглашений.
+                            </Text>
+                        </View>
+                    )}
+
                     <TextInput
                         style={styles.input}
                         value={title}
@@ -272,16 +390,52 @@ export default function CreateEventScreen() {
                         )}
                     </View>
 
-                    {/* Чекбокс публичности */}
-                    <TouchableOpacity
-                        style={styles.checkboxContainer}
-                        onPress={() => setIsPublic(!isPublic)}
-                    >
-                        <Text style={styles.checkboxLabel}>Публичное</Text>
-                        <View style={[styles.checkbox, isPublic && styles.checkboxChecked]}>
-                            {isPublic && <Ionicons name="checkmark" size={18} color="#fff" />}
+                    {/* Блок выбора приглашений (показываем только для приватных событий) */}
+                    {(!isPublic || !isAdmin) && (
+                        <View style={styles.section}>
+                            <Text style={styles.sectionTitle}>
+                                {!isAdmin && !isPublic ? "Приглашения *" : "Приглашения"}
+                            </Text>
+                            <TouchableOpacity
+                                style={styles.inviteButton}
+                                onPress={() => setPeoplePickerVisible(true)}
+                            >
+                                <View style={styles.inviteButtonContent}>
+                                    <Ionicons name="people-outline" size={24} color="#0f6319" />
+                                    <View>
+                                        <Text style={styles.inviteButtonTitle}>Выбрать участников</Text>
+                                        <Text style={styles.inviteButtonSubtitle}>
+                                            {selectedUserIds.length + selectedDepartmentIds.length > 0
+                                                ? `Выбрано: ${selectedUserIds.length} пользователей, ${selectedDepartmentIds.length} отделов`
+                                                : "Нажмите для выбора пользователей и отделов"}
+                                        </Text>
+                                    </View>
+                                </View>
+                                <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+                            </TouchableOpacity>
                         </View>
-                    </TouchableOpacity>
+                    )}
+
+                    {/* Чекбокс публичности только для Админа */}
+                    {isAdmin && (
+                        <TouchableOpacity
+                            style={styles.checkboxContainer}
+                            onPress={() => {
+                                setIsPublic(!isPublic);
+                                // Очищаем приглашения при переключении на публичное
+                                if (!isPublic) {
+                                    setSelectedUserIds([]);
+                                    setSelectedDepartmentIds([]);
+                                }
+                            }}
+                        >
+                            <Text style={styles.checkboxLabel}>Публичное мероприятие</Text>
+                            <View style={[styles.checkbox, isPublic && styles.checkboxChecked]}>
+                                {isPublic && <Ionicons name="checkmark" size={18} color="#fff" />}
+                            </View>
+                        </TouchableOpacity>
+                    )}
+
                     <TouchableOpacity
                         style={[styles.publishButton, isLoading && styles.publishButtonDisabled]}
                         onPress={handleCreate}
@@ -292,7 +446,6 @@ export default function CreateEventScreen() {
                 </View>
             </ScrollView>
 
-            {/* Пикеры дат - обновленные обработчики */}
             <DateTimePickerModal
                 isVisible={isStartPickerVisible}
                 mode="datetime"
@@ -306,7 +459,6 @@ export default function CreateEventScreen() {
                 onCancel={() => setEndPickerVisible(false)}
             />
 
-            {/* Модальное окно с картой */}
             <LocationPickerModal
                 visible={isMapModalVisible}
                 onClose={() => setMapModalVisible(false)}
@@ -314,9 +466,24 @@ export default function CreateEventScreen() {
                 initialLocation={location}
                 initialCoords={coords}
             />
+
+            <PeoplePickerModal
+                visible={isPeoplePickerVisible}
+                onClose={() => setPeoplePickerVisible(false)}
+                users={users}
+                departments={departments}
+                selectedUserIds={selectedUserIds}
+                selectedDepartmentIds={selectedDepartmentIds}
+                onConfirm={(userIds, departmentIds) => {
+                    setSelectedUserIds(userIds);
+                    setSelectedDepartmentIds(departmentIds);
+                }}
+                mode="both"
+            />
         </KeyboardAvoidingView>
     );
 }
+
 const styles = StyleSheet.create({
     container: {
         flexGrow: 1,
@@ -326,13 +493,17 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderBottomLeftRadius: 24,
         borderBottomRightRadius: 24,
-        paddingBottom: 20,
+        paddingBottom: 25,
         paddingHorizontal: 20,
-        paddingTop: Platform.OS === 'ios' ? 60 : 40,
     },
     backButton: {
-        marginRight: 10,
-        padding: 4,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 15
     },
     headerTitle: {
         fontSize: 20,
@@ -343,6 +514,23 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         padding: 20,
         marginBottom: 20,
+    },
+    warningAlert: {
+        flexDirection: 'row',
+        backgroundColor: '#fef3c7',
+        borderWidth: 1,
+        borderColor: '#fde047',
+        borderRadius: 10,
+        padding: 12,
+        marginBottom: 6,
+        marginTop: -36,
+    },
+    warningText: {
+        flex: 1,
+        color: '#b45309',
+        fontSize: 14,
+        marginLeft: 8,
+        lineHeight: 20,
     },
     input: {
         backgroundColor: "#f7f7f7",
@@ -357,6 +545,7 @@ const styles = StyleSheet.create({
     },
     textArea: {
         textAlignVertical: "top",
+        minHeight: 100,
     },
     unifiedInput: {
         flexDirection: "row",
@@ -386,10 +575,9 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        paddingVertical: 10,
+        paddingVertical: 12,
         borderRadius: 10,
         marginTop: 25,
-
     },
     publishButtonDisabled: {
         backgroundColor: "#9ca3af",
@@ -399,7 +587,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: "600",
     },
-    // Стили для Select
     selectWrapper: {
         marginBottom: 14,
         marginTop: 8,
@@ -459,15 +646,13 @@ const styles = StyleSheet.create({
         color: '#0f6319',
         fontWeight: '500',
     },
-    // Стили для чекбокса
     checkboxContainer: {
         backgroundColor: "#f7f7f7",
         borderWidth: 1,
         borderColor: "#ddd",
         borderRadius: 10,
         paddingHorizontal: 12,
-        paddingVertical: 10,
-        fontSize: 15,
+        paddingVertical: 12,
         marginBottom: 14,
         marginTop: 10,
         flexDirection: 'row',
@@ -485,9 +670,46 @@ const styles = StyleSheet.create({
     },
     checkboxChecked: {
         backgroundColor: '#0f6319',
+        borderColor: '#0f6319',
     },
     checkboxLabel: {
         fontSize: 15,
         color: '#333',
+    },
+    section: {
+        marginBottom: 16,
+        marginTop: 8,
+    },
+    sectionTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#333',
+        marginBottom: 8,
+    },
+    inviteButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: '#f7f7f7',
+        borderWidth: 1,
+        borderColor: '#ddd',
+        borderRadius: 10,
+        padding: 12,
+    },
+    inviteButtonContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        flex: 1,
+    },
+    inviteButtonTitle: {
+        fontSize: 15,
+        fontWeight: '500',
+        color: '#333',
+    },
+    inviteButtonSubtitle: {
+        fontSize: 12,
+        color: '#6b7280',
+        marginTop: 2,
     },
 });

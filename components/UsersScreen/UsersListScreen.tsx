@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { apiUrl } from "@/api/api";
 import { Profile } from "@/models/ProfileModel";
 import { AuthManager } from "@/components/LoginScreen/LoginScreen";
+import {renderUserItem} from "@/components/UsersScreen/RenderUserItem";
 
 const UsersListScreen = () => {
     const router = useRouter();
@@ -64,7 +65,6 @@ const UsersListScreen = () => {
 
             // ПРОВЕРКА: Если ответ пустой или не OK, не пытаемся парсить JSON
             if (!response.ok) {
-                Toast.show()
                 setUsers([]);
                 setFilteredUsers([]);
                 return;
@@ -92,52 +92,9 @@ const UsersListScreen = () => {
         fetchUsers();
     };
 
-    const getRoleStyles = (roles: string[] | null) => {
-        const role = roles?.[0];
-        switch (role) {
-            case 'Admin': return { bg: '#fee2e2', text: '#ef4444', label: 'Админ' };
-            case 'Deputy': return { bg: '#dcfce7', text: '#166534', label: 'Депутат' };
-            case 'Helper': return { bg: '#e0f2fe', text: '#0369a1', label: 'Помощник' };
-            default: return { bg: '#f1f5f9', text: '#64748b', label: 'Сотрудник' };
-        }
-    };
-
-    const renderUserItem = ({ item }: { item: Profile }) => {
-        const roleStyle = getRoleStyles(item.roles);
-
-        return (
-            <TouchableOpacity
-                style={styles.userCard}
-                onPress={() => router.push({ pathname: '/(screens)/ProfileScreen', params: { id: item.id } })}
-            >
-                <View style={[styles.avatar, { backgroundColor: '#dcfce7' }]}>
-                    <Text style={styles.avatarText}>
-                        {(item.full_name || item.email || '?').charAt(0).toUpperCase()}
-                    </Text>
-                </View>
-
-                <View style={styles.userInfo}>
-                    <Text style={styles.userName} numberOfLines={1}>
-                        {item.full_name || 'Без имени'}
-                    </Text>
-                    <Text style={styles.jobText} numberOfLines={1}>
-                        {item.job_title || item.email}
-                    </Text>
-                </View>
-
-                <View style={[styles.roleBadge, { backgroundColor: "#f1f5f9" }]}>
-                    <Text style={[styles.roleBadgeText, { color: "#64748b" }]}>
-                        {roleStyle.label}
-                    </Text>
-                </View>
-
-                <Ionicons name="chevron-forward" size={18} color="#cbd5e1" style={{ marginLeft: 8 }} />
-            </TouchableOpacity>
-        );
-    };
 
     return (
-        <View style={{ flex: 1, backgroundColor: '#fff' }}>
+        <View style={{ flex: 1, backgroundColor: '#fff', paddingBottom: insets.bottom + 50 }}>
             <StatusBar barStyle="light-content" translucent />
 
             <LinearGradient
@@ -201,7 +158,7 @@ const UsersListScreen = () => {
     );
 };
 
-const styles = StyleSheet.create({
+export const styles = StyleSheet.create({
     header: {
         flexDirection: 'row',
         alignItems: 'center',

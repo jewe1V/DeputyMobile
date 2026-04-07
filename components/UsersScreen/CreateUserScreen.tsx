@@ -9,9 +9,7 @@ import {
     KeyboardAvoidingView,
     Platform,
     ActivityIndicator,
-    Alert,
     StatusBar,
-    InteractionManager
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -21,6 +19,9 @@ import * as Clipboard from 'expo-clipboard'; // Добавлен импорт б
 import {apiUrl} from "@/api/api"
 import {Profile} from "@/models/ProfileModel";
 import {AuthManager} from "@/components/LoginScreen/LoginScreen";
+import { SelectionPopup } from "@/components/UsersScreen/SelectionPopup";
+import Toast from "react-native-toast-message";
+import {Building2} from "lucide-react-native";
 
 const CreateUserScreen = () => {
     const router = useRouter();
@@ -33,39 +34,51 @@ const CreateUserScreen = () => {
     const [password, setPassword] = useState('');
     const [selectedRole, setSelectedRole] = useState(null);
     const [selectedDeputy, setSelectedDeputy] = useState<Profile>();
-    const [isReady, setIsReady] = useState(false);
 
     // Состояния UI
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isRoleSelectOpen, setIsRoleSelectOpen] = useState(false);
-    const [isDeputySelectOpen, setIsDeputySelectOpen] = useState(false);
-    const [isPasswordVisible, setIsPasswordVisible] = useState(false); // Состояние видимости пароля
+    const [isPasswordVisible, setIsPasswordVisible] = useState(false);
     const [deputies, setDeputies] = useState<Profile[]>([]);
     const token = AuthManager.getToken();
+    const [deputyPopupVisible, setDeputyPopupVisible] = useState(false);
+    const [departments, setDepartments] = useState<{id: string, name: string}[]>([]);
+    const [selectedDepartment, setSelectedDepartment] = useState<{id: string, name: string} | null>(null);
+    const [departmentPopupVisible, setDepartmentPopupVisible] = useState(false);
 
     const roles = ['Admin', 'Deputy', 'Helper'];
 
     useEffect(() => {
-        const task = InteractionManager.runAfterInteractions(() => {
-            setIsReady(true);
-        });
         fetchDeputies();
-        return () => task.cancel();
+        fetchDepartments();
     }, []);
 
     const fetchDeputies = async () => {
         try {
-            const response = await fetch(`${apiUrl}/api/Auth/all`, {
+            const response = await fetch(`${apiUrl}/api/Auth/role/Deputy`, {
                 headers: {
                     'Accept': 'application/json',
                     'Authorization': `Bearer ${token}`
                 }
             });
             const data: Profile[] = await response.json();
-            const filtered = data.filter(u => u.roles && u.roles.includes('Deputy'));
-            setDeputies(filtered);
+            setDeputies(data);
         } catch (error) {
             console.error("Ошибка при загрузке депутатов:", error);
+        }
+    };
+    const fetchDepartments = async () => {
+        try {
+            const response = await fetch(`${apiUrl}/api/Department/get-all`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            const data = await response.json();
+            setDepartments(data);
+        } catch (error) {
+            console.error("Ошибка при загрузке департаментов:", error);
         }
     };
 
@@ -77,22 +90,37 @@ const CreateUserScreen = () => {
             newPassword += chars.charAt(Math.floor(Math.random() * chars.length));
         }
         setPassword(newPassword);
-        setIsPasswordVisible(true); // Показываем сгенерированный пароль, чтобы его было видно
+        setIsPasswordVisible(true);
     };
 
-    // Копирование пароля в буфер обмена
     const copyPassword = async () => {
-        if (!password) {
-            Alert.alert("Внимание", "Сначала введите или сгенерируйте пароль");
-            return;
-        }
         await Clipboard.setStringAsync(password);
-        Alert.alert("Успех", "Пароль скопирован в буфер обмена");
+        Toast.show({
+            type: "success",
+            text1: 'Скопировано',
+            visibilityTime: 1000
+        });
     };
 
     const handleSubmit = async () => {
+        // 1. Валидация
         if (!fullName || !email || !password || !selectedRole) {
-            Alert.alert("Ошибка", "Заполните все обязательные поля");
+            Toast.show({
+                type: 'error',
+                text1: 'Ошибка заполнения',
+                text2: 'Заполните все обязательные поля (*)',
+                position: 'bottom'
+            });
+            return;
+        }
+
+        if (selectedRole === 'Helper' && !selectedDeputy) {
+            Toast.show({
+                type: 'error',
+                text1: 'Выбор депутата',
+                text2: 'Для роли Помощник необходимо выбрать депутата',
+                position: 'bottom'
+            });
             return;
         }
 
@@ -104,32 +132,58 @@ const CreateUserScreen = () => {
             full_name: fullName,
             password,
             roles: [selectedRole],
-            deputy_id: selectedRole === 'Helper' ? selectedDeputy?.id : null
+            deputy_id: selectedRole === 'Helper' ? selectedDeputy?.id : null,
+            department_id: selectedDepartment?.id || null,
         };
 
         try {
             const response = await fetch(`${apiUrl}/api/Auth/create`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify(payload)
             });
 
             if (response.ok) {
-                Alert.alert("Успех", "Пользователь успешно создан");
-                router.back();
+                Toast.show({
+                    type: 'success',
+                    text1: 'Успешно',
+                    text2: `Пользователь ${fullName} создан`,
+                });
+                setTimeout(() => router.back(), 1500);
             } else {
-                Alert.alert("Ошибка", "Не удалось создать пользователя");
+                // Пытаемся распарсить JSON ошибки
+                const errorData = await response.json().catch(() => ({}));
+
+                // --- ЛОГИРОВАНИЕ ОШИБКИ В КОНСОЛЬ ---
+                console.group('❌ Ошибка создания пользователя');
+                console.log('Статус:', response.status);
+                console.log('Тело ответа:', errorData);
+                console.log('Payload запроса:', payload); // Полезно проверить, что мы отправили
+                console.groupEnd();
+                // ------------------------------------
+
+                const errorMessage = errorData.message || `Ошибка сервера: ${response.status}`;
+
+                Toast.show({
+                    type: 'error',
+                    text1: 'Ошибка сервера',
+                    text2: errorMessage,
+                });
             }
         } catch (error) {
-            Alert.alert("Ошибка", "Проблемы с соединением");
+            Toast.show({
+                type: 'error',
+                text1: 'Сбой сети',
+                text2: 'Проверьте интернет-соединение',
+            });
+            console.error(error);
         } finally {
             setIsSubmitting(false);
         }
     };
-
-    if (!isReady) {
-        return <View style={{flex: 1, backgroundColor: 'white'}} />;
-    }
 
     return (
         <KeyboardAvoidingView
@@ -182,6 +236,17 @@ const CreateUserScreen = () => {
                         placeholderTextColor="#999"
                     />
 
+                    <TouchableOpacity
+                        style={[styles.selectTrigger, {  }]}
+                        onPress={() => setDepartmentPopupVisible(true)}
+                    >
+                        <View style={{ flex: 1 }}>
+                            <Text style={selectedDepartment ? styles.selectValue : styles.placeholderText}>
+                                {selectedDepartment ? selectedDepartment.name : 'Департамент'}
+                            </Text>
+                        </View>
+                    </TouchableOpacity>
+
                     {/* Обновленное поле пароля с кнопками */}
                     <View style={styles.passwordContainer}>
                         <TextInput
@@ -213,7 +278,6 @@ const CreateUserScreen = () => {
                             style={styles.selectTrigger}
                             onPress={() => {
                                 setIsRoleSelectOpen(!isRoleSelectOpen);
-                                setIsDeputySelectOpen(false);
                             }}
                         >
                             <Text style={!selectedRole ? styles.placeholderText : styles.selectValue}>
@@ -258,51 +322,22 @@ const CreateUserScreen = () => {
 
                     {/* Выбор Депутата (только для Helper) */}
                     {selectedRole === 'Helper' && (
-                        <View style={[styles.selectWrapper, { zIndex: 900 }]}>
-                            <TouchableOpacity
-                                style={styles.selectTrigger}
-                                onPress={() => {
-                                    setIsDeputySelectOpen(!isDeputySelectOpen);
-                                    setIsRoleSelectOpen(false);
-                                }}
-                            >
-                                <Text style={!selectedDeputy ? styles.placeholderText : styles.selectValue}>
-                                    {selectedDeputy ? selectedDeputy.full_name : 'Привязать к депутату *'}
+                        <TouchableOpacity
+                            style={styles.selectTrigger}
+                            onPress={() => setDeputyPopupVisible(true)}
+                        >
+                            <View style={{ flex: 1 }}>
+                                <Text
+                                    style={selectedDeputy ? styles.selectValue : styles.placeholderText}
+                                    numberOfLines={1}
+                                >
+                                    {selectedDeputy
+                                        ? (selectedDeputy.full_name || selectedDeputy.email)
+                                        : 'Привязать к депутату'}
                                 </Text>
-                                <Ionicons
-                                    name={isDeputySelectOpen ? "chevron-up" : "chevron-down"}
-                                    size={20}
-                                    color="#6b7280"
-                                />
-                            </TouchableOpacity>
-
-                            {isDeputySelectOpen && (
-                                <View style={styles.selectDropdown}>
-                                    {deputies.length > 0 ? deputies.map((item) => (
-                                        <TouchableOpacity
-                                            key={item.id}
-                                            style={[
-                                                styles.selectItem,
-                                                selectedDeputy?.id === item.id && styles.selectItemSelected
-                                            ]}
-                                            onPress={() => {
-                                                setSelectedDeputy(item);
-                                                setIsDeputySelectOpen(false);
-                                            }}
-                                        >
-                                            <Text style={[
-                                                styles.selectItemText,
-                                                selectedDeputy?.id === item.id && styles.selectItemTextSelected
-                                            ]}>
-                                                {item.full_name}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    )) : (
-                                        <View style={styles.selectItem}><Text>Депутаты не найдены</Text></View>
-                                    )}
-                                </View>
-                            )}
-                        </View>
+                            </View>
+                            <Ionicons name="chevron-down" size={20} color="#94a3b8" />
+                        </TouchableOpacity>
                     )}
 
                     <TouchableOpacity
@@ -318,6 +353,51 @@ const CreateUserScreen = () => {
                     </TouchableOpacity>
                 </View>
             </ScrollView>
+            <SelectionPopup
+                visible={deputyPopupVisible}
+                title="Выберите депутата"
+                onClose={() => setDeputyPopupVisible(false)}
+                data={deputies}
+                keyExtractor={(item) => item.id}
+                onSelect={(deputy) => {
+                    console.log("Выбран депутат:", deputy); // Проверь в консоли, что прилетает
+                    setSelectedDeputy(deputy);
+                }}
+                renderItem={(item: Profile) => (
+                    <View style={styles.deputyItem}>
+                        <View style={styles.deputyAvatar}>
+                            <Text style={styles.deputyAvatarText}>
+                                {(item.full_name || item.email || "?")[0].toUpperCase()}
+                            </Text>
+                        </View>
+                        <View>
+                            <Text style={styles.deputyName}>
+                                {/* Пробуем оба варианта ключа на случай расхождения с API */}
+                                {item.full_name || (item as any).fullName || item.email}
+                            </Text>
+                            <Text style={styles.deputyJob}>{item.job_title || 'Депутат'}</Text>
+                        </View>
+                    </View>
+                )}
+            />
+            <SelectionPopup
+                visible={departmentPopupVisible}
+                title="Выберите департамент"
+                onClose={() => setDepartmentPopupVisible(false)}
+                data={departments}
+                keyExtractor={(item) => item.id}
+                onSelect={(dept) => {
+                    setSelectedDepartment(dept);
+                }}
+                renderItem={(item) => (
+                    <View style={styles.deptItem}>
+                        <View style={styles.deptIcon}>
+                            <Building2 size={20} color="#2A6E3F" />
+                        </View>
+                        <Text style={styles.deptName}>{item.name}</Text>
+                    </View>
+                )}
+            />
         </KeyboardAvoidingView>
     );
 };
@@ -395,6 +475,8 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         paddingHorizontal: 12,
         paddingVertical: 10,
+        marginBottom: 14,
+        marginTop: 8,
     },
     selectDropdown: {
         position: 'absolute',
@@ -425,6 +507,33 @@ const styles = StyleSheet.create({
     selectItemSelected: { backgroundColor: '#f0f7f0' },
     selectItemText: { fontSize: 15, color: '#333' },
     selectItemTextSelected: { color: '#0f6319', fontWeight: '500' },
+    inputLabel: { fontSize: 15, color: '#9ca3af' },
+    deputyItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
+    deputyAvatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#ebfdeb', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+    deputyAvatarText: { color: '#2A6E3F', fontWeight: '700' },
+    deputyName: { fontSize: 15, fontWeight: '600', color: '#1e293b' },
+    deputyJob: { fontSize: 12, color: '#64748b' },
+    deptItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f1f5f9'
+    },
+    deptIcon: {
+        width: 40,
+        height: 40,
+        borderRadius: 10,
+        backgroundColor: '#f0f9f0',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12
+    },
+    deptName: {
+        fontSize: 16,
+        color: '#1e293b',
+        fontWeight: '500'
+    },
 });
 
 export default CreateUserScreen;

@@ -266,10 +266,13 @@ export function Dashboard() {
 
     return (
         <View style={{ flex: 1, paddingBottom: insets.bottom + 15 }}>
-
-            {/* 1. Статичная полоса, которая не скроллится (закрывает статус-бар) */}
-            {/* Используем верхний цвет градиента, чтобы не было видно стыка */}
-            <View style={{ height: insets.top, backgroundColor: '#2A6E3F' }} />
+            <LinearGradient
+                colors={['#2A6E3F', '#349339']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={{height: insets.top}}
+            >
+            </LinearGradient>
 
             <ScrollView
                 showsVerticalScrollIndicator={false}

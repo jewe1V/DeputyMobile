@@ -1,7 +1,7 @@
 import React from "react";
 import { Platform, StyleSheet, Text, View, TouchableOpacity } from "react-native";
 import { BlurView } from "expo-blur";
-import { Calendar, Folder, House, ListTodo, User } from "lucide-react-native";
+import {Building2, Calendar, Folder, House, ListTodo, User} from "lucide-react-native";
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from "react-native-reanimated";
 
 const SPRING_CONFIG = {
@@ -88,6 +88,7 @@ export function CustomBottomTabBar({ state, descriptors, navigation, insets, rol
                         case "TaskBoardScreen": Icon = ListTodo; label = "задачи"; break;
                         case "CatalogScreen": Icon = Folder; label = "каталог"; break;
                         case "UserListScreen": Icon = User; label = "аккаунты"; break;
+                        case "DepartmentsScreen": Icon = Building2; label = "отделы"; break;
                         default: return null;
                     }
 

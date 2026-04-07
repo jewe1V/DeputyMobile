@@ -73,7 +73,7 @@ export function FileManager() {
     }
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, {paddingBottom: insets.bottom + 50}]}>
             {/* Header */}
             <LinearGradient
                 colors={['#2A6E3F', '#349339']}

@@ -43,7 +43,7 @@ export const EventAttendanceModal: React.FC<Props> = ({
 
     const panY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
     const [uploadProgress, setUploadProgress] = useState(0);
-    const START_Y = SCREEN_HEIGHT * 0.3;
+    const START_Y = SCREEN_HEIGHT * 0.2;
     const token = AuthManager.getToken();
     const isImageFile = (fileName: string) => {
         const ext = fileName.split('.').pop()?.toLowerCase();

@@ -1,25 +1,26 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import {
     View, Text, StyleSheet, ScrollView, TouchableOpacity,
-    ActivityIndicator, RefreshControl, Alert, Modal
+    ActivityIndicator, RefreshControl, Modal
 } from 'react-native';
-import {useLocalSearchParams, useNavigation, useRootNavigation, useRouter} from "expo-router";
+import {useLocalSearchParams, useRouter} from "expo-router";
 import { AuthManager } from "@/components/LoginScreen/LoginScreen";
 import { apiUrl } from "@/api/api";
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Yamap, Marker } from 'react-native-yamap-plus';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ArrowLeft, FileText, Download, CheckCircle2, XCircle, HelpCircle } from "lucide-react-native";
+import {ArrowLeft, FileText, Download, CheckCircle2, XCircle, HelpCircle, X} from "lucide-react-native";
 import { EventAttachmentUploader } from "@/components/EventsScreen/EventAttachmentUploader";
 import { EventAttendanceModal } from "@/components/EventsScreen/EventAttendanceModal";
 import { showLocation } from 'react-native-map-link';
 import {useFileManagerPresenter} from "@/components/FileManagerScreen/FileManagerPresenter";
 import {formatDateTime} from "@/utils";
 import {AttendeeExcuseModal} from "@/components/EventsScreen/AttendeeExcuseModal";
-import { Directory, File } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { Image } from 'react-native';
+import Toast from "react-native-toast-message";
+
 
 
 interface Attachment {
@@ -55,24 +56,49 @@ interface EventData {
 interface ImageViewerModalProps {
     visible: boolean;
     imageUrl: string | null;
+    name: string | null;
     onClose: () => void;
 }
 
-const ImageViewerModal: React.FC<ImageViewerModalProps> = ({ visible, imageUrl, onClose }) => {
+const ImageViewerModal: React.FC<ImageViewerModalProps> = ({ visible, imageUrl, name, onClose }) => {
     if (!imageUrl) return null;
     const token = AuthManager.getToken();
+    const insets = useSafeAreaInsets();
 
     return (
-        <Modal visible={visible} transparent={true} animationType="fade" onRequestClose={onClose}>
-            <View style={styles.imageViewerOverlay}>
-                <TouchableOpacity style={styles.imageViewerCloseButton} onPress={onClose}>
-                    <XCircle size={32} color="#fff" />
+        <Modal
+            visible={visible}
+            transparent={true}
+            onRequestClose={onClose}
+            animationType="fade"
+        >
+            <View style={styles.fullScreenOverlay}>
+                <TouchableOpacity
+                    style={[styles.closePreviewButton, { top: insets.top + 10 }]}
+                    onPress={onClose}
+                >
+                    <View pointerEvents={"none"}>
+                        <X size={30} color="white" />
+                    </View>
                 </TouchableOpacity>
-                <Image
-                    source={{ uri: imageUrl, headers: { Authorization: `Bearer ${token}` } }}
-                    style={styles.fullScreenImage}
-                    resizeMode="contain"
-                />
+                {imageUrl && (() => {
+                    if (imageUrl) {
+                        return (
+                            <Image
+                                source={{ uri: imageUrl, headers: { Authorization: `Bearer ${token}` } }}
+                                style={styles.fullImage}
+                                resizeMode="contain"
+                            />
+                        );
+                    }
+                    return null;
+                })()}
+
+                <View style={[styles.previewFooter, { paddingBottom: insets.bottom + 20 }]}>
+                    <Text style={styles.previewFooterText}>
+                        {name || 'Файл'}
+                    </Text>
+                </View>
             </View>
         </Modal>
     );
@@ -91,29 +117,17 @@ const AttachmentItem: React.FC<AttachmentItemProps> = ({ file, onImagePress }) =
         try {
             setIsDownloading(true);
             setDownloadProgress(0);
-
-            const rawFileName = file.file_name || file.url.split('/').pop() || 'file';
-            const safeFileName = rawFileName.replace(/[^a-zA-Z0-9.\-_а-яА-Я]/g, '_');
-
-            // Use the correct constants from new API
-            const fileUri = `${FileSystem.documentDirectory}${safeFileName}`;
-
-            // New API uses downloadAsync directly
-            const downloadResult = await FileSystem.downloadAsync(
-                file.url,
-                fileUri,
-                {
-                    headers: { Authorization: `Bearer ${token}` },
-                    sessionType: FileSystem.FileSystemSessionType.BACKGROUND,
-                }
-            );
-
-            if (downloadResult && downloadResult.uri) {
-                await Sharing.shareAsync(downloadResult.uri);
-            }
+            await Sharing.shareAsync(downloadResult.uri);
         } catch (error) {
             console.error('Ошибка скачивания:', error);
-            Alert.alert('Ошибка', 'Не удалось скачать файл');
+            Toast.show({
+                type: 'error',
+                text1: 'Ошибка',
+                text2: 'Не удалось скачать файл',
+                position: 'top',
+                visibilityTime: 3000,
+                topOffset: 50,
+            });
         } finally {
             setIsDownloading(false);
             setDownloadProgress(0);
@@ -128,7 +142,7 @@ const AttachmentItem: React.FC<AttachmentItemProps> = ({ file, onImagePress }) =
                     onPress={() => onImagePress(file.url)}
                 >
                     <Image
-                        source={{ uri: file.url, headers: { Authorization: `Bearer ${token}` } }}
+                        source={{ uri: `${apiUrl}/api/files/${encodeURIComponent(file.file_name)}`, headers: { Authorization: `Bearer ${token}` } }}
                         style={styles.imagePreview}
                     />
                     <View style={styles.imagePreviewOverlay}>
@@ -187,9 +201,11 @@ const EventDetailsScreen: React.FC = () => {
     const [selectedExcuseAttendee, setSelectedExcuseAttendee] = useState<Attendee | null>(null);
     const [viewerVisible, setViewerVisible] = useState(false);
     const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
+    const [selectedImageName, setSelectedImageName] = useState<string | null>(null);
 
-    const handleImagePress = (url: string) => {
+    const handleImagePress = (url: string, name: string) => {
         setSelectedImageUrl(url);
+        setSelectedImageName(name);
         setViewerVisible(true);
     };
 
@@ -397,7 +413,7 @@ const EventDetailsScreen: React.FC = () => {
                                 <AttachmentItem
                                     key={file.id}
                                     file={file}
-                                    onImagePress={handleImagePress}
+                                    onImagePress={() => handleImagePress(`${apiUrl}/api/files/${encodeURIComponent(file.file_name)}`, file.file_name)}
                                 />
                             ))}
                         </View>
@@ -414,6 +430,7 @@ const EventDetailsScreen: React.FC = () => {
                                     onPress={() => {
                                         if (attendee.status === 'No') {
                                             setSelectedExcuseAttendee(attendee);
+                                            console.log(selectedExcuseAttendee);
                                             setExcuseModalVisible(true);
                                         } else {
                                             router.push({ pathname: '/(screens)/ProfileScreen', params: { id: attendee.user_id } });
@@ -484,6 +501,7 @@ const EventDetailsScreen: React.FC = () => {
             <ImageViewerModal
                 visible={viewerVisible}
                 imageUrl={selectedImageUrl}
+                name={selectedImageName}
                 onClose={() => setViewerVisible(false)}
             />
         </>
@@ -608,6 +626,38 @@ const styles = StyleSheet.create({
     fullScreenImage: {
         width: '100%',
         height: '80%',
+    },
+    fullScreenOverlay: {
+        flex: 1,
+        backgroundColor: 'black',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    closePreviewButton: {
+        position: 'absolute',
+        right: 20,
+        zIndex: 10,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        borderRadius: 20,
+        padding: 5,
+    },
+    fullImage: {
+        width: '100%',
+        height: '80%',
+    },
+    previewFooter: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        padding: 20,
+        alignItems: 'center',
+    },
+    previewFooterText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: '500',
     },
 });
 
