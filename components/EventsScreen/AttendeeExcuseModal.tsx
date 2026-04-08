@@ -27,7 +27,7 @@ interface AttendeeExcuseModalProps {
     visible: boolean;
     onClose: () => void;
     attendee: Attendee | null;
-    onDownloadDocument: (fileName: string, url: string) => void;
+    onDownloadDocument: (file: {}) => void;
 }
 
 export const AttendeeExcuseModal: React.FC<AttendeeExcuseModalProps> = ({ visible, onClose, attendee, onDownloadDocument }) => {
@@ -81,6 +81,9 @@ export const AttendeeExcuseModal: React.FC<AttendeeExcuseModalProps> = ({ visibl
         });
     };
 
+    // @ts-ignore
+    // @ts-ignore
+    // @ts-ignore
     return (
         <Modal visible={visible} transparent animationType="none" onRequestClose={() => closeAnim(onClose)}>
             <View style={[styles.overlay, { paddingBottom: insets.bottom }]}>

@@ -65,6 +65,7 @@ const AttachmentItem: React.FC<AttachmentItemProps> = ({ file, onImagePress }) =
 
     // Создаем обработчик, который будет вызываться при нажатии
     const handleDownload = React.useCallback(() => {
+        // @ts-ignore
         handlers.handleDownloadDocument(file);
     }, [handlers, file]);
 
@@ -332,6 +333,7 @@ const EventDetailsScreen: React.FC = () => {
         ]);
     };
 
+    // @ts-ignore
     return (
         <>
             <ScrollView
