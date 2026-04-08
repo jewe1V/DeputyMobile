@@ -15,8 +15,7 @@ import {
     Text,
     TouchableOpacity,
     View,
-    RefreshControl,
-    InteractionManager
+    RefreshControl, Modal, ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CatalogCard } from './CatalogCard';
@@ -26,13 +25,13 @@ import { useFileManagerPresenter } from './FileManagerPresenter';
 import { styles } from './file-manager-screen';
 import { CreateCatalogModal } from './CreateCatalogModal';
 import {AuthManager} from "@/components/LoginScreen/LoginScreen";
-import {useEffect, useMemo, useState} from "react";
+import {useMemo} from "react";
+import { UploadingDocumentCard } from './UploadingDocumentCard';
 
 export function FileManager() {
     const { state, handlers, computed } = useFileManagerPresenter();
     const insets = useSafeAreaInsets();
     const userRole = AuthManager.getRole();
-    const [isReady, setIsReady] = useState(false);
 
     const showCreateCatalogButton = useMemo(() => {
         if (!state.currentCatalog) return false;
@@ -60,17 +59,6 @@ export function FileManager() {
 
         return true;
     }, [state.currentCatalog, userRole, state.breadcrumbPath]);
-
-    useEffect(() => {
-        const task = InteractionManager.runAfterInteractions(() => {
-            setIsReady(true);
-        });
-        return () => task.cancel();
-    }, []);
-
-    if (!isReady) {
-        return <View style={{flex: 1, backgroundColor: 'white'}} />;
-    }
 
     return (
         <View style={[styles.container, {paddingBottom: insets.bottom + 50}]}>
@@ -235,10 +223,22 @@ export function FileManager() {
                 )}
 
                 {/* Documents List */}
-                {state.currentCatalog && !state.loading && computed.filteredDocuments.length > 0 && (
+                {state.currentCatalog && !state.loading && (computed.filteredDocuments.length > 0 || state.uploading) && (
                     <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Файлы ({computed.filteredDocuments.length})</Text>
+                        <Text style={styles.sectionTitle}>
+                            Файлы ({computed.filteredDocuments.length + (state.uploading ? 1 : 0)})
+                        </Text>
                         <View style={styles.documentList}>
+
+                            {/* Плейсхолдер загрузки всегда сверху */}
+                            {state.uploading && (
+                                <UploadingDocumentCard
+                                    progress={state.uploadProgress}
+                                    onCancel={handlers.cancelUpload}
+                                />
+                            )}
+
+                            {/* Обычные документы */}
                             {computed.filteredDocuments.map((doc: Document) => (
                                 <DocumentCard
                                     key={doc.id}
@@ -246,7 +246,7 @@ export function FileManager() {
                                     getFileIcon={handlers.getFileIcon}
                                     getFileSize={handlers.getFileSize}
                                     onInfoPress={handlers.handleOpenDocumentDetail}
-                                    onDownloadPress={() => handlers.handleDownloadDocument(doc.file_name, doc.url)}
+                                    onDownloadPress={() => handlers.handleDownloadDocument(doc)}
                                 />
                             ))}
                         </View>
@@ -254,7 +254,7 @@ export function FileManager() {
                 )}
 
                 {/* Empty State */}
-                {state.currentCatalog && !state.loading && computed.filteredCatalogs.length === 0 && computed.filteredDocuments.length === 0 && !state.searchQuery && (
+                {state.currentCatalog && !state.loading && computed.filteredCatalogs.length === 0 && computed.filteredDocuments.length === 0 && !state.searchQuery && !state.uploading && (
                     <View style={styles.emptyState}>
                         <View style={styles.emptyStateIcon}>
                             <Folder size={32} color="#9ca3af" />
@@ -292,6 +292,8 @@ export function FileManager() {
                 document={state.selectedDocument}
                 onClose={handlers.handleCloseDocumentDetail}
                 onDelete={handlers.handleDeleteDocument}
+                onStatusChange={handlers.handleStatusChange}
+                getFileSize={handlers.getFileSize}
             />
         </View>
     );

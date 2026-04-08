@@ -26,6 +26,7 @@ import {Task} from "@/models/TaskBoardModel";
 import {declOfNum, formatDateToDay} from "@/utils";
 import {TaskCard} from "@/components/TaskBoard/TaskCard";
 import { SkeletonItem } from '@/components/ui/SkeletonLoader';
+import {useFocusEffect} from "@react-navigation/native";
 
 interface DashboardData {
     job_title: string;
@@ -56,6 +57,8 @@ export function Dashboard() {
     useEffect(() => {
         fetchDashboardData(false);
     }, []);
+
+
 
     const fetchDashboardData = async (isRefresh = false) => {
         try {
@@ -101,9 +104,10 @@ export function Dashboard() {
         }
     };
 
+
     const onRefresh = useCallback(() => {
         setRefreshing(true);
-        fetchDashboardData(true); // Передаем флаг, что это обновление
+        fetchDashboardData(true);
     }, []);
 
     const getInitials = (name: string) => {

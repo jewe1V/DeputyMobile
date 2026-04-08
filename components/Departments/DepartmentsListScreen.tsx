@@ -190,7 +190,7 @@ const DepartmentsListScreen = () => {
                 style={styles.deleteButton}
             >
                 <View pointerEvents={"none"}>
-                    <Trash2 size={16} color="#af1b1b" />
+                    <Trash2 size={16} color="#000" />
                 </View>
             </TouchableOpacity>
         </TouchableOpacity>

@@ -36,6 +36,7 @@ interface Attendee {
     user_full_name: string;
     status: 'Yes' | 'No' | 'Maybe' | string;
     excuse_document_id: string | null;
+    excuse_document_name: string | null;
     excuse_note: string | null;
 }
 
@@ -53,109 +54,43 @@ interface EventData {
     attachments: Attachment[];
     attendees: Attendee[];
 }
-interface ImageViewerModalProps {
-    visible: boolean;
-    imageUrl: string | null;
-    name: string | null;
-    onClose: () => void;
-}
-
-const ImageViewerModal: React.FC<ImageViewerModalProps> = ({ visible, imageUrl, name, onClose }) => {
-    if (!imageUrl) return null;
-    const token = AuthManager.getToken();
-    const insets = useSafeAreaInsets();
-
-    return (
-        <Modal
-            visible={visible}
-            transparent={true}
-            onRequestClose={onClose}
-            animationType="fade"
-        >
-            <View style={styles.fullScreenOverlay}>
-                <TouchableOpacity
-                    style={[styles.closePreviewButton, { top: insets.top + 10 }]}
-                    onPress={onClose}
-                >
-                    <View pointerEvents={"none"}>
-                        <X size={30} color="white" />
-                    </View>
-                </TouchableOpacity>
-                {imageUrl && (() => {
-                    if (imageUrl) {
-                        return (
-                            <Image
-                                source={{ uri: imageUrl, headers: { Authorization: `Bearer ${token}` } }}
-                                style={styles.fullImage}
-                                resizeMode="contain"
-                            />
-                        );
-                    }
-                    return null;
-                })()}
-
-                <View style={[styles.previewFooter, { paddingBottom: insets.bottom + 20 }]}>
-                    <Text style={styles.previewFooterText}>
-                        {name || 'Файл'}
-                    </Text>
-                </View>
-            </View>
-        </Modal>
-    );
-};
 
 const AttachmentItem: React.FC<AttachmentItemProps> = ({ file, onImagePress }) => {
     const [downloadProgress, setDownloadProgress] = useState(0);
     const [isDownloading, setIsDownloading] = useState(false);
     const token = AuthManager.getToken();
-
+    const isAdmin = AuthManager.getRole() === "Admin";
+    const { handlers } = useFileManagerPresenter();
     const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(file.url);
 
-    const downloadFile = async () => {
-        if (isDownloading) return;
+    // Создаем обработчик, который будет вызываться при нажатии
+    const handleDownload = React.useCallback(() => {
+        handlers.handleDownloadDocument(file);
+    }, [handlers, file]);
 
-        try {
-            setIsDownloading(true);
-            setDownloadProgress(0);
-            await Sharing.shareAsync(downloadResult.uri);
-        } catch (error) {
-            console.error('Ошибка скачивания:', error);
-            Toast.show({
-                type: 'error',
-                text1: 'Ошибка',
-                text2: 'Не удалось скачать файл',
-                position: 'top',
-                visibilityTime: 3000,
-                topOffset: 50,
-            });
-        } finally {
-            setIsDownloading(false);
-            setDownloadProgress(0);
-        }
-    };
 
     return (
         <View style={styles.attachmentContainer}>
             {isImage ? (
                 <TouchableOpacity
                     style={styles.imagePreviewContainer}
-                    onPress={() => onImagePress(file.url)}
+                    onPress={handleDownload}  // ← передаем функцию, а не результат вызова
                 >
                     <Image
-                        source={{ uri: `${apiUrl}/api/files/${encodeURIComponent(file.file_name)}`, headers: { Authorization: `Bearer ${token}` } }}
+                        source={{
+                            uri: `${apiUrl}/api/files/${encodeURIComponent(file.file_name)}`,
+                            headers: { Authorization: `Bearer ${token}` }
+                        }}
                         style={styles.imagePreview}
                     />
                     <View style={styles.imagePreviewOverlay}>
                         <Text style={styles.imagePreviewName} numberOfLines={1}>{file.file_name}</Text>
-                        <TouchableOpacity onPress={downloadFile} style={styles.downloadIconButton}>
-                            <Download size={20} color="#fff" />
-                        </TouchableOpacity>
                     </View>
                 </TouchableOpacity>
             ) : (
                 <TouchableOpacity
                     style={[styles.fileRow, isDownloading && styles.fileRowDownloading]}
-                    onPress={downloadFile}
+                    onPress={handleDownload}
                     disabled={isDownloading}
                 >
                     <View style={styles.fileIconContainer}>
@@ -172,7 +107,7 @@ const AttachmentItem: React.FC<AttachmentItemProps> = ({ file, onImagePress }) =
                 </TouchableOpacity>
             )}
 
-            {/* Прогресс-бар загрузки (показывается и для файлов, и для картинок при скачивании) */}
+            {/* Прогресс-бар загрузки */}
             {isDownloading && (
                 <View style={styles.progressBarBackground}>
                     <View style={[styles.progressBarFill, { width: `${downloadProgress * 100}%` }]} />
@@ -581,12 +516,6 @@ const EventDetailsScreen: React.FC = () => {
                 attendee={selectedExcuseAttendee}
                 onDownloadDocument={handlers.handleDownloadDocument}
             />
-            <ImageViewerModal
-                visible={viewerVisible}
-                imageUrl={selectedImageUrl}
-                name={selectedImageName}
-                onClose={() => setViewerVisible(false)}
-            />
         </>
     );
 };
@@ -662,7 +591,8 @@ const styles = StyleSheet.create({
         right: 0,
         backgroundColor: 'rgba(0,0,0,0.5)',
         flexDirection: 'row',
-        padding: 8,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
         alignItems: 'center',
         justifyContent: 'space-between',
     },
@@ -673,7 +603,7 @@ const styles = StyleSheet.create({
         marginRight: 8,
     },
     downloadIconButton: {
-        padding: 4,
+        padding: 8,
         backgroundColor: 'rgba(255,255,255,0.2)',
         borderRadius: 8,
     },

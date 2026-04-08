@@ -5,7 +5,7 @@ export interface DocumentApiResponse {
     id: string;
     file_name: string;
     file_name_encoded: string;
-    status: number;
+    status: "InProgress" | "ToDo" | "Done";
     start_date: string;
     end_date: string;
     url: string;
@@ -14,6 +14,7 @@ export interface DocumentApiResponse {
     uploaded_by_id: string;
     catalog_id: string;
     post_id: string;
+    user_name: string;
     post?: {
         id: string;
         title: string;
@@ -36,6 +37,10 @@ export interface Document {
     uploaded_at: string;
     content_type: string;
     url: string;
+    status: "InProgress" | "ToDo" | "Done";
+    start_date?: string;
+    end_date?: string;
+    user_name?: string;
 }
 
 class DocumentService {
@@ -77,6 +82,10 @@ class DocumentService {
             uploaded_at: data.uploaded_at,
             content_type: data.content_type,
             url: data.url,
+            status: data.status,
+            start_date: data.start_date,
+            end_date: data.end_date,
+            user_name: data.user_name,
         };
     }
 
@@ -182,6 +191,21 @@ class DocumentService {
             throw error;
         }
     }
+
+    async updateDocumentStatus(documentId: string, newStatus: string): Promise<Document> {
+        const response = await this.fetchWithTimeout(`${apiUrl}/Documents/update?documentId=${documentId}&newStatus=${newStatus}`, {
+            method: 'POST',
+            headers: this.getAuthHeaders(),
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText || 'Не удалось изменить статус документа');
+        }
+
+        const updatedDocument: Document = await response.json();
+        return updatedDocument;
+    };
 }
 
 export const documentService = new DocumentService();

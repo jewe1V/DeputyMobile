@@ -15,20 +15,11 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { UserX, LogOut, Mail, Shield, Calendar, ListTodo, ChevronRight } from 'lucide-react-native';
+import {UserX, LogOut, Mail, Shield, Calendar, ListTodo, ChevronRight, Building2, Edit} from 'lucide-react-native';
 import {Profile} from "@/models/ProfileModel";
+import {declOfNum} from "@/utils";
+import { useFocusEffect } from '@react-navigation/native';
 
-
-interface AvatarProps {
-    style?: any;
-    children: React.ReactNode;
-}
-
-const Avatar: React.FC<AvatarProps> = ({ style, children }) => (
-    <View style={[styles.avatarBase, style]}>
-        {children}
-    </View>
-);
 
 const getInitials = (name: string) => {
     if (!name) return '?';
@@ -44,6 +35,9 @@ export function ProfileScreen() {
     const [profile, setProfile] = useState<Profile | null>(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+
+    const userId = AuthManager.getUserId();
+    const userRole = AuthManager.getRole();
 
     const loadProfile = useCallback(async () => {
         try {
@@ -70,6 +64,12 @@ export function ProfileScreen() {
     useEffect(() => {
         loadProfile();
     }, [loadProfile]);
+
+    useFocusEffect(
+        useCallback(() => {
+            loadProfile();
+        }, [loadProfile])
+    );
 
     const handleRefresh = () => {
         setRefreshing(true);
@@ -115,7 +115,7 @@ export function ProfileScreen() {
     }
 
     return (
-        <View style={{ flex: 1, backgroundColor: '#f8fafc' }}>
+        <View style={{ flex: 1, backgroundColor: '#f8fafc', paddingBottom: insets.bottom + 20 }}>
             <ScrollView
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
@@ -135,11 +135,25 @@ export function ProfileScreen() {
                 >
                     <View style={styles.headerTopRow}>
                         <Text style={styles.headerTitle}>Профиль</Text>
-                        {!id && (
-                            <TouchableOpacity style={styles.iconButton} onPress={handleLogout}>
-                                <LogOut size={20} color="white" />
-                            </TouchableOpacity>
-                        )}
+                        <View style={styles.headerButtons}>
+                            {(profile.id === userId || userRole === "Admin") && (
+                                <TouchableOpacity
+                                    style={styles.iconButton}
+                                    onPress={() => router.push({pathname: '/(forms)/CreateUserScreen', params: { id: profile.id}})}
+                                >
+                                    <View pointerEvents={"none"}>
+                                        <Edit size={20} color="white" />
+                                    </View>
+                                </TouchableOpacity>
+                            )}
+                            {!id && (
+                                <TouchableOpacity style={styles.iconButton} onPress={handleLogout}>
+                                    <View pointerEvents={"none"}>
+                                        <LogOut size={20} color="white" />
+                                    </View>
+                                </TouchableOpacity>
+                            )}
+                        </View>
                     </View>
                 </LinearGradient>
 
@@ -191,6 +205,33 @@ export function ProfileScreen() {
                         </View>
                     </View>
 
+                    {/* Секция: Подразделение (Департамент) */}
+                    {profile.department && profile.department?.name !== "unknown"  && (
+                        <>
+                            <Text style={styles.sectionTitle}>Подразделение</Text>
+                            <TouchableOpacity
+                                style={[styles.card, styles.departmentCard]}
+                                onPress={() => router.push({
+                                    pathname: '/(forms)/DepartmentDetailsScreen',
+                                    params: { id: profile.department?.id, name: profile.department?.name }
+                                })}
+                            >
+                                <View style={styles.departmentIcon}>
+                                    <Building2 size={24} color="#2A6E3F" />
+                                </View>
+                                <View style={styles.departmentInfo}>
+                                    <Text style={styles.departmentName}>{profile.department?.name || profile.department}</Text>
+                                    <Text style={styles.departmentId}>
+                                        ID: {profile.department?.id && profile.department.id !== '00000000-0000-0000-0000-000000000000'
+                                        ? `${profile.department.id.slice(0, 8)}...`
+                                        : 'Не назначен'}
+                                    </Text>
+                                </View>
+                                <ChevronRight size={20} color="#cbd5e1" />
+                            </TouchableOpacity>
+                        </>
+                    )}
+
                     {/* Быстрые действия */}
                     <Text style={styles.sectionTitle}>Активность</Text>
 
@@ -205,7 +246,12 @@ export function ProfileScreen() {
                             <View style={styles.actionContent}>
                                 <Text style={styles.actionTitle}>События</Text>
                                 <Text style={styles.actionSubtitle}>
-                                    Участвует в {profile.event_count || 0} мероприятиях
+                                    Участвует в {profile?.events?.length || profile?.event_count || 0} {
+                                    declOfNum(
+                                        profile?.events?.length || profile?.event_count || 0,
+                                        ['мероприятии', 'мероприятиях', 'мероприятиях']
+                                    )
+                                }
                                 </Text>
                             </View>
                             <ChevronRight size={20} color="#cbd5e1" />
@@ -223,7 +269,12 @@ export function ProfileScreen() {
                             <View style={styles.actionContent}>
                                 <Text style={styles.actionTitle}>Задачи</Text>
                                 <Text style={styles.actionSubtitle}>
-                                    Назначено {profile.task_count || 0} задач
+                                    Назначено {profile?.tasks?.length || profile?.task_count || 0} {
+                                    declOfNum(
+                                        profile?.tasks?.length || profile?.task_count || 0,
+                                        ['задача', 'задачи', 'задач']
+                                    )
+                                }
                                 </Text>
                             </View>
                             <ChevronRight size={20} color="#cbd5e1" />
@@ -287,6 +338,10 @@ const styles = StyleSheet.create({
         fontSize: 24,
         fontWeight: '700',
         color: '#FFFFFF',
+    },
+    headerButtons: {
+        flexDirection: 'row',
+        gap: 15,
     },
     iconButton: {
         width: 40,
@@ -443,5 +498,32 @@ const styles = StyleSheet.create({
         height: 1,
         backgroundColor: '#f1f5f9',
         marginLeft: 70, // Линия начинается после иконки
+    },
+    departmentCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 16,
+    },
+    departmentIcon: {
+        width: 36,
+        height: 36,
+        borderRadius: 14,
+        backgroundColor: '#f0fdf4',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 16,
+    },
+    departmentInfo: {
+        flex: 1,
+    },
+    departmentName: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#1e293b',
+        marginBottom: 4,
+    },
+    departmentId: {
+        fontSize: 13,
+        color: '#94a3b8',
     },
 });

@@ -8,6 +8,7 @@ import { Image } from 'react-native';
 import {apiUrl} from "@/api/api";
 import {AuthManager} from "@/components/LoginScreen/LoginScreen";
 
+
 interface DocumentCardProps {
     document: Document;
     getFileIcon: (item: CatalogItem) => JSX.Element;
@@ -17,60 +18,52 @@ interface DocumentCardProps {
 }
 
 export function DocumentCard({ document, getFileIcon, getFileSize, onInfoPress, onDownloadPress }: DocumentCardProps) {
-    const isImage = /\.(jpg|jpeg|png|webp|gif)$/i.test(document.file_name_encoded);
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp', '.svg'];
+    const isImage = imageExtensions.includes(document.content_type);
     const token = AuthManager.getToken();
 
     return (
         <View style={styles.documentItem}>
-            <View style={styles.documentContent}>
-                <View style={styles.documentIconContainer}>
-                    {isImage ? (
-                        <Image
-                            source={{
-                                uri: `${apiUrl}/api/files/${encodeURIComponent(document.file_name)}`,
-                                headers: { Authorization: `Bearer ${token}` }
-                            }}
-                            style={{ width: "100%", height: "100%", borderRadius: 8}}
-                            resizeMode="cover"
-                        />
-                    ) : (
-                        getFileIcon({
-                            id: document.id,
-                            name: document.file_name_encoded,
-                            parent_catalog_id: null,
-                            type: 'document'
-                        } as CatalogItem)
-                    )}
-                </View>
-
-                <View style={styles.documentInfo}>
-                    <Text style={styles.documentName} numberOfLines={1}>
-                        {document.file_name}
-                    </Text>
-                    <View style={styles.documentMeta}>
-                        <Text style={styles.documentMetaText}>
-                            Размер: {getFileSize(document.file_size)}
-                        </Text>
+            <TouchableOpacity onPress={onDownloadPress} style={styles.documentContent}>
+                    <View style={styles.documentIconContainer}>
+                        {isImage ? (
+                            <Image
+                                source={{
+                                    uri: `${apiUrl}/api/files/${encodeURIComponent(`${document.file_name}`)}`,
+                                    headers: { Authorization: `Bearer ${token}` }
+                                }}
+                                style={{ width: "100%", height: "100%", borderRadius: 8}}
+                                resizeMode="cover"
+                            />
+                        ) : (
+                            getFileIcon({
+                                id: document.id,
+                                name: document.file_name_encoded,
+                                parent_catalog_id: null,
+                                type: 'document'
+                            } as CatalogItem)
+                        )}
                     </View>
-                </View>
 
-                <View style={styles.documentActions}>
-                    {/* Исправленный вызов функции */}
-                    <TouchableOpacity style={styles.documentActionButton} onPress={onDownloadPress}>
-                        <View pointerEvents="none">
-                        <Download size={17} color="#777d87" />
+                    <View style={styles.documentInfo}>
+                        <Text style={styles.documentName} numberOfLines={1}>
+                            {document.file_name}
+                        </Text>
+                        <View style={styles.documentMeta}>
+                            <Text style={styles.documentMetaText}>
+                                Размер: {getFileSize(document.file_size)}
+                            </Text>
                         </View>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.documentActionButton}
-                        onPress={() => onInfoPress(document)}
-                    >
-                        <View pointerEvents="none">
+                    </View>
+                <TouchableOpacity
+                    style={styles.documentActionButton}
+                    onPress={() => onInfoPress(document)}
+                >
+                    <View pointerEvents="none">
                         <Info size={18} color="#777d87" />
-                        </View>
-                    </TouchableOpacity>
-                </View>
-            </View>
+                    </View>
+                </TouchableOpacity>
+            </TouchableOpacity>
         </View>
     );
 }

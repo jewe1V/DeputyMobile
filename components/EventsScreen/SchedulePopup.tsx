@@ -32,13 +32,13 @@ export const SchedulePopup: React.FC<SchedulePopupProps> = ({
     const resetPositionAnim = Animated.timing(panY, {
         toValue: START_Y,
         duration: 300,
-        useNativeDriver: false, // Изменено на false
+        useNativeDriver: true, // Изменено на false
     });
 
     const closeAnim = (callback?: () => void) => Animated.timing(panY, {
         toValue: SCREEN_HEIGHT,
         duration: 250,
-        useNativeDriver: false, // Изменено на false
+        useNativeDriver: true, // Изменено на false
     }).start(callback);
 
     // Обработка нажатия на элемент

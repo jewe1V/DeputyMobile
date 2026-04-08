@@ -56,13 +56,13 @@ export const EventAttendanceModal: React.FC<Props> = ({
     const resetPositionAnim = Animated.timing(panY, {
         toValue: START_Y,
         duration: 300,
-        useNativeDriver: false,
+        useNativeDriver: true,
     });
 
     const closeAnim = (callback?: () => void) => Animated.timing(panY, {
         toValue: SCREEN_HEIGHT,
         duration: 250,
-        useNativeDriver: false,
+        useNativeDriver: true,
     }).start(callback);
 
     const panResponder = useRef(

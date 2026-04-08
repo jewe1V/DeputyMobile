@@ -1,9 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import {
-    View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Animated, PanResponder, Dimensions
+    View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Animated, PanResponder, Dimensions, Alert
 } from 'react-native';
 import {useRouter } from "expo-router";
-import { apiUrl } from "@/api/api";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FileText, Download, User } from "lucide-react-native";
 
@@ -14,7 +13,9 @@ interface Attendee {
     user_full_name: string;
     status: 'Yes' | 'No' | 'Maybe' | string;
     excuse_document_id: string | null;
+    excuse_document_name: string | null;
     excuse_note: string | null;
+    content_type: string;
 }
 
 const getInitials = (name: string) => {
@@ -22,7 +23,6 @@ const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 };
 
-// --- Модалка для причины отсутствия ---
 interface AttendeeExcuseModalProps {
     visible: boolean;
     onClose: () => void;
@@ -120,10 +120,8 @@ export const AttendeeExcuseModal: React.FC<AttendeeExcuseModalProps> = ({ visibl
                                 <Text style={styles.fieldLabel}>Прикрепленный документ:</Text>
                                 <TouchableOpacity
                                     style={styles.documentPreviewCard}
-                                    onPress={() => onDownloadDocument(
-                                        'Документ_об_отсутствии',
-                                        `${apiUrl}/api/Documents/${attendee.excuse_document_name}`
-                                    )}
+                                    onPress={() => onDownloadDocument({file_name: attendee.excuse_document_name,
+                                            content_type: attendee.content_type})}
                                 >
                                     <View style={styles.previewContent}>
                                         <View style={styles.fileIconContainer}>
@@ -133,7 +131,7 @@ export const AttendeeExcuseModal: React.FC<AttendeeExcuseModalProps> = ({ visibl
                                             <Text style={styles.documentName} numberOfLines={1}>
                                                 Открыть документ
                                             </Text>
-                                            <Text style={styles.fileStatus}>Загружен пользователем</Text>
+                                            <Text style={styles.fileStatus}>{attendee.excuse_document_name}</Text>
                                         </View>
                                     </View>
                                     <Download size={20} color="#6b7280" />

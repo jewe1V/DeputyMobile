@@ -64,7 +64,8 @@
           }
         }
       ],
-      "expo-font"
+      "expo-font",
+      "react-native-file-viewer-turbo"
     ],
     "experiments": {
       "typedRoutes": true,

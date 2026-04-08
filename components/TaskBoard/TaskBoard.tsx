@@ -101,6 +101,12 @@ export function TaskBoard() {
         }
     }, [taskMode, userRole]);
 
+    useFocusEffect(
+        useCallback(() => {
+            loadTasks(true);
+        }, [])
+    );
+
     const onRefresh = useCallback(() => {
         setRefreshing(true);
         loadTasks(true);
