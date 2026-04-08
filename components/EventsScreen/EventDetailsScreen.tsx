@@ -1,16 +1,16 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import {
     View, Text, StyleSheet, ScrollView, TouchableOpacity,
-    ActivityIndicator, RefreshControl, Modal
+    ActivityIndicator, RefreshControl, Modal, Alert
 } from 'react-native';
-import {useLocalSearchParams, useRouter} from "expo-router";
+import {router, useLocalSearchParams, useRouter} from "expo-router";
 import { AuthManager } from "@/components/LoginScreen/LoginScreen";
 import { apiUrl } from "@/api/api";
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Yamap, Marker } from 'react-native-yamap-plus';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import {ArrowLeft, FileText, Download, CheckCircle2, XCircle, HelpCircle, X} from "lucide-react-native";
+import {ArrowLeft, FileText, Download, CheckCircle2, XCircle, HelpCircle, X, Edit, Trash2} from "lucide-react-native";
 import { EventAttachmentUploader } from "@/components/EventsScreen/EventAttachmentUploader";
 import { EventAttendanceModal } from "@/components/EventsScreen/EventAttendanceModal";
 import { showLocation } from 'react-native-map-link';
@@ -203,6 +203,9 @@ const EventDetailsScreen: React.FC = () => {
     const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
     const [selectedImageName, setSelectedImageName] = useState<string | null>(null);
 
+    const userRole = AuthManager.getRole();
+    const userId = AuthManager.getUserId();
+
     const handleImagePress = (url: string, name: string) => {
         setSelectedImageUrl(url);
         setSelectedImageName(name);
@@ -331,28 +334,108 @@ const EventDetailsScreen: React.FC = () => {
         return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
     };
 
+    const handleDelete = () => {
+        Alert.alert('Удаление', 'Вы уверены?', [
+            { text: 'Отмена', style: 'cancel' },
+            {
+                text: 'Удалить',
+                style: 'destructive',
+                onPress: async () => {
+                    try {
+                        const token = AuthManager.getToken();
+                        const response = await fetch(`${apiUrl}/api/Events/${id}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                        });
+
+                        if (response.ok) {
+                            Toast.show({
+                                type: 'success',
+                                text1: 'Успешно',
+                                text2: 'Событие успешно удалено',
+                                position: 'bottom',
+                                visibilityTime: 3000,
+                            });
+                            router.push("/(screens)/EventsScreen");
+                        } else {
+                            // Обработка ошибок HTTP
+                            const errorData = await response.json().catch(() => ({}));
+                            Toast.show({
+                                type: 'error',
+                                text1: 'Ошибка',
+                                text2: errorData.message || `Ошибка ${response.status}: не удалось удалить событие`,
+                                position: 'bottom',
+                                visibilityTime: 4000,
+                            });
+                        }
+                    } catch (error: any) {
+                        console.error('Delete error:', error);
+
+                        if (error.name === 'TypeError' && error.message.includes('network')) {
+                            Toast.show({
+                                type: 'error',
+                                text1: 'Ошибка сети',
+                                text2: 'Проверьте подключение к интернету',
+                                position: 'bottom',
+                                visibilityTime: 4000,
+                            });
+                        } else {
+                            Toast.show({
+                                type: 'error',
+                                text1: 'Ошибка',
+                                text2: error.message || 'Произошла неизвестная ошибка',
+                                position: 'bottom',
+                                visibilityTime: 4000,
+                            });
+                        }
+                    }
+                }
+            },
+        ]);
+    };
+
     return (
         <>
             <ScrollView
                 style={[styles.container, { backgroundColor: '#f8fafc' }]}
-                contentContainerStyle={{ paddingBottom: insets.bottom + 30 }}
+                contentContainerStyle={{ paddingBottom: insets.bottom + 50 }}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
                 showsVerticalScrollIndicator={false}
             >
                 <LinearGradient
                     colors={['#2A6E3F', '#349339']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
                     style={[styles.header, { paddingTop: insets.top + 15 }]}
                 >
-                    <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-                        <View pointerEvents="none">
-                            <ArrowLeft size={24} color="white" />
-                        </View>
-                    </TouchableOpacity>
+                    <View style={styles.headerTopRow}>
+                        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+                            <View pointerEvents="none">
+                                <ArrowLeft size={24} color="white" />
+                            </View>
+                        </TouchableOpacity>
+
+                        {(userRole === "Admin" || userId===event.id) && (
+                            <View style={styles.headerActions}>
+                                <TouchableOpacity
+                                    style={styles.iconButton}
+                                    onPress={() => router.push({pathname: '/(forms)/CreateEventScreen', params: { id: event.id, isEdit: 1 }})}
+                                >
+                                    <Edit size={20} color="white" />
+                                </TouchableOpacity>
+                                <TouchableOpacity style={[styles.iconButton, { marginLeft: 10 }]} onPress={handleDelete}>
+                                    <Trash2 size={20} color="#fff" />
+                                </TouchableOpacity>
+                            </View>
+                        )}
+                    </View>
+
                     <View style={styles.headerContent}>
-                        <Text style={styles.headerTitle} numberOfLines={2}>{event.title}</Text>
-                        <Text style={styles.headerSubtitle}>{getEventTypeLabel(event.type)}</Text>
+                        <Text style={styles.headerTitle} numberOfLines={3}>{event.title}</Text>
+                        <View style={[styles.statusTag, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+                            <Text style={[styles.statusTagText, { color: 'white' }]}>{getEventTypeLabel(event.type)}</Text>
+                        </View>
                     </View>
                 </LinearGradient>
 
@@ -516,12 +599,16 @@ const styles = StyleSheet.create({
     errorText: { marginTop: 16, fontSize: 18, color: '#1e293b', textAlign: 'center' },
     errorButton: { marginTop: 24, paddingHorizontal: 24, paddingVertical: 12, backgroundColor: '#0f6319', borderRadius: 8 },
     errorButtonText: { color: '#fff', fontSize: 16 },
-    header: { flexDirection: 'row', alignItems: 'center', borderBottomLeftRadius: 24, borderBottomRightRadius: 24, paddingBottom: 40, paddingHorizontal: 20 },
-    backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255, 255, 255, 0.2)', justifyContent: 'center', alignItems: 'center', marginRight: 15 },
+    header: { paddingHorizontal: 20, paddingBottom: 50, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
+    headerTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+    backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255, 255, 255, 0.2)', justifyContent: 'center', alignItems: 'center' },
+    headerActions: { flexDirection: 'row' },
+    iconButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255, 255, 255, 0.2)', justifyContent: 'center', alignItems: 'center' },
     headerContent: { flex: 1 },
-    headerTitle: { fontSize: 20, fontWeight: '600', color: '#FFFFFF' },
-    headerSubtitle: { fontSize: 13, color: 'rgba(255, 255, 255, 0.8)', marginTop: 2 },
-    content: { padding: 16, marginTop: -30 },
+    headerTitle: { fontSize: 22, fontWeight: '700', color: '#FFFFFF', marginBottom: 10 },
+    statusTag: { alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 8 },
+    statusTagText: { fontSize: 12, fontWeight: '600' },
+    content: { padding: 16, marginTop: -55 },
     card: { backgroundColor: '#fff', borderRadius: 20, padding: 16, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
     sectionTitle: { fontSize: 18, fontWeight: '600', color: '#1e293b', marginBottom: 12 },
     timeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

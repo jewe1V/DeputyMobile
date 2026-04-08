@@ -8,7 +8,6 @@ import {
     ActivityIndicator,
     StatusBar,
     RefreshControl,
-    Modal,
     Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,6 +21,7 @@ import Toast from "react-native-toast-message";
 import {renderUserItem} from "@/components/UsersScreen/RenderUserItem";
 import { AddUserPopup } from "./AddUserPopup";
 import {ArrowLeft, Plus} from "lucide-react-native";
+import {declOfNum} from "@/utils";
 
 const DepartmentDetailScreen = () => {
     const router = useRouter();
@@ -35,6 +35,7 @@ const DepartmentDetailScreen = () => {
     const [addUserModal, setAddUserModal] = useState(false);
     const [addingUser, setAddingUser] = useState(false);
 
+    const userRole = AuthManager.getRole();
     const token = AuthManager.getToken();
 
     const fetchDepartmentUsers = async () => {
@@ -154,64 +155,40 @@ const DepartmentDetailScreen = () => {
         return allUsers.filter(user => !departmentUserIds.has(user.id));
     };
 
-
-    const renderAvailableUserItem = ({ item }: { item: Profile }) => (
-        <TouchableOpacity
-            style={styles.availableUserCard}
-            onPress={() => {
-                Alert.alert(
-                    'Добавить пользователя',
-                    `Добавить ${item.full_name || item.email} в отдел?`,
-                    [
-                        { text: 'Отмена', style: 'cancel' },
-                        {
-                            text: 'Добавить',
-                            onPress: () => addUsersToDepartment([item.id])
-                        }
-                    ]
-                );
-            }}
-        >
-            <View style={[styles.avatar, { backgroundColor: '#e0f2fe' }]}>
-                <Text style={[styles.avatarText, { color: '#0369a1' }]}>
-                    {(item.full_name || item.email || '?').charAt(0).toUpperCase()}
-                </Text>
-            </View>
-            <View style={styles.userInfo}>
-                <Text style={styles.userName}>{item.full_name || 'Без имени'}</Text>
-                <Text style={styles.userEmail}>{item.email}</Text>
-                <Text style={styles.userJob}>{item.job_title}</Text>
-            </View>
-            <Ionicons name="add-circle" size={24} color="#2A6E3F" />
-        </TouchableOpacity>
-    );
-
     return (
         <View style={{ flex: 1, backgroundColor: '#fff' }}>
             <StatusBar barStyle="light-content" translucent />
-
             <LinearGradient
                 colors={['#2A6E3F', '#349339']}
-                start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                 style={[styles.header, { paddingTop: insets.top + 15 }]}
             >
-                <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-                    <View pointerEvents="none">
-                        <ArrowLeft size={24} color="white" />
-                    </View>
-                </TouchableOpacity>
+                <View style={styles.headerTopRow}>
+                    <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+                        <View pointerEvents="none">
+                            <ArrowLeft size={24} color="white" />
+                        </View>
+                    </TouchableOpacity>
+
+                    {(userRole === "Admin") && (
+                        <View style={styles.headerActions}>
+                            <TouchableOpacity
+                                style={styles.iconButton}
+                                onPress={() => setAddUserModal(true)}
+                            >
+                                <View pointerEvents="none">
+                                    <Plus size={20} color="white" />
+                                </View>
+                            </TouchableOpacity>
+                        </View>
+                    )}
+                </View>
+
                 <View style={styles.headerContent}>
-                    <Text style={styles.headerTitle}>{name}</Text>
+                    <Text style={styles.headerTitle} numberOfLines={3}>{name}</Text>
                     <Text style={styles.headerSubtitle}>
-                        {users.length} сотрудников
+                        {users.length} {declOfNum(users.length, ['сотрудник', 'сотрудника', 'сотрудников'])}
                     </Text>
                 </View>
-                <TouchableOpacity
-                    style={styles.addButton}
-                    onPress={() => setAddUserModal(true)}
-                >
-                    <Plus size={24} color="#fff" />
-                </TouchableOpacity>
             </LinearGradient>
 
             {loading ? (
@@ -249,18 +226,14 @@ const DepartmentDetailScreen = () => {
 };
 
 const styles = StyleSheet.create({
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderBottomLeftRadius: 24,
-        borderBottomRightRadius: 24,
-        paddingHorizontal: 20,
-        paddingBottom: 20,
-    },
-    backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255, 255, 255, 0.2)', justifyContent: 'center', alignItems: 'center', marginRight: 15 },
-    headerContent: { flex: 1 },
-    headerTitle: { fontSize: 20, fontWeight: '600', color: '#FFFFFF' },
-    headerSubtitle: { fontSize: 14, color: 'rgba(255, 255, 255, 0.8)', marginTop: 2 },
+    header: { paddingHorizontal: 20, paddingBottom: 20, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
+    headerTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 },
+    backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255, 255, 255, 0.2)', justifyContent: 'center', alignItems: 'center' },
+    headerActions: { flexDirection: 'row' },
+    iconButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255, 255, 255, 0.2)', justifyContent: 'center', alignItems: 'center' },
+    headerContent: {},
+    headerTitle: { fontSize: 22, fontWeight: '700', color: '#FFFFFF'},
+    headerSubtitle: { fontSize: 13, fontWeight: '400', color: '#FFFFFF' },
     addButton: {
         width: 40,
         height: 40,

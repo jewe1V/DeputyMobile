@@ -6,19 +6,23 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router"; // Добавлен useLocalSearchParams
 import { apiUrl } from "@/api/api";
 import { AuthManager } from "@/components/LoginScreen/LoginScreen";
 import { LinearGradient } from "expo-linear-gradient";
 import LocationPickerModal from "./LocationPickerModal";
 import Toast from "react-native-toast-message";
-import {ArrowLeft} from "lucide-react-native";
-import {PeoplePickerModal} from "@/components/EventsScreen/PeoplePickerModal";
+import { ArrowLeft } from "lucide-react-native";
+import { PeoplePickerModal } from "@/components/EventsScreen/PeoplePickerModal";
 
 type User = { id: string; full_name: string; email: string };
 type Department = { id: string; name: string };
 
 export default function CreateEventScreen() {
+    // Получаем id из параметров маршрута и вычисляем режим
+    const { id } = useLocalSearchParams<{ id: string }>();
+    const isEditMode = !!id;
+
     const isAdmin = AuthManager.getRole() === "Admin";
     const insets = useSafeAreaInsets();
     const scrollViewRef = useRef<ScrollView>(null);
@@ -31,7 +35,7 @@ export default function CreateEventScreen() {
     const [startAt, setStartAt] = useState<Date | null>(null);
     const [endAt, setEndAt] = useState<Date | null>(null);
     const [eventType, setEventType] = useState<string>();
-    const [isPublic, setIsPublic] = useState(isAdmin); // По умолчанию true только для админов
+    const [isPublic, setIsPublic] = useState(isAdmin);
     const [isPeoplePickerVisible, setPeoplePickerVisible] = useState(false);
 
     // Списки приглашений
@@ -44,6 +48,7 @@ export default function CreateEventScreen() {
     const [isStartPickerVisible, setStartPickerVisible] = useState(false);
     const [isEndPickerVisible, setEndPickerVisible] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [isDataLoading, setIsDataLoading] = useState(isEditMode); // Загрузка данных для редактирования
     const [isMapModalVisible, setMapModalVisible] = useState(false);
 
     // Состояния Dropdown'ов
@@ -59,7 +64,10 @@ export default function CreateEventScreen() {
 
     useEffect(() => {
         fetchUsersAndDepartments();
-    }, []);
+        if (isEditMode) {
+            fetchEventData();
+        }
+    }, [isEditMode]);
 
     const fetchUsersAndDepartments = async () => {
         const token = AuthManager.getToken();
@@ -89,6 +97,57 @@ export default function CreateEventScreen() {
         }
     };
 
+    // Функция загрузки данных существующего события
+    const fetchEventData = async () => {
+        const token = AuthManager.getToken();
+        if (!token) return;
+
+        try {
+            // Укажи здесь правильный эндпоинт твоего API для получения события по ID
+            const response = await fetch(`${apiUrl}/api/Events/${id}`, {
+                headers: {
+                    accept: "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setTitle(data.title || "");
+                setDescription(data.description || "");
+                setStartAt(new Date(data.start_at));
+                setEndAt(new Date(data.end_at));
+                setEventType(data.type);
+                setIsPublic(data.is_public ?? isAdmin);
+
+                // Восстанавливаем локацию и координаты, если они были сохранены в формате "Адрес|lat,lon"
+                if (data.location) {
+                    const parts = data.location.split('|');
+                    setLocation(parts[0]);
+                    if (parts.length > 1) {
+                        const [lat, lon] = parts[1].split(',');
+                        setCoords({ lat: parseFloat(lat), lon: parseFloat(lon) });
+                    }
+                }
+
+                if (data.user_ids) setSelectedUserIds(data.user_ids);
+                if (data.department_ids) setSelectedDepartmentIds(data.department_ids);
+            } else {
+                throw new Error("Не удалось загрузить данные события");
+            }
+        } catch (error) {
+            console.error("Ошибка загрузки события:", error);
+            Toast.show({
+                type: 'error',
+                text1: 'Ошибка',
+                text2: 'Не удалось загрузить данные для редактирования',
+                position: 'top',
+            });
+        } finally {
+            setIsDataLoading(false);
+        }
+    };
+
     const handleLocationSelected = (locationData: { address: string; coords: { lat: number; lon: number } }) => {
         setLocation(locationData.address);
         setCoords(locationData.coords);
@@ -104,8 +163,8 @@ export default function CreateEventScreen() {
         setEndPickerVisible(false);
     };
 
-    const handleCreate = async () => {
-        // Валидация обязательных полей
+    // Переименовал в handleSave, чтобы логично звучало для обоих режимов
+    const handleSave = async () => {
         if (!title.trim() || !startAt || !endAt || !eventType) {
             Toast.show({
                 type: 'error',
@@ -128,7 +187,6 @@ export default function CreateEventScreen() {
             return;
         }
 
-        // Для приватных мероприятий проверяем наличие приглашенных
         if (!isPublic && selectedUserIds.length === 0 && selectedDepartmentIds.length === 0) {
             Toast.show({
                 type: 'error',
@@ -145,7 +203,7 @@ export default function CreateEventScreen() {
             Toast.show({
                 type: 'error',
                 text1: 'Ошибка',
-                text2: 'Для создания события необходимо авторизоваться',
+                text2: 'Необходимо авторизоваться',
                 position: 'top',
                 visibilityTime: 3000,
             });
@@ -159,7 +217,6 @@ export default function CreateEventScreen() {
                 ? `${location.trim()}|${coords.lat},${coords.lon}`
                 : location.trim();
 
-            // Базовые данные события (без is_public)
             const baseEventData = {
                 title: title.trim(),
                 description: description.trim(),
@@ -169,31 +226,36 @@ export default function CreateEventScreen() {
                 type: eventType,
             };
 
-            // Выбираем эндпоинт и формируем тело запроса в зависимости от типа события
             let endpoint = "";
-            let requestBody = {};
+            let method = isEditMode ? "PUT" : "POST";
+            let requestBody: any = {};
 
-            if (isPublic) {
-                // Публичное событие
-                endpoint = `${apiUrl}/api/Events/create-public`;
-                requestBody = baseEventData;
-                console.log("Создание публичного события");
-            } else {
-                // Приватное событие с приглашениями
-                endpoint = `${apiUrl}/api/Events/create-private`;
+            if (isEditMode) {
+                endpoint = `${apiUrl}/api/Events/${id}`;
                 requestBody = {
                     ...baseEventData,
+                    is_public: isPublic,
                     user_ids: selectedUserIds,
                     department_ids: selectedDepartmentIds
                 };
-                console.log("Создание приватного события с приглашениями");
+            } else {
+                if (isPublic) {
+                    endpoint = `${apiUrl}/api/Events/create-public`;
+                    requestBody = baseEventData;
+                } else {
+                    endpoint = `${apiUrl}/api/Events/create-private`;
+                    requestBody = {
+                        ...baseEventData,
+                        user_ids: selectedUserIds,
+                        department_ids: selectedDepartmentIds
+                    };
+                }
             }
 
-            console.log("Эндпоинт:", endpoint);
-            console.log("Отправляемые данные:", JSON.stringify(requestBody, null, 2));
+            console.log("Эндпоинт:", endpoint, "Метод:", method);
 
             const response = await fetch(endpoint, {
-                method: "POST",
+                method: method,
                 headers: {
                     "accept": "application/json",
                     "Content-Type": "application/json",
@@ -203,45 +265,32 @@ export default function CreateEventScreen() {
             });
 
             const responseText = await response.text();
-            console.log("Ответ сервера:", response.status, responseText);
 
             if (!response.ok) {
-                // Попытка распарсить ошибку
                 let errorMessage = responseText;
                 try {
                     const errorJson = JSON.parse(responseText);
                     errorMessage = errorJson.message || errorJson.title || responseText;
-                } catch {
-                    // Оставляем как есть
-                }
-                throw new Error(errorMessage || "Ошибка создания события");
-            }
-
-            // Парсим успешный ответ если нужно
-            let result;
-            try {
-                result = JSON.parse(responseText);
-                console.log("Событие создано:", result);
-            } catch {
-                console.log("Событие создано (текстовый ответ):", responseText);
+                } catch {}
+                throw new Error(errorMessage || `Ошибка ${isEditMode ? 'обновления' : 'создания'} события`);
             }
 
             Toast.show({
                 type: 'success',
                 text1: 'Успешно',
-                text2: 'Событие успешно создано',
+                text2: `Событие успешно ${isEditMode ? 'обновлено' : 'создано'}`,
                 position: 'top',
                 visibilityTime: 3000,
             });
 
-            clearForm();
+            if (!isEditMode) clearForm();
             router.push({ pathname: "/(screens)/EventsScreen", params: { refresh: "true" } });
         } catch (error: any) {
             console.error("Полная ошибка:", error);
             Toast.show({
                 type: 'error',
                 text1: 'Ошибка',
-                text2: error.message || 'Произошла ошибка при создании события',
+                text2: error.message || 'Произошла ошибка',
                 position: 'top',
                 visibilityTime: 4000,
             });
@@ -271,6 +320,15 @@ export default function CreateEventScreen() {
         setSelectedDepartmentIds([]);
     };
 
+    // Если данные еще грузятся, показываем лоадер вместо формы
+    if (isDataLoading) {
+        return (
+            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+                <ActivityIndicator size="large" color="#0f6319" />
+            </View>
+        );
+    }
+
     return (
         <KeyboardAvoidingView
             style={{ flex: 1, backgroundColor: '#fff' }}
@@ -293,7 +351,7 @@ export default function CreateEventScreen() {
                             <ArrowLeft size={24} color="white" />
                         </View>
                     </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Новое событие</Text>
+                    <Text style={styles.headerTitle}>{isEditMode ? "Редактирование события" : "Новое событие"}</Text>
                 </LinearGradient>
 
                 <View style={styles.card}>
@@ -389,13 +447,12 @@ export default function CreateEventScreen() {
                             </View>
                         )}
                     </View>
-                    {/* Чекбокс публичности только для Админа */}
+
                     {isAdmin && (
                         <TouchableOpacity
                             style={styles.checkboxContainer}
                             onPress={() => {
                                 setIsPublic(!isPublic);
-                                // Очищаем приглашения при переключении на публичное
                                 if (!isPublic) {
                                     setSelectedUserIds([]);
                                     setSelectedDepartmentIds([]);
@@ -409,7 +466,6 @@ export default function CreateEventScreen() {
                         </TouchableOpacity>
                     )}
 
-                    {/* Блок выбора приглашений (показываем только для приватных событий) */}
                     {(!isPublic || !isAdmin) && (
                         <View style={styles.section}>
                             <Text style={styles.sectionTitle}>
@@ -435,14 +491,12 @@ export default function CreateEventScreen() {
                         </View>
                     )}
 
-
-
                     <TouchableOpacity
                         style={[styles.publishButton, isLoading && styles.publishButtonDisabled]}
-                        onPress={handleCreate}
+                        onPress={handleSave}
                         disabled={isLoading}
                     >
-                        {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.publishButtonText}>Создать</Text>}
+                        {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.publishButtonText}>{isEditMode ? "Сохранить изменения" : "Создать"}</Text>}
                     </TouchableOpacity>
                 </View>
             </ScrollView>
@@ -485,232 +539,39 @@ export default function CreateEventScreen() {
     );
 }
 
+// ...оставляем стили без изменений
 const styles = StyleSheet.create({
-    container: {
-        flexGrow: 1,
-    },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderBottomLeftRadius: 24,
-        borderBottomRightRadius: 24,
-        paddingBottom: 25,
-        paddingHorizontal: 20,
-    },
-    backButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 15
-    },
-    headerTitle: {
-        fontSize: 20,
-        fontWeight: "700",
-        color: "#fff",
-    },
-    card: {
-        borderRadius: 16,
-        padding: 20,
-        marginBottom: 20,
-    },
-    warningAlert: {
-        flexDirection: 'row',
-        backgroundColor: '#fef3c7',
-        borderWidth: 1,
-        borderColor: '#fde047',
-        borderRadius: 10,
-        padding: 12,
-        marginBottom: 6,
-        marginTop: -36,
-    },
-    warningText: {
-        flex: 1,
-        color: '#b45309',
-        fontSize: 14,
-        marginLeft: 8,
-        lineHeight: 20,
-    },
-    input: {
-        backgroundColor: "#f7f7f7",
-        borderWidth: 1,
-        borderColor: "#ddd",
-        borderRadius: 10,
-        paddingHorizontal: 12,
-        paddingVertical: 10,
-        fontSize: 15,
-        marginBottom: 14,
-        marginTop: 8,
-    },
-    textArea: {
-        textAlignVertical: "top",
-        minHeight: 100,
-    },
-    unifiedInput: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        backgroundColor: "#f7f7f7",
-        borderWidth: 1,
-        borderColor: "#ddd",
-        borderRadius: 10,
-        paddingHorizontal: 12,
-        paddingVertical: 10,
-        marginBottom: 14,
-        marginTop: 8,
-    },
-    inputText: {
-        fontSize: 15,
-        color: "#333",
-        flex: 1,
-    },
-    placeholderText: {
-        fontSize: 15,
-        color: "#9ca3af",
-        flex: 1,
-    },
-    publishButton: {
-        backgroundColor: "#0f6319",
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        paddingVertical: 12,
-        borderRadius: 10,
-        marginTop: 25,
-    },
-    publishButtonDisabled: {
-        backgroundColor: "#9ca3af",
-    },
-    publishButtonText: {
-        color: "#fff",
-        fontSize: 16,
-        fontWeight: "600",
-    },
-    selectWrapper: {
-        marginBottom: 14,
-        marginTop: 8,
-        position: 'relative',
-        zIndex: 1000,
-    },
-    selectTrigger: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        backgroundColor: "#f7f7f7",
-        borderWidth: 1,
-        borderColor: "#ddd",
-        borderRadius: 10,
-        paddingHorizontal: 12,
-        paddingVertical: 10,
-    },
-    selectValue: {
-        fontSize: 15,
-        color: "#333",
-        flex: 1,
-    },
-    selectDropdown: {
-        position: 'absolute',
-        top: '100%',
-        left: 0,
-        right: 0,
-        backgroundColor: '#fff',
-        borderWidth: 1,
-        borderColor: '#ddd',
-        borderRadius: 10,
-        marginTop: 4,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-        zIndex: 1001,
-    },
-    selectItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 12,
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
-    },
-    selectItemSelected: {
-        backgroundColor: '#f0f7f0',
-    },
-    selectItemText: {
-        fontSize: 15,
-        color: '#333',
-    },
-    selectItemTextSelected: {
-        color: '#0f6319',
-        fontWeight: '500',
-    },
-    checkboxContainer: {
-        backgroundColor: "#f7f7f7",
-        borderWidth: 1,
-        borderColor: "#ddd",
-        borderRadius: 10,
-        paddingHorizontal: 12,
-        paddingVertical: 12,
-        marginBottom: 14,
-        marginTop: 10,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-    },
-    checkbox: {
-        width: 20,
-        height: 20,
-        borderRadius: 6,
-        borderWidth: 1,
-        borderColor: '#6b7280',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    checkboxChecked: {
-        backgroundColor: '#0f6319',
-        borderColor: '#0f6319',
-    },
-    checkboxLabel: {
-        fontSize: 15,
-        color: '#333',
-    },
-    section: {
-        marginBottom: 16,
-        marginTop: 8,
-    },
-    sectionTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#333',
-        marginBottom: 8,
-    },
-    inviteButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        backgroundColor: '#f7f7f7',
-        borderWidth: 1,
-        borderColor: '#ddd',
-        borderRadius: 10,
-        padding: 12,
-    },
-    inviteButtonContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-        flex: 1,
-    },
-    inviteButtonTitle: {
-        fontSize: 15,
-        fontWeight: '500',
-        color: '#333',
-    },
-    inviteButtonSubtitle: {
-        fontSize: 12,
-        color: '#6b7280',
-        marginTop: 2,
-    },
+    container: { flexGrow: 1 },
+    header: { flexDirection: 'row', alignItems: 'center', borderBottomLeftRadius: 24, borderBottomRightRadius: 24, paddingBottom: 25, paddingHorizontal: 20 },
+    backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255, 255, 255, 0.2)', justifyContent: 'center', alignItems: 'center', marginRight: 15 },
+    headerTitle: { fontSize: 20, fontWeight: "700", color: "#fff" },
+    card: { borderRadius: 16, padding: 20, marginBottom: 20 },
+    warningAlert: { flexDirection: 'row', backgroundColor: '#fef3c7', borderWidth: 1, borderColor: '#fde047', borderRadius: 10, padding: 12, marginBottom: 6, marginTop: -36 },
+    warningText: { flex: 1, color: '#b45309', fontSize: 14, marginLeft: 8, lineHeight: 20 },
+    input: { backgroundColor: "#f7f7f7", borderWidth: 1, borderColor: "#ddd", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, marginBottom: 14, marginTop: 8 },
+    textArea: { textAlignVertical: "top", minHeight: 100 },
+    unifiedInput: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#f7f7f7", borderWidth: 1, borderColor: "#ddd", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 14, marginTop: 8 },
+    inputText: { fontSize: 15, color: "#333", flex: 1 },
+    placeholderText: { fontSize: 15, color: "#9ca3af", flex: 1 },
+    publishButton: { backgroundColor: "#0f6319", flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 12, borderRadius: 10, marginTop: 25 },
+    publishButtonDisabled: { backgroundColor: "#9ca3af" },
+    publishButtonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
+    selectWrapper: { marginBottom: 14, marginTop: 8, position: 'relative', zIndex: 1000 },
+    selectTrigger: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#f7f7f7", borderWidth: 1, borderColor: "#ddd", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 },
+    selectValue: { fontSize: 15, color: "#333", flex: 1 },
+    selectDropdown: { position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd', borderRadius: 10, marginTop: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3, zIndex: 1001 },
+    selectItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
+    selectItemSelected: { backgroundColor: '#f0f7f0' },
+    selectItemText: { fontSize: 15, color: '#333' },
+    selectItemTextSelected: { color: '#0f6319', fontWeight: '500' },
+    checkboxContainer: { backgroundColor: "#f7f7f7", borderWidth: 1, borderColor: "#ddd", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 12, marginBottom: 14, marginTop: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    checkbox: { width: 20, height: 20, borderRadius: 6, borderWidth: 1, borderColor: '#6b7280', justifyContent: 'center', alignItems: 'center' },
+    checkboxChecked: { backgroundColor: '#0f6319', borderColor: '#0f6319' },
+    checkboxLabel: { fontSize: 15, color: '#333' },
+    section: { marginBottom: 16, marginTop: 8 },
+    sectionTitle: { fontSize: 16, fontWeight: '600', color: '#333', marginBottom: 8 },
+    inviteButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#f7f7f7', borderWidth: 1, borderColor: '#ddd', borderRadius: 10, padding: 12 },
+    inviteButtonContent: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
+    inviteButtonTitle: { fontSize: 15, fontWeight: '500', color: '#333' },
+    inviteButtonSubtitle: { fontSize: 12, color: '#6b7280', marginTop: 2 },
 });

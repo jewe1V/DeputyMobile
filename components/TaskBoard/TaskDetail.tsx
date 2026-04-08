@@ -409,7 +409,9 @@ export function TaskDetail() {
                 >
                     <View style={styles.headerTopRow}>
                         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-                            <ArrowLeft size={24} color="white" />
+                            <View pointerEvents="none">
+                                <ArrowLeft size={24} color="white" />
+                            </View>
                         </TouchableOpacity>
 
                         {(userRole === "Admin" || userId===task.author_id) && (

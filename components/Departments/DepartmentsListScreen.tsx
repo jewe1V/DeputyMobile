@@ -10,7 +10,7 @@ import {
     StatusBar,
     RefreshControl,
     Modal,
-    Alert
+    Alert, Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -20,8 +20,9 @@ import { apiUrl } from "@/api/api";
 import { Department } from "@/models/DepartmentModel";
 import { AuthManager } from "@/components/LoginScreen/LoginScreen";
 import Toast from "react-native-toast-message";
-import {Building2, Trash2} from "lucide-react-native";
+import {Building2, Plus, Trash2} from "lucide-react-native";
 import {CreateDepartmentPopup} from "@/components/Departments/CreateDepartmentPopup";
+import { declOfNum } from '@/utils';
 
 const DepartmentsListScreen = () => {
     const router = useRouter();
@@ -34,7 +35,6 @@ const DepartmentsListScreen = () => {
     const [searchQuery, setSearchQuery] = useState('');
 
     const [modalVisible, setModalVisible] = useState(false);
-    const [newDepartmentName, setNewDepartmentName] = useState('');
     const [creating, setCreating] = useState(false);
 
     const token = AuthManager.getToken();
@@ -208,31 +208,39 @@ const DepartmentsListScreen = () => {
                 <View style={styles.headerContent}>
                     <Text style={styles.headerTitle}>Отделы</Text>
                     <Text style={styles.headerSubtitle}>
-                        {loading ? 'Загрузка...' : `${filteredDepartments.length} отделов`}
+                        {loading ? 'Загрузка...' : `${filteredDepartments.length} ${declOfNum(filteredDepartments.length, ['отдел', 'отдела', 'отделов'])}`}
                     </Text>
                 </View>
                 <TouchableOpacity
                     style={styles.newTaskButton}
                     onPress={() => setModalVisible(true)}
                 >
-                    <Ionicons name="add" size={24} color="white" />
+                    <View pointerEvents={"none"}>
+                        <Plus size={20} color="white" />
+                    </View>
                 </TouchableOpacity>
             </LinearGradient>
 
-            <LinearGradient colors={['#ebfdeb', '#fff']} style={styles.filtersSection}>
-                <View style={styles.searchWrapper}>
-                    <Ionicons name="search-outline" size={18} color="#9CA3AF" />
-                    <TextInput
-                        style={styles.searchInput}
-                        placeholder="Название отдела"
-                        value={searchQuery}
-                        onChangeText={(t) => {
-                            setSearchQuery(t);
-                            applyFilters(departments, t);
-                        }}
-                    />
+            <View style={styles.filtersSection}>
+                <View style={styles.filtersGrid}>
+                    <View style={styles.filterGroup}>
+                        <Text style={styles.filterLabel}>Поиск</Text>
+                        <View style={styles.searchWrapper}>
+                            <TextInput
+                                style={styles.searchInput}
+                                placeholder="Название отдела"
+                                placeholderTextColor="#9ca3af"
+                                value={searchQuery}
+                                onChangeText={(t) => {
+                                    setSearchQuery(t);
+                                    applyFilters(departments, t);
+                                }}
+                            />
+                            <Ionicons name="search" size={16} color="#6B7280" />
+                        </View>
+                    </View>
                 </View>
-            </LinearGradient>
+            </View>
 
             {loading && !refreshing ? (
                 <View style={styles.center}>
@@ -274,12 +282,23 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderBottomLeftRadius: 24,
         borderBottomRightRadius: 24,
-        paddingHorizontal: 30,
-        paddingBottom: 50,
+        paddingBottom: 40, // Увеличил padding, чтобы фильтр красиво перекрывал градиент
+        paddingHorizontal: 20,
+        paddingTop: Platform.OS === 'ios' ? 60 : 40,
     },
-    headerContent: { marginLeft: 0 },
-    headerTitle: { fontSize: 24, fontWeight: '600', color: '#FFFFFF' },
-    headerSubtitle: { fontSize: 14, color: 'rgba(255, 255, 255, 0.8)', marginTop: 2 },
+    headerContent: {
+        marginLeft: 10
+    },
+    headerTitle: {
+        fontSize: 24,
+        fontWeight: '600',
+        color: '#FFFFFF',
+    },
+    headerSubtitle: {
+        fontSize: 14,
+        color: 'rgba(255, 255, 255, 0.8)',
+        marginTop: 1,
+    },
     newTaskButton: {
         width: 40,
         height: 40,
@@ -291,34 +310,49 @@ const styles = StyleSheet.create({
     },
     filtersSection: {
         padding: 12,
-        marginTop: -40,
+        marginTop: -24,
         borderRadius: 20,
         marginHorizontal: 15,
-        backgroundColor: "#fff",
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 5,
+        backgroundColor: "rgb(250,254,250)",
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 3,
+        zIndex: 10,
     },
-    filtersLabel: {
-        marginLeft: 6,
-        marginBottom: 2,
-        fontSize: 14,
-        fontWeight: '600',
+    filtersGrid: {
+        flexDirection: 'row',
+        gap: 8,
+    },
+    filterGroup: {
+        flex: 1,
+    },
+    filterLabel: {
+        fontSize: 12,
+        color: '#6b7280',
+        marginBottom: 4,
+        marginLeft: 2,
     },
     searchWrapper: {
         flexDirection: 'row',
         alignItems: 'center',
+        // Копируем стили из selectTrigger:
         backgroundColor: '#ffffff',
         borderRadius: 10,
         borderWidth: 1,
-        borderColor: '#eee',
-        paddingHorizontal: 10,
-        height: 40,
-        gap: 8,
+        borderColor: '#eee', // или тот цвет, что в вашем селекте
+        paddingHorizontal: 12,
+        height: 36, // Фиксированная высота как у триггера
     },
-    searchInput: { flex: 1, fontSize: 14, fontWeight: '600' },
+    searchInput: {
+        flex: 1,
+        fontSize: 14,
+        color: '#1e293b', // Темный цвет текста как в селекте
+        fontWeight: '400', // Средний вес
+        paddingVertical: 0, // Убираем внутренние отступы Android
+    },
+    taskList: { padding: 15, paddingTop: 10 },
     listContainer: { padding: 15, paddingTop: 10 },
     departmentCard: {
         flexDirection: 'row',

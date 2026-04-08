@@ -5,20 +5,25 @@ import {
     StyleSheet,
     FlatList,
     ActivityIndicator,
-    RefreshControl, TouchableOpacity, Platform, InteractionManager
+    RefreshControl,
+    TouchableOpacity,
+    Platform,
+    InteractionManager,
+    ScrollView
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Calendar } from '@/components/EventsScreen/Calendar';
 import { EventCard } from '@/components/EventsScreen/EventCard';
 import { Event } from '@/models/EventModel';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { apiUrl } from "@/api/api";
-import {Plus} from "lucide-react-native";
-import {LinearGradient} from "expo-linear-gradient";
-import {router} from "expo-router";
-import {AuthManager} from "@/components/LoginScreen/LoginScreen";
-import {Select} from "@/components/ui/Select";
-import {SchedulePopup} from "@/components/EventsScreen/SchedulePopup";
-import {formatDate, formatDateTime, getLocalDateKey, getTodayLocalKey} from "@/utils";
+import { Plus } from "lucide-react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { router } from "expo-router";
+import { AuthManager } from "@/components/LoginScreen/LoginScreen";
+import { Select } from "@/components/ui/Select";
+import { SchedulePopup } from "@/components/EventsScreen/SchedulePopup";
+import { formatDate, formatDateTime, getLocalDateKey, getTodayLocalKey } from "@/utils";
 
 const EventsScreen: React.FC = () => {
     const now = new Date();
@@ -37,15 +42,18 @@ const EventsScreen: React.FC = () => {
     const insets = useSafeAreaInsets();
 
     // Функция для получения названия месяца в родительном падеже
-    const getMonthInGenitive = (year: number, month: number): string => {
+    const getMonthInGenitive = useCallback((year: number, month: number): string => {
         const monthsGenitive = [
             'январе', 'феврале', 'марте', 'апреле', 'мае', 'июне',
             'июле', 'августе', 'сентябре', 'октябре', 'ноябре', 'декабре'
         ];
         return monthsGenitive[month];
-    };
+    }, []);
 
-    const currMonth = getMonthInGenitive(viewDate.year, viewDate.month);
+    const currMonth = useMemo(() =>
+            getMonthInGenitive(viewDate.year, viewDate.month),
+        [viewDate.year, viewDate.month, getMonthInGenitive]
+    );
 
     const loadEvents = useCallback(async (year: number, month: number, isRefresh = false, isOnlyMy = false) => {
         try {
@@ -67,16 +75,27 @@ const EventsScreen: React.FC = () => {
             const data: Event[] = await response.json();
             console.log(data);
             setEvents(data);
+            return data;
         } catch (e) {
             console.error('Ошибка при загрузке событий:', e);
+            return [];
         } finally {
             if (isRefresh) setRefreshing(false);
             else setLoading(false);
         }
     }, []);
 
+    // Обновление данных при фокусе на экране
+    useFocusEffect(
+        useCallback(() => {
+            if (isReady) {
+                loadEvents(viewDate.year, viewDate.month, false, eventsFilter === 'mine');
+            }
+        }, [isReady, viewDate.year, viewDate.month, eventsFilter, loadEvents])
+    );
+
     // Обработка смены режима отображения
-    const handleViewModeChange = (mode: 'calendar' | 'list') => {
+    const handleViewModeChange = useCallback((mode: 'calendar' | 'list') => {
         setViewMode(mode);
         const today = new Date();
 
@@ -90,7 +109,7 @@ const EventsScreen: React.FC = () => {
                 loadEvents(today.getFullYear(), today.getMonth(), false, eventsFilter === 'mine');
             }
         }
-    };
+    }, [eventsFilter, viewDate.month, viewDate.year, loadEvents]);
 
     useEffect(() => {
         const task = InteractionManager.runAfterInteractions(() => {
@@ -100,13 +119,15 @@ const EventsScreen: React.FC = () => {
         loadEvents(viewDate.year, viewDate.month, false, eventsFilter === 'mine');
 
         return () => task.cancel();
-    }, [eventsFilter]);
+    }, [eventsFilter]); // Убрал viewDate из зависимостей, чтобы не было лишних вызовов
 
-    const onRefresh = async () => {
+    const onRefresh = useCallback(async () => {
         setRefreshing(true);
         await loadEvents(viewDate.year, viewDate.month, true, eventsFilter === 'mine');
-    };
-    const todayKey = getTodayLocalKey();
+    }, [viewDate.year, viewDate.month, eventsFilter, loadEvents]);
+
+    const todayKey = useMemo(() => getTodayLocalKey(), []);
+
     const filteredEvents = useMemo(() => {
         if (!events || !Array.isArray(events)) {
             return [];
@@ -124,8 +145,7 @@ const EventsScreen: React.FC = () => {
             }
             return eventDateKey >= todayKey;
         });
-    }, [events, selectedDate, viewMode, eventsFilter]);
-
+    }, [events, selectedDate, viewMode, eventsFilter, todayKey]);
 
     const grouped = useMemo(() => {
         const map: Record<string, Event[]> = {};
@@ -163,12 +183,19 @@ const EventsScreen: React.FC = () => {
         }
     }, [viewMode]);
 
+    const headerSubtitleText = useMemo(() => {
+        if (viewMode !== 'calendar') {
+            return `Предстоит: ${filteredEvents.length}`;
+        }
+        return `Запланировано в ${currMonth}: ${filteredEvents.length}`;
+    }, [viewMode, filteredEvents.length, currMonth]);
+
     if (!isReady) {
-        return (<View style={{flex: 1, backgroundColor: '#f9f9f9' }}></View>);
+        return (<View style={{ flex: 1, backgroundColor: '#f9f9f9' }}></View>);
     }
 
     return (
-        <View style={{flex: 1, backgroundColor: '#f9f9f9' }}>
+        <View style={{ flex: 1, backgroundColor: '#ffffff' }}>
             <LinearGradient
                 colors={['#2A6E3F', '#349339']}
                 start={{ x: 0, y: 0 }}
@@ -177,7 +204,7 @@ const EventsScreen: React.FC = () => {
             >
                 <View style={styles.headerContent}>
                     <Text style={styles.headerTitle}>События</Text>
-                    <Text style={styles.headerSubtitle}>{viewMode === 'calendar' ? "Предстоит" : `Запланировано в ${currMonth}`}: {filteredEvents.length}</Text>
+                    <Text style={styles.headerSubtitle}>{headerSubtitleText}</Text>
                 </View>
                 <TouchableOpacity style={styles.newTaskButton} onPress={() => router.push("/CreateEventScreen")}>
                     <View pointerEvents="none">
@@ -187,7 +214,7 @@ const EventsScreen: React.FC = () => {
             </LinearGradient>
 
             {/* Блок фильтров */}
-            <View  style={styles.filtersSection}>
+            <View style={styles.filtersSection}>
                 <View style={styles.filtersGrid}>
                     <View style={styles.filterGroup}>
                         <Text style={styles.filterLabel}>Отображение</Text>
@@ -212,15 +239,26 @@ const EventsScreen: React.FC = () => {
             </View>
 
             {viewMode === 'calendar' ? (
-                <View style={styles.calendarContainer}>
-                    <Calendar
-                        selectedDate={selectedDate}
-                        onSelectDate={handleDateSelect}
-                        events={events}
-                        onMonthChange={(y, m) => loadEvents(y, m, false, eventsFilter === 'mine')}
-                    />
-                    {/* Список здесь больше не выводим */}
-                </View>
+                <ScrollView
+                    style={styles.calendarScrollView}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={onRefresh}
+                            colors={['#0f6219']}
+                            tintColor="#0a58ff"
+                        />
+                    }
+                >
+                    <View style={styles.calendarContainer}>
+                        <Calendar
+                            selectedDate={selectedDate}
+                            onSelectDate={handleDateSelect}
+                            events={events}
+                            onMonthChange={(y, m) => loadEvents(y, m, false, eventsFilter === 'mine')}
+                        />
+                    </View>
+                </ScrollView>
             ) : (
                 // Список выводится ТОЛЬКО в режиме 'list'
                 <View style={[styles.contentSection, { marginTop: 16 }]}>
@@ -239,7 +277,14 @@ const EventsScreen: React.FC = () => {
                                             <Text style={styles.dateBadgeText}>{formattedDate}</Text>
                                         </View>
                                         {dayEvents.map(ev => (
-                                            <EventCard key={ev.id} event={ev} onPress={() => router.push({ pathname: '/(screens)/EventDetailsScreen', params: { id: ev.id } })}/>
+                                            <EventCard
+                                                key={ev.id}
+                                                event={ev}
+                                                onPress={() => router.push({
+                                                    pathname: '/(screens)/EventDetailsScreen',
+                                                    params: { id: ev.id }
+                                                })}
+                                            />
                                         ))}
                                     </View>
                                 );
@@ -276,7 +321,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderBottomLeftRadius: 24,
         borderBottomRightRadius: 24,
-        paddingBottom: 40, // Увеличил padding, чтобы фильтр красиво перекрывал градиент
+        paddingBottom: 40,
         paddingHorizontal: 20,
         paddingTop: Platform.OS === 'ios' ? 60 : 40,
     },
@@ -303,7 +348,6 @@ const styles = StyleSheet.create({
         marginLeft: "auto"
     },
 
-    // Новые стили для фильтров
     filtersSection: {
         padding: 12,
         marginTop: -24,
@@ -336,12 +380,16 @@ const styles = StyleSheet.create({
         marginLeft: 2,
     },
 
+    calendarScrollView: {
+        flex: 1,
+    },
     calendarContainer: {
         marginTop: 10,
         alignItems: 'center',
+        paddingBottom: 20,
     },
     contentSection: {
-        flex: 1, // Чтобы FlatList корректно скроллился
+        flex: 1,
         paddingHorizontal: 16,
     },
     emptyText: {
@@ -367,7 +415,7 @@ const styles = StyleSheet.create({
         textTransform: 'capitalize',
     },
     listContent: {
-        paddingBottom: 100, // Увеличен padding снизу для комфортного скролла
+        paddingBottom: 100,
         paddingTop: 10,
     },
 });

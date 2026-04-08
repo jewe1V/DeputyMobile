@@ -7,15 +7,15 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
         borderBottomLeftRadius: 24,
         borderBottomRightRadius: 24,
+        paddingBottom: 40, // Увеличил padding, чтобы фильтр красиво перекрывал градиент
         paddingHorizontal: 20,
         paddingTop: Platform.OS === 'ios' ? 60 : 40,
-        paddingBottom: 40,
     },
     headerContent: {
         marginLeft: 10
     },
     headerTitle: {
-        fontSize: 26,
+        fontSize: 24,
         fontWeight: '600',
         color: '#FFFFFF',
     },
@@ -33,30 +33,37 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
         marginLeft: "auto"
     },
+    // Новые стили для фильтров
     filtersSection: {
         padding: 12,
         marginTop: -24,
         borderRadius: 20,
         marginHorizontal: 15,
         backgroundColor: "rgb(250,254,250)",
-    },
-    filtersHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        marginBottom: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 3,
+        zIndex: 10,
+        overflow: 'visible',
     },
     filtersGrid: {
         flexDirection: 'row',
         gap: 8,
+        zIndex: 15,
+        overflow: 'visible'
     },
     filterGroup: {
         flex: 1,
+        zIndex: 11,
+        overflow: 'visible'
     },
     filterLabel: {
-        fontSize: 14,
-        color: '#333333', // gray-600
+        fontSize: 12,
+        color: '#6b7280',
         marginBottom: 4,
+        marginLeft: 2,
     },
     selectContainer: {
         position: 'relative',

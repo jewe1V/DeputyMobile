@@ -23,7 +23,7 @@ import { apiUrl } from '@/api/api';
 import {Event} from "@/models/EventModel"
 import {EventCard} from "@/components/EventsScreen/EventCard";
 import {Task} from "@/models/TaskBoardModel";
-import {formatDateToDay} from "@/utils";
+import {declOfNum, formatDateToDay} from "@/utils";
 import {TaskCard} from "@/components/TaskBoard/TaskCard";
 import { SkeletonItem } from '@/components/ui/SkeletonLoader';
 
@@ -324,7 +324,7 @@ export function Dashboard() {
                             <LinearGradient colors={['#ffffff', '#fffafa']} style={styles.statCard}>
                                 <View style={styles.statIcon}><Calendar size={20} color="black" /></View>
                                 <Text style={styles.statNumber}>{data.event_count || 0}</Text>
-                                <Text style={styles.statLabel}>Мероприятий</Text>
+                                <Text style={styles.statLabel}>{declOfNum(data.event_count, ['Мероприятие', 'Мероприятия', 'Мероприятий'])}</Text>
                             </LinearGradient>
                         </Animated.View>
 
@@ -332,7 +332,7 @@ export function Dashboard() {
                             <LinearGradient colors={['#ffffff', '#fffafa']} style={styles.statCard}>
                                 <View style={styles.statIcon}><CheckCircle2 size={20} color="black" /></View>
                                 <Text style={styles.statNumber}>{data.task_count || 0}</Text>
-                                <Text style={styles.statLabel}>Задач</Text>
+                                <Text style={styles.statLabel}>{declOfNum(data.task_count, ['Задача', 'Задачи', 'Задач'])}</Text>
                             </LinearGradient>
                         </Animated.View>
 
@@ -340,7 +340,7 @@ export function Dashboard() {
                             <LinearGradient colors={['#ffffff', '#fffafa']} style={styles.statCard}>
                                 <View style={styles.statIcon}><AlertCircle size={20} color="black" /></View>
                                 <Text style={styles.statNumber}>{data.urgent_tasks_count || 0}</Text>
-                                <Text style={styles.statLabel}>Срочных задач</Text>
+                                <Text style={styles.statLabel}>{declOfNum(data.urgent_tasks_count, ['Срочная задача', 'Срочных задачи', 'Срочных задач'])}</Text>
                             </LinearGradient>
                         </Animated.View>
                     </View>

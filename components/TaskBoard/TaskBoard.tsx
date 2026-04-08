@@ -23,6 +23,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { styles } from './task-board-style';
 import { AuthManager } from "@/components/LoginScreen/LoginScreen";
+import { declOfNum } from '@/utils';
 
 type TaskMode = 'all' | 'my_tasks' | 'assigned' | 'authored';
 type StatusItem = { name: string; isDefault: boolean };
@@ -169,7 +170,7 @@ export function TaskBoard() {
                 <View style={styles.headerContent}>
                     <Text style={styles.headerTitle}>Задачи</Text>
                     <Text style={styles.headerSubtitle}>
-                        {loading ? 'Загрузка...' : `${filteredTasks.length} задач`}
+                        {loading ? 'Загрузка...' : `${filteredTasks.length} ${declOfNum(filteredTasks.length, ['задача', 'задачи', 'задач'])}`}
                     </Text>
                 </View>
                 <TouchableOpacity style={styles.newTaskButton} onPress={handleNewTask}>

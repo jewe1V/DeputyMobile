@@ -76,3 +76,14 @@ export const getTodayLocalKey = (): string => {
     const day = String(now.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
 };
+
+export const declOfNum = (n: number, titles: [string, string, string]): string => {
+    const abs = Math.abs(n) % 100;
+    const last = abs % 10;
+
+    if (abs > 10 && abs < 20) return titles[2];
+    if (last > 1 && last < 5) return titles[1];
+    if (last === 1) return titles[0];
+
+    return titles[2];
+};
