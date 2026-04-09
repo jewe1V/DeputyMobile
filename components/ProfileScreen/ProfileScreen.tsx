@@ -117,17 +117,31 @@ export function ProfileScreen() {
     return (
         <View style={{ flex: 1, backgroundColor: '#f8fafc', paddingBottom: insets.bottom + 35 }}>
             <ScrollView
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
+                style={[styles.container, { backgroundColor: '#f8fafc' }]} // Основной фон белый
+                contentContainerStyle={{
+                    paddingBottom: insets.bottom + 50,
+                }}
                 refreshControl={
                     <RefreshControl
                         refreshing={refreshing}
                         onRefresh={handleRefresh}
+                        tintColor="#ffffff"
                         colors={['#2A6E3F']}
-                        tintColor="#2A6E3F"
                     />
                 }
+                showsVerticalScrollIndicator={false}
             >
+                {/* ХИТРОСТЬ: Зеленая плашка, которая уходит вверх за границы скролла */}
+                <View
+                    style={{
+                        backgroundColor: '#2A6E3F',
+                        height: 1000, // Очень высокая
+                        position: 'absolute',
+                        top: -1000, // Уводим её полностью вверх
+                        left: 0,
+                        right: 0
+                    }}
+                />
                 {/* Header */}
                 <LinearGradient
                     colors={['#2A6E3F', '#349339']}

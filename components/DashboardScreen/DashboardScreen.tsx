@@ -270,33 +270,38 @@ export function Dashboard() {
 
     return (
         <View style={{ flex: 1, paddingBottom: insets.bottom + 15 }}>
-            <LinearGradient
-                colors={['#2A6E3F', '#349339']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={{height: insets.top}}
-            >
-            </LinearGradient>
-
             <ScrollView
-                showsVerticalScrollIndicator={false}
+                style={[styles.container, { backgroundColor: '#f8fafc' }]} // Основной фон белый
+                contentContainerStyle={{
+                    paddingBottom: insets.bottom + 50,
+                }}
                 refreshControl={
                     <RefreshControl
                         refreshing={refreshing}
                         onRefresh={onRefresh}
+                        tintColor="#ffffff"
                         colors={['#2A6E3F']}
-                        tintColor="#2A6E3F"
-                        title="Обновление..."
-                        titleColor="#666"
                     />
                 }
+                showsVerticalScrollIndicator={false}
             >
+                {/* ХИТРОСТЬ: Зеленая плашка, которая уходит вверх за границы скролла */}
+                <View
+                    style={{
+                        backgroundColor: '#2A6E3F',
+                        height: 1000, // Очень высокая
+                        position: 'absolute',
+                        top: -1000, // Уводим её полностью вверх
+                        left: 0,
+                        right: 0
+                    }}
+                />
                 {/* 2. Теперь хедер находится внутри ScrollView и скроллится */}
                 <LinearGradient
                     colors={['#2A6E3F', '#349339']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
-                    style={[styles.header, { paddingTop: 15 }]} // Убрали insets.top отсюда
+                    style={[styles.header, { paddingTop: insets.top + 15 }]} // Убрали insets.top отсюда
                 >
                     <View style={styles.headerContent}>
                         <View style={styles.userInfoRow}>

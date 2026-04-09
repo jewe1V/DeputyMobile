@@ -397,11 +397,31 @@ export function TaskDetail() {
             <StatusBar barStyle="light-content" />
 
             <ScrollView
-                style={styles.container}
-                contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#2A6E3F" />}
+                style={[styles.container, { backgroundColor: '#f8fafc' }]} // Основной фон белый
+                contentContainerStyle={{
+                    paddingBottom: insets.bottom + 50,
+                }}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        tintColor="#ffffff"
+                        colors={['#2A6E3F']}
+                    />
+                }
                 showsVerticalScrollIndicator={false}
             >
+                {/* ХИТРОСТЬ: Зеленая плашка, которая уходит вверх за границы скролла */}
+                <View
+                    style={{
+                        backgroundColor: '#2A6E3F',
+                        height: 1000, // Очень высокая
+                        position: 'absolute',
+                        top: -1000, // Уводим её полностью вверх
+                        left: 0,
+                        right: 0
+                    }}
+                />
                 {/* Header */}
                 <LinearGradient
                     colors={['#2A6E3F', '#349339']}

@@ -3,7 +3,7 @@ import {
     View, Text, StyleSheet, ScrollView, TouchableOpacity,
     ActivityIndicator, RefreshControl, Modal, Alert
 } from 'react-native';
-import {router, useLocalSearchParams, useRouter} from "expo-router";
+import {useLocalSearchParams, useRouter} from "expo-router";
 import { AuthManager } from "@/components/LoginScreen/LoginScreen";
 import { apiUrl } from "@/api/api";
 import { LinearGradient } from 'expo-linear-gradient';
@@ -17,7 +17,6 @@ import { showLocation } from 'react-native-map-link';
 import {useFileManagerPresenter} from "@/components/FileManagerScreen/FileManagerPresenter";
 import {formatDateTime} from "@/utils";
 import {AttendeeExcuseModal} from "@/components/EventsScreen/AttendeeExcuseModal";
-import * as Sharing from 'expo-sharing';
 import { Image } from 'react-native';
 import Toast from "react-native-toast-message";
 
@@ -337,11 +336,31 @@ const EventDetailsScreen: React.FC = () => {
     return (
         <>
             <ScrollView
-                style={[styles.container, { backgroundColor: '#f8fafc' }]}
-                contentContainerStyle={{ paddingBottom: insets.bottom + 50 }}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                style={[styles.container, { backgroundColor: '#f8fafc' }]} // Основной фон белый
+                contentContainerStyle={{
+                    paddingBottom: insets.bottom + 50,
+                }}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        tintColor="#ffffff"
+                        colors={['#2A6E3F']}
+                    />
+                }
                 showsVerticalScrollIndicator={false}
             >
+                {/* ХИТРОСТЬ: Зеленая плашка, которая уходит вверх за границы скролла */}
+                <View
+                    style={{
+                        backgroundColor: '#2A6E3F',
+                        height: 1000, // Очень высокая
+                        position: 'absolute',
+                        top: -1000, // Уводим её полностью вверх
+                        left: 0,
+                        right: 0
+                    }}
+                />
                 <LinearGradient
                     colors={['#2A6E3F', '#349339']}
                     style={[styles.header, { paddingTop: insets.top + 15 }]}
