@@ -189,20 +189,19 @@ export function DocumentDetailModal({ visible, document, onClose, onDelete, onSt
                                 <Text style={styles.errorText}>{deleteError}</Text>
                             </View>
                         )}
+                        {/* Кнопка удаления */}
+                        <TouchableOpacity
+                            style={[styles.deleteButton, deleting && { opacity: 0.6 }]}
+                            onPress={handleDelete}
+                            disabled={deleting}
+                        >
+                            {deleting ? (
+                                <ActivityIndicator size="small" color="#E02424" />
+                            ) : (
+                                <Text style={styles.deleteButtonText}>Удалить файл</Text>
+                            )}
+                        </TouchableOpacity>
                     </ScrollView>
-
-                    {/* Кнопка удаления */}
-                    <TouchableOpacity
-                        style={[styles.deleteButton, deleting && { opacity: 0.6 }]}
-                        onPress={handleDelete}
-                        disabled={deleting}
-                    >
-                        {deleting ? (
-                            <ActivityIndicator size="small" color="#E02424" />
-                        ) : (
-                            <Text style={styles.deleteButtonText}>Удалить файл</Text>
-                        )}
-                    </TouchableOpacity>
                 </Animated.View>
             </View>
         </Modal>
@@ -221,6 +220,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         left: 0,
         right: 0,
+        height: '100%',
         backgroundColor: '#fff',
         borderTopLeftRadius: 28,
         borderTopRightRadius: 28,

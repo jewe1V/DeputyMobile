@@ -357,7 +357,7 @@ export default function CreateEventScreen() {
 
     return (
         <KeyboardAvoidingView
-            style={{ flex: 1, backgroundColor: '#fff', paddingBottom: insets.bottom + 20 }}
+            style={{ flex: 1, backgroundColor: '#fff' }}
             behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
             <LinearGradient
@@ -375,7 +375,7 @@ export default function CreateEventScreen() {
             </LinearGradient>
             <ScrollView
                 ref={scrollViewRef}
-                contentContainerStyle={[styles.container, { paddingBottom: insets.bottom }]}
+                contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + 45 }]}
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
             >

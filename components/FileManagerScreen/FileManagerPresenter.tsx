@@ -749,7 +749,6 @@ export const useFileManagerPresenter = () => {
             Toast.show({
                 type: 'info',
                 text1: 'Загрузка...',
-                text2: `Файл скачивается впервые`,
             });
 
             const downloadResult = await FileSystem.downloadAsync(
