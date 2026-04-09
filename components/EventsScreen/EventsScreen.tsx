@@ -206,7 +206,7 @@ const EventsScreen: React.FC = () => {
                     <Text style={styles.headerTitle}>События</Text>
                     <Text style={styles.headerSubtitle}>{headerSubtitleText}</Text>
                 </View>
-                <TouchableOpacity style={styles.newTaskButton} onPress={() => router.push("/CreateEventScreen")}>
+                <TouchableOpacity style={styles.newTaskButton} onPress={() => router.push("/(screens)/EventsScreen/CreateEventScreen")}>
                     <View pointerEvents="none">
                         <Plus size={20} color="white" />
                     </View>
@@ -281,7 +281,7 @@ const EventsScreen: React.FC = () => {
                                                 key={ev.id}
                                                 event={ev}
                                                 onPress={() => router.push({
-                                                    pathname: '/(screens)/EventDetailsScreen',
+                                                    pathname: '/(screens)/EventsScreen/EventDetailsScreen',
                                                     params: { id: ev.id }
                                                 })}
                                             />

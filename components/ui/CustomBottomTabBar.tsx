@@ -88,7 +88,7 @@ export function CustomBottomTabBar({ state, descriptors, navigation, insets, rol
                         case "EventsScreen": Icon = Calendar; label = "события"; break;
                         case "TaskBoardScreen": Icon = ListTodo; label = "задачи"; break;
                         case "CatalogScreen": Icon = Folder; label = "каталог"; break;
-                        case "UserListScreen": Icon = User; label = "аккаунты"; break;
+                        case "UsersScreen": Icon = User; label = "аккаунты"; break;
                         case "DepartmentsScreen": Icon = Building2; label = "отделы"; break;
                         default: return null;
                     }

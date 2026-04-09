@@ -19,7 +19,7 @@ export const EventCard = ({event, index, displayTasks}: EventCardProps) => {
             key={event.id || index}
             entering={FadeInRight.delay((displayTasks > 0 ? 1100 : 800) + index * 100).duration(500).springify()}
         >
-            <TouchableOpacity style={styles.card} onPress={() => router.push({pathname: '/EventDetailsScreen'})}>
+            <TouchableOpacity style={styles.card} onPress={() => router.push({pathname: '/(screens)/EventsScreen/EventDetailsScreen'})}>
                 <View style={styles.cardContent}>
                     <View style={styles.eventDateContainer}>
                         <Text style={styles.eventDay}>

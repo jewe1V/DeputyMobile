@@ -363,7 +363,7 @@ export function Dashboard() {
                                         key={task.task_id || index}
                                         task={task}
                                         onPress={() => router.push({
-                                            pathname: '/(forms)/TaskDetailScreen',
+                                            pathname: '/(screens)/TaskBoardScreen/TaskDetailScreen',
                                             params: { id: task.task_id }
                                         })}
                                     />
@@ -395,7 +395,7 @@ export function Dashboard() {
                                                 event={event}
                                                 index={index}
                                                 onPress={() => router.push({
-                                                    pathname: '/(screens)/EventDetailsScreen',
+                                                    pathname: '/(screens)/EventsScreen/EventDetailsScreen',
                                                     params: { id: event.id }
                                                 })}
                                             />

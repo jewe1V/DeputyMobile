@@ -141,11 +141,11 @@ export function TaskBoard() {
     }
 
     const handleTaskPress = (id: string) => {
-        router.push({ pathname: '/(forms)/TaskDetailScreen', params: { id: id } });
+        router.push({ pathname: '/(screens)/TaskBoardScreen/TaskDetailScreen', params: { id: id } });
     };
 
     const handleNewTask = () => {
-        router.push('/NewTaskScreen');
+        router.push('/(screens)/TaskBoardScreen/NewTaskScreen');
     };
 
     const taskModeItems = [

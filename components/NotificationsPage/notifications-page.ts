@@ -4,6 +4,7 @@ export const styles = StyleSheet.create({
     container: {
           backgroundColor: '#ffffff',
         flex: 1,
+
     },
     header: {
         borderBottomLeftRadius: 24,
@@ -100,6 +101,7 @@ export const styles = StyleSheet.create({
         color: '#FFFFFF',
     },
     listContent: {
+        paddingBottom: 125,
     },
     notificationItem: {
         paddingVertical: 16,

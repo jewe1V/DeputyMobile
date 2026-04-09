@@ -172,7 +172,7 @@ const DepartmentsListScreen = () => {
         <TouchableOpacity
             style={styles.departmentCard}
             onPress={() => router.push({
-                pathname: '/(forms)/DepartmentDetailsScreen',
+                pathname: '/(screens)/DepartmentsScreen/DepartmentDetailsScreen',
                 params: { id: item.id, name: item.name }
             })}
         >

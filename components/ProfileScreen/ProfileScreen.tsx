@@ -115,7 +115,7 @@ export function ProfileScreen() {
     }
 
     return (
-        <View style={{ flex: 1, backgroundColor: '#f8fafc', paddingBottom: insets.bottom + 20 }}>
+        <View style={{ flex: 1, backgroundColor: '#f8fafc', paddingBottom: insets.bottom + 35 }}>
             <ScrollView
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
@@ -139,7 +139,7 @@ export function ProfileScreen() {
                             {(profile.id === userId || userRole === "Admin") && (
                                 <TouchableOpacity
                                     style={styles.iconButton}
-                                    onPress={() => router.push({pathname: '/(forms)/CreateUserScreen', params: { id: profile.id}})}
+                                    onPress={() => router.push({pathname: '/(screens)/UsersScreen/CreateUserScreen', params: { id: profile.id}})}
                                 >
                                     <View pointerEvents={"none"}>
                                         <Edit size={20} color="white" />
@@ -212,7 +212,7 @@ export function ProfileScreen() {
                             <TouchableOpacity
                                 style={[styles.card, styles.departmentCard]}
                                 onPress={() => router.push({
-                                    pathname: '/(forms)/DepartmentDetailsScreen',
+                                    pathname: '/(screens)/DepartmentsScreen/DepartmentDetailsScreen',
                                     params: { id: profile.department?.id, name: profile.department?.name }
                                 })}
                             >

@@ -292,7 +292,7 @@ const EventDetailsScreen: React.FC = () => {
                                 type: 'success',
                                 text1: 'Успешно',
                                 text2: 'Событие успешно удалено',
-                                position: 'bottom',
+                                position: 'top',
                                 visibilityTime: 3000,
                             });
                             router.push("/(screens)/EventsScreen");
@@ -357,7 +357,7 @@ const EventDetailsScreen: React.FC = () => {
                             <View style={styles.headerActions}>
                                 <TouchableOpacity
                                     style={styles.iconButton}
-                                    onPress={() => router.push({pathname: '/(forms)/CreateEventScreen', params: { id: event.id, isEdit: 1 }})}
+                                    onPress={() => router.push({pathname: '/(screens)/EventsScreen/CreateEventScreen', params: { id: event.id, isEdit: 1 }})}
                                 >
                                     <Edit size={20} color="white" />
                                 </TouchableOpacity>

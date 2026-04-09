@@ -46,7 +46,7 @@ export const SchedulePopup: React.FC<SchedulePopupProps> = ({
         // Сначала запускаем анимацию закрытия, потом выполняем переход и onClose
         closeAnim(() => {
             onClose();
-            router.push({ pathname: '/(screens)/EventDetailsScreen', params: { id: eventId } });
+            router.push({ pathname: '/(screens)/EventsScreen/EventDetailsScreen', params: { id: eventId } });
         });
     };
 

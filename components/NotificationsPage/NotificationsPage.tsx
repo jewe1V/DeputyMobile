@@ -122,9 +122,9 @@ export function Notifications() {
 
     const handleNotificationClick = (notification: Notification) => {
         if (notification.notify_type === 'Task') {
-            router.push({ pathname: '/(screens)/TaskBoardScreen', params: { id: notification.notifable_id }});
+            router.push({ pathname: '/(screens)/TaskBoardScreen/TaskDetailScreen', params: { id: notification.notifable_id }});
         } else {
-            router.push({ pathname: '/(screens)/EventDetailsScreen', params: { id: notification.notifable_id }});
+            router.push({ pathname: '/(screens)/EventsScreen/EventDetailsScreen', params: { id: notification.notifable_id }});
         }
     };
 

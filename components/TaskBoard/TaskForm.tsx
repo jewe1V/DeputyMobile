@@ -98,7 +98,7 @@ export function TaskForm() {
             if (isEditMode) {
                 await taskService.updateTask(id, payload);
                 Toast.show({ type: 'success', text1: 'Задача обновлена' });
-                router.push({ pathname: '/(forms)/TaskDetailScreen', params: { id: id } });
+                router.push({ pathname: '/(screens)/TaskBoardScreen/TaskDetailScreen', params: { id: id } });
             } else {
                 const response = await taskService.createTask(payload);
                 if (response && response.errors) {
@@ -116,7 +116,7 @@ export function TaskForm() {
                 const taskId = response;
                 console.log(taskId);
                 Toast.show({ type: 'success', text1: 'Задача создана' });
-                router.push({ pathname: '/(forms)/TaskDetailScreen', params: { id: taskId } });
+                router.push({ pathname: '/(screens)/TaskBoardScreen/TaskDetailScreen', params: { id: taskId } });
             }
         } catch (error) {
             Toast.show({ type: 'error', text1: 'Ошибка при сохранении' });
@@ -188,54 +188,6 @@ export function TaskForm() {
                         </Text>
                     </TouchableOpacity>
 
-                    {/* Выбор статуса */}
-                    <View style={[styles.selectWrapper, { zIndex: 1000 }]}>
-                        <TouchableOpacity
-                            style={styles.selectTrigger}
-                            onPress={() => {
-                                setIsStatusSelectOpen(!isStatusSelectOpen);
-                                setIsPrioritySelectOpen(false);
-                            }}
-                        >
-                            <Text style={!selectedStatus ? styles.placeholderText : styles.selectValue}>
-                                {selectedStatus || 'Статус *'}
-                            </Text>
-                            <Ionicons
-                                name={isStatusSelectOpen ? "chevron-up" : "chevron-down"}
-                                size={20}
-                                color="#6b7280"
-                            />
-                        </TouchableOpacity>
-
-                        {isStatusSelectOpen && (
-                            <View style={styles.selectDropdown}>
-                                {statuses.map((item) => (
-                                    <TouchableOpacity
-                                        key={item.name}
-                                        style={[
-                                            styles.selectItem,
-                                            selectedStatus === item.name && styles.selectItemSelected
-                                        ]}
-                                        onPress={() => {
-                                            setSelectedStatus(item.name);
-                                            setIsStatusSelectOpen(false);
-                                        }}
-                                    >
-                                        <Text style={[
-                                            styles.selectItemText,
-                                            selectedStatus === item.name && styles.selectItemTextSelected
-                                        ]}>
-                                            {item.name}
-                                        </Text>
-                                        {selectedStatus === item.name && (
-                                            <Ionicons name="checkmark" size={18} color="#0f6319" />
-                                        )}
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-                        )}
-                    </View>
-
                     {/* Выбор приоритета */}
                     <View style={[styles.selectWrapper, { zIndex: 900 }]}>
                         <TouchableOpacity
@@ -276,6 +228,54 @@ export function TaskForm() {
                                             {item.label}
                                         </Text>
                                         {priority === item.id && (
+                                            <Ionicons name="checkmark" size={18} color="#0f6319" />
+                                        )}
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        )}
+                    </View>
+
+                    {/* Выбор статуса */}
+                    <View style={[styles.selectWrapper, { zIndex: 800 }]}>
+                        <TouchableOpacity
+                            style={styles.selectTrigger}
+                            onPress={() => {
+                                setIsStatusSelectOpen(!isStatusSelectOpen);
+                                setIsPrioritySelectOpen(false);
+                            }}
+                        >
+                            <Text style={!selectedStatus ? styles.placeholderText : styles.selectValue}>
+                                {selectedStatus || 'Статус *'}
+                            </Text>
+                            <Ionicons
+                                name={isStatusSelectOpen ? "chevron-up" : "chevron-down"}
+                                size={20}
+                                color="#6b7280"
+                            />
+                        </TouchableOpacity>
+
+                        {isStatusSelectOpen && (
+                            <View style={styles.selectDropdown}>
+                                {statuses.map((item) => (
+                                    <TouchableOpacity
+                                        key={item.name}
+                                        style={[
+                                            styles.selectItem,
+                                            selectedStatus === item.name && styles.selectItemSelected
+                                        ]}
+                                        onPress={() => {
+                                            setSelectedStatus(item.name);
+                                            setIsStatusSelectOpen(false);
+                                        }}
+                                    >
+                                        <Text style={[
+                                            styles.selectItemText,
+                                            selectedStatus === item.name && styles.selectItemTextSelected
+                                        ]}>
+                                            {item.name}
+                                        </Text>
+                                        {selectedStatus === item.name && (
                                             <Ionicons name="checkmark" size={18} color="#0f6319" />
                                         )}
                                     </TouchableOpacity>

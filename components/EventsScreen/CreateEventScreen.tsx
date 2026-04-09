@@ -19,7 +19,6 @@ type User = { id: string; full_name: string; email: string };
 type Department = { id: string; name: string };
 
 export default function CreateEventScreen() {
-    // Получаем id из параметров маршрута и вычисляем режим
     const { id } = useLocalSearchParams<{ id: string }>();
     const isEditMode = !!id;
 
@@ -163,7 +162,6 @@ export default function CreateEventScreen() {
         setEndPickerVisible(false);
     };
 
-    // Переименовал в handleSave, чтобы логично звучало для обоих режимов
     const handleSave = async () => {
         if (!title.trim() || !startAt || !endAt || !eventType) {
             Toast.show({
@@ -275,6 +273,21 @@ export default function CreateEventScreen() {
                 throw new Error(errorMessage || `Ошибка ${isEditMode ? 'обновления' : 'создания'} события`);
             }
 
+            // Парсим ответ сервера
+            let eventData;
+            try {
+                eventData = JSON.parse(responseText);
+            } catch {
+                eventData = null;
+            }
+
+            // Получаем ID созданного события
+            const newEventId = eventData?.id;
+
+            if (!isEditMode && !newEventId) {
+                throw new Error('Не удалось получить ID созданного события');
+            }
+
             Toast.show({
                 type: 'success',
                 text1: 'Успешно',
@@ -283,8 +296,21 @@ export default function CreateEventScreen() {
                 visibilityTime: 3000,
             });
 
-            if (!isEditMode) clearForm();
-            router.push({ pathname: "/(screens)/EventsScreen", params: { refresh: "true" } });
+            if (!isEditMode) {
+                clearForm();
+            }
+            if (isEditMode) {
+                router.push({
+                    pathname: "/(screens)/EventsScreen/EventDetailsScreen",
+                    params: { id: id }
+                });
+            } else {
+                router.push({
+                    pathname: "/(screens)/EventsScreen/EventDetailsScreen",
+                    params: { id: newEventId }
+                });
+            }
+
         } catch (error: any) {
             console.error("Полная ошибка:", error);
             Toast.show({
@@ -331,7 +357,7 @@ export default function CreateEventScreen() {
 
     return (
         <KeyboardAvoidingView
-            style={{ flex: 1, backgroundColor: '#fff' }}
+            style={{ flex: 1, backgroundColor: '#fff', paddingBottom: insets.bottom + 20 }}
             behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
             <ScrollView

@@ -112,7 +112,7 @@ const UsersListScreen = () => {
                 </View>
                 <TouchableOpacity
                     style={styles.newTaskButton}
-                    onPress={() => router.push('/(forms)/CreateUserScreen')}
+                    onPress={() => router.push('/(screens)/UsersScreen/CreateUserScreen')}
                 >
                     <View pointerEvents={"none"}>
                         <Plus size={20} color="white" />

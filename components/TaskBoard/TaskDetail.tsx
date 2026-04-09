@@ -218,8 +218,8 @@ export function TaskDetail() {
 
                         if (!response.ok) throw new Error('Ошибка сервера');
 
-                        Toast.show({ type: 'success', text1: 'Успешно', text2: 'Задача завершена и перенесена в архив' });
-                        router.back();
+                        Toast.show({ type: 'success', text1: 'Успешно', text2: 'Задача перенесена в архив' });
+                        router.push("/(screens)/TaskBoardScreen");
                     } catch (error) {
                         Toast.show({ type: 'error', text1: 'Ошибка', text2: 'Не удалось завершить задачу' });
                         setIsCompleting(false);
@@ -283,7 +283,7 @@ export function TaskDetail() {
                 style: 'destructive',
                 onPress: async () => {
                     await taskService.deleteTask(id as string);
-                    router.back();
+                    router.push("/(screens)/TaskBoardScreen");
                 }
             },
         ]);
@@ -393,7 +393,7 @@ export function TaskDetail() {
     );
 
     return (
-        <View style={{ flex: 1, backgroundColor: '#f8fafc' }}>
+        <View style={{ flex: 1, backgroundColor: '#f8fafc', paddingBottom: insets.bottom + 20 }}>
             <StatusBar barStyle="light-content" />
 
             <ScrollView
@@ -418,7 +418,7 @@ export function TaskDetail() {
                             <View style={styles.headerActions}>
                                 <TouchableOpacity
                                     style={styles.iconButton}
-                                    onPress={() => router.push({pathname: '/(forms)/NewTaskScreen', params: { id: task.task_id, isEdit: 1 }})}
+                                    onPress={() => router.push({pathname: '/(screens)/TaskBoardScreen/NewTaskScreen', params: { id: task.task_id, isEdit: 1 }})}
                                 >
                                     <Edit size={20} color="white" />
                                 </TouchableOpacity>
