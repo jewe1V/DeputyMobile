@@ -360,25 +360,25 @@ export default function CreateEventScreen() {
             style={{ flex: 1, backgroundColor: '#fff', paddingBottom: insets.bottom + 20 }}
             behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
+            <LinearGradient
+                colors={['#2A6E3F', '#349339']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[styles.header, { paddingTop: insets.top + 20 }]}
+            >
+                <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+                    <View pointerEvents="none">
+                        <ArrowLeft size={24} color="white" />
+                    </View>
+                </TouchableOpacity>
+                <Text style={styles.headerTitle}>{isEditMode ? "Редактирование события" : "Новое событие"}</Text>
+            </LinearGradient>
             <ScrollView
                 ref={scrollViewRef}
                 contentContainerStyle={[styles.container, { paddingBottom: insets.bottom }]}
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
             >
-                <LinearGradient
-                    colors={['#2A6E3F', '#349339']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={[styles.header, { paddingTop: insets.top + 20 }]}
-                >
-                    <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-                        <View pointerEvents="none">
-                            <ArrowLeft size={24} color="white" />
-                        </View>
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>{isEditMode ? "Редактирование события" : "Новое событие"}</Text>
-                </LinearGradient>
 
                 <View style={styles.card}>
                     {!isAdmin && (

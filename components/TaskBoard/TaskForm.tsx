@@ -139,28 +139,28 @@ export function TaskForm() {
             behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
             <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-
+            <LinearGradient
+                colors={['#2A6E3F', '#349339']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[styles.header, { paddingTop: insets.top + 20 }]}
+            >
+                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                    <View pointerEvents="none">
+                        <Ionicons name="arrow-back" size={24} color="#fff" />
+                    </View>
+                </TouchableOpacity>
+                {/* Меняем заголовок в зависимости от режима */}
+                <Text style={styles.headerTitle}>
+                    {isEditMode ? 'Редактирование' : 'Новая задача'}
+                </Text>
+            </LinearGradient>
             <ScrollView
                 contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + 20 }]}
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
             >
-                <LinearGradient
-                    colors={['#2A6E3F', '#349339']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={[styles.header, { paddingTop: insets.top + 20 }]}
-                >
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                        <View pointerEvents="none">
-                        <Ionicons name="arrow-back" size={24} color="#fff" />
-                        </View>
-                    </TouchableOpacity>
-                    {/* Меняем заголовок в зависимости от режима */}
-                    <Text style={styles.headerTitle}>
-                        {isEditMode ? 'Редактирование' : 'Новая задача'}
-                    </Text>
-                </LinearGradient>
+
 
                 <View style={styles.card}>
                     <TextInput

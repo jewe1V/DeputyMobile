@@ -314,7 +314,9 @@ export function Dashboard() {
                                 </View>
                             </TouchableOpacity>
                             <TouchableOpacity style={styles.notificationButton} onPress={() => router.push("/NotificationScreen")}>
-                                <Bell size={20} color="white" />
+                                <View pointerEvents={"none"}>
+                                    <Bell size={20} color="white" />
+                                </View>
                             </TouchableOpacity>
                         </View>
                         <Text style={styles.jobTitle}>{data?.job_title || 'Сотрудник'}</Text>
