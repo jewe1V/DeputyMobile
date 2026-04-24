@@ -27,6 +27,16 @@ const getInitials = (name: string) => {
     return parts.length >= 2 ? `${parts[0][0]}${parts[1][0]}`.toUpperCase() : name[0].toUpperCase();
 };
 
+const translateRole = (role: string): string => {
+    const roleMap: Record<string, string> = {
+        'Admin': 'Администратор',
+        'Deputy': 'Депутат',
+        'Helper': 'Помощник депутата'
+    };
+    return roleMap[role] || role;
+};
+
+
 export function ProfileScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const navigation = useNavigation();
@@ -196,7 +206,7 @@ export function ProfileScreen() {
                                     <View style={styles.rolesList}>
                                         {profile.roles?.map((userRole: string, index: number) => (
                                             <View key={index} style={styles.roleBadge}>
-                                                <Text style={styles.roleText}>{userRole}</Text>
+                                                <Text style={styles.roleText}>{translateRole(userRole)}</Text>
                                             </View>
                                         ))}
                                     </View>
