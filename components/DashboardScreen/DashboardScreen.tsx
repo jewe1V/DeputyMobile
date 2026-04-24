@@ -12,7 +12,7 @@ import {
     CheckCircle2,
     Bell,
     AlertCircle,
-    RefreshCw
+    RefreshCw, Phone
 } from 'lucide-react-native';
 import { styles } from './style';
 import Animated, { FadeInDown} from 'react-native-reanimated';
@@ -177,6 +177,14 @@ export function Dashboard() {
                             marginBottom={0}
                         />
                     </View>
+                    <View style={styles.notificationButton}>
+                        <SkeletonItem
+                            width={40}
+                            height={40}
+                            borderRadius={20}
+                            marginBottom={0}
+                        />
+                    </View>
                 </View>
                 <SkeletonItem
                     width={150}
@@ -316,6 +324,11 @@ export function Dashboard() {
                             <TouchableOpacity style={styles.notificationButton} onPress={() => router.push("/NotificationScreen")}>
                                 <View pointerEvents={"none"}>
                                     <Bell size={20} color="white" />
+                                </View>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.notificationButton} onPress={() => router.push("/NotificationScreen")}>
+                                <View pointerEvents={"none"}>
+                                    <Phone size={20} color="white" />
                                 </View>
                             </TouchableOpacity>
                         </View>

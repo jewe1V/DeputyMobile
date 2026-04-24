@@ -11,7 +11,8 @@ export const styles = StyleSheet.create({
         paddingBottom: 32,
     },
     headerContent: {
-        paddingHorizontal: 20,
+        paddingLeft: 10,
+        paddingRight: 5,
     },
     userInfoRow: {
         flexDirection: 'row',
@@ -56,7 +57,7 @@ export const styles = StyleSheet.create({
     },
     userName: {
         color: 'white',
-        fontSize: 18,
+        fontSize: 17,
         fontWeight: '600',
         flexWrap: 'wrap', // Разрешает перенос текста
         flexShrink: 1, // Позволяет тексту сжиматься
@@ -68,6 +69,7 @@ export const styles = StyleSheet.create({
         backgroundColor: 'rgba(255, 255, 255, 0.2)',
         justifyContent: 'center',
         alignItems: 'center',
+        marginLeft: 5
     },
     jobTitle: {
         color: 'rgba(255, 255, 255, 0.9)',
