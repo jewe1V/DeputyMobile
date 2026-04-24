@@ -303,7 +303,7 @@ export const EventAttendanceModal: React.FC<Props> = ({
                                     multiline
                                 />
 
-                                <Text style={styles.label}>Оправдательный документ</Text>
+                                <Text style={styles.label}>Приложить документ</Text>
 
                                 {excuseDocument ? (
                                 <View style={styles.documentPreviewCard}>
