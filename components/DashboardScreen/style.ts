@@ -16,9 +16,12 @@ export const styles = StyleSheet.create({
     userInfoRow: {
         flexDirection: 'row',
         marginBottom: 10,
+        alignItems: 'center', // Выравнивание по центру
     },
     userProfileButton: {
         flexDirection: 'row',
+        flex: 1, // Занимает все доступное пространство
+        marginRight: 12, // Отступ от кнопки уведомлений
     },
     avatarContainer: {
         marginRight: 12,
@@ -43,7 +46,9 @@ export const styles = StyleSheet.create({
         fontWeight: '600',
     },
     userInfo: {
+        flex: 1, // Занимает оставшееся пространство
         justifyContent: 'center',
+        flexShrink: 1, // Позволяет сжиматься
     },
     greeting: {
         color: 'rgba(255, 255, 255, 0.8)',
@@ -53,6 +58,8 @@ export const styles = StyleSheet.create({
         color: 'white',
         fontSize: 18,
         fontWeight: '600',
+        flexWrap: 'wrap', // Разрешает перенос текста
+        flexShrink: 1, // Позволяет тексту сжиматься
     },
     notificationButton: {
         width: 40,
@@ -61,8 +68,6 @@ export const styles = StyleSheet.create({
         backgroundColor: 'rgba(255, 255, 255, 0.2)',
         justifyContent: 'center',
         alignItems: 'center',
-        alignSelf: 'center',
-        marginLeft: "auto"
     },
     jobTitle: {
         color: 'rgba(255, 255, 255, 0.9)',
