@@ -250,7 +250,7 @@ const EventDetailsScreen: React.FC = () => {
                 ...locationParams,
                 latitude: lat,
                 longitude: lon,
-                appsWhiteList: ['yandex-maps', 'google-maps', 'dgis', 'apple-maps']
+                appsWhiteList: ['yandex-maps', 'dgis', 'apple-maps']
             });
         }
         else if (location.address) {
