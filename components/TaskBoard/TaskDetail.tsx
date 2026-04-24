@@ -72,26 +72,24 @@ export function TaskDetail() {
 
     const loadData = useCallback(() => {
         if (!id) return;
-        InteractionManager.runAfterInteractions(() => {
-            taskService.getTaskById(id)
-                .then(taskData => {
-                    // @ts-ignore
-                    setTask(taskData);
-                    setLoading(false);
-                })
-                .catch(error => {
-                    Toast.show({ type: 'error', text1: 'Ошибка', text2: 'Не удалось загрузить задачу' });
-                    setLoading(false);
-                })
-                .finally(() => {
-                    setRefreshing(false);
-                });
-            taskService.getStatuses()
-                .then(statusesData => {
-                    setStatuses(statusesData);
-                })
-                .catch(error => console.error("Ошибка загрузки статусов", error));
-        });
+        taskService.getTaskById(id)
+            .then(taskData => {
+                // @ts-ignore
+                setTask(taskData);
+                setLoading(false);
+            })
+            .catch(error => {
+                Toast.show({ type: 'error', text1: 'Ошибка', text2: 'Не удалось загрузить задачу' });
+                setLoading(false);
+            })
+            .finally(() => {
+                setRefreshing(false);
+            });
+        taskService.getStatuses()
+            .then(statusesData => {
+                setStatuses(statusesData);
+            })
+            .catch(error => console.error("Ошибка загрузки статусов", error));
     }, [id]);
 
     useEffect(() => { loadData(); }, [loadData]);
@@ -393,7 +391,7 @@ export function TaskDetail() {
     );
 
     return (
-        <View style={{ flex: 1, backgroundColor: '#f8fafc', paddingBottom: insets.bottom + 20 }}>
+        <View style={{ flex: 1, backgroundColor: '#f8fafc', paddingBottom: insets.bottom + 30 }}>
             <StatusBar barStyle="light-content" />
 
             <ScrollView

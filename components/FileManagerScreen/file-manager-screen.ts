@@ -100,7 +100,7 @@ export const styles = StyleSheet.create({
     content: {
         flex: 1,
         paddingTop: 10,
-        padding: 16,
+        padding: Platform.OS === "web" ? 8 : 16,
     },
     section: {
         marginBottom: 24,

@@ -1,26 +1,24 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import {
     View, Text, StyleSheet, ScrollView, TouchableOpacity,
-    ActivityIndicator, RefreshControl, Modal, Alert
+    ActivityIndicator, RefreshControl, Modal, Alert, Platform, Image
 } from 'react-native';
-import {router, useLocalSearchParams, useRouter} from "expo-router";
+import { router, useLocalSearchParams, useRouter } from "expo-router";
 import { AuthManager } from "@/components/LoginScreen/LoginScreen";
 import { apiUrl } from "@/api/api";
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { Yamap, Marker } from 'react-native-yamap-plus';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import {ArrowLeft, FileText, Download, CheckCircle2, XCircle, HelpCircle, X, Edit, Trash2} from "lucide-react-native";
+import { ArrowLeft, FileText, Download, CheckCircle2, XCircle, HelpCircle, X, Edit, Trash2 } from "lucide-react-native";
 import { EventAttachmentUploader } from "@/components/EventsScreen/EventAttachmentUploader";
 import { EventAttendanceModal } from "@/components/EventsScreen/EventAttendanceModal";
-import { showLocation } from 'react-native-map-link';
-import {useFileManagerPresenter} from "@/components/FileManagerScreen/FileManagerPresenter";
-import {formatDateTime} from "@/utils";
-import {AttendeeExcuseModal} from "@/components/EventsScreen/AttendeeExcuseModal";
+import { useFileManagerPresenter } from "@/components/FileManagerScreen/FileManagerPresenter";
+import { formatDateTime } from "@/utils";
+import { AttendeeExcuseModal } from "@/components/EventsScreen/AttendeeExcuseModal";
 import * as Sharing from 'expo-sharing';
-import { Image } from 'react-native';
 import Toast from "react-native-toast-message";
-
+import { EventMap } from "@/components/ui/EventMap/EventMap";
+import {showLocation} from "react-native-map-link";
 
 
 interface Attachment {
@@ -55,27 +53,29 @@ interface EventData {
     attendees: Attendee[];
 }
 
+interface AttachmentItemProps {
+    file: Attachment;
+    onImagePress: (url: string) => void;
+}
+
 const AttachmentItem: React.FC<AttachmentItemProps> = ({ file, onImagePress }) => {
     const [downloadProgress, setDownloadProgress] = useState(0);
     const [isDownloading, setIsDownloading] = useState(false);
     const token = AuthManager.getToken();
-    const isAdmin = AuthManager.getRole() === "Admin";
     const { handlers } = useFileManagerPresenter();
     const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(file.url);
 
-    // Создаем обработчик, который будет вызываться при нажатии
     const handleDownload = React.useCallback(() => {
         // @ts-ignore
         handlers.handleDownloadDocument(file);
     }, [handlers, file]);
-
 
     return (
         <View style={styles.attachmentContainer}>
             {isImage ? (
                 <TouchableOpacity
                     style={styles.imagePreviewContainer}
-                    onPress={handleDownload}  // ← передаем функцию, а не результат вызова
+                    onPress={handleDownload}
                 >
                     <Image
                         source={{
@@ -108,7 +108,6 @@ const AttachmentItem: React.FC<AttachmentItemProps> = ({ file, onImagePress }) =
                 </TouchableOpacity>
             )}
 
-            {/* Прогресс-бар загрузки */}
             {isDownloading && (
                 <View style={styles.progressBarBackground}>
                     <View style={[styles.progressBarFill, { width: `${downloadProgress * 100}%` }]} />
@@ -117,11 +116,6 @@ const AttachmentItem: React.FC<AttachmentItemProps> = ({ file, onImagePress }) =
         </View>
     );
 };
-
-interface AttachmentItemProps {
-    file: Attachment;
-    onImagePress: (url: string) => void;
-}
 
 const EventDetailsScreen: React.FC = () => {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -168,7 +162,6 @@ const EventDetailsScreen: React.FC = () => {
             }
 
             const data: EventData = await response.json();
-            console.log(data);
             setEvent(data);
         } catch (e) {
             console.error('Ошибка при загрузке события:', e);
@@ -233,6 +226,17 @@ const EventDetailsScreen: React.FC = () => {
     };
 
     const openMaps = () => {
+        // Условие для веб-платформы: открываем обычную ссылку в браузере
+        if (Platform.OS === 'web') {
+            if (location.coordinates) {
+                window.open(`https://yandex.ru/maps/?pt=${location.coordinates.lon},${location.coordinates.lat}&z=16`, '_blank');
+            } else if (location.address) {
+                window.open(`https://yandex.ru/maps/?text=${encodeURIComponent(location.address)}`, '_blank');
+            }
+            return;
+        }
+
+        // Логика для нативных приложений
         const locationParams = {
             title: location.address,
             dialogTitle: 'Открыть в навигаторе',
@@ -271,69 +275,65 @@ const EventDetailsScreen: React.FC = () => {
     };
 
     const handleDelete = () => {
+        if (Platform.OS === 'web') {
+            if (window.confirm('Вы уверены, что хотите удалить событие?')) {
+                executeDelete();
+            }
+            return;
+        }
+
         Alert.alert('Удаление', 'Вы уверены?', [
             { text: 'Отмена', style: 'cancel' },
             {
                 text: 'Удалить',
                 style: 'destructive',
-                onPress: async () => {
-                    try {
-                        const token = AuthManager.getToken();
-                        const response = await fetch(`${apiUrl}/api/Events/${id}`, {
-                            method: 'DELETE',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${token}`
-                            },
-                        });
-
-                        if (response.ok) {
-                            Toast.show({
-                                type: 'success',
-                                text1: 'Успешно',
-                                text2: 'Событие успешно удалено',
-                                position: 'top',
-                                visibilityTime: 3000,
-                            });
-                            router.push("/(screens)/EventsScreen");
-                        } else {
-                            // Обработка ошибок HTTP
-                            const errorData = await response.json().catch(() => ({}));
-                            Toast.show({
-                                type: 'error',
-                                text1: 'Ошибка',
-                                text2: errorData.message || `Ошибка ${response.status}: не удалось удалить событие`,
-                                position: 'bottom',
-                                visibilityTime: 4000,
-                            });
-                        }
-                    } catch (error: any) {
-                        console.error('Delete error:', error);
-
-                        if (error.name === 'TypeError' && error.message.includes('network')) {
-                            Toast.show({
-                                type: 'error',
-                                text1: 'Ошибка сети',
-                                text2: 'Проверьте подключение к интернету',
-                                position: 'bottom',
-                                visibilityTime: 4000,
-                            });
-                        } else {
-                            Toast.show({
-                                type: 'error',
-                                text1: 'Ошибка',
-                                text2: error.message || 'Произошла неизвестная ошибка',
-                                position: 'bottom',
-                                visibilityTime: 4000,
-                            });
-                        }
-                    }
-                }
+                onPress: executeDelete
             },
         ]);
     };
 
-    // @ts-ignore
+    const executeDelete = async () => {
+        try {
+            const token = AuthManager.getToken();
+            const response = await fetch(`${apiUrl}/api/Events/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+            });
+
+            if (response.ok) {
+                Toast.show({
+                    type: 'success',
+                    text1: 'Успешно',
+                    text2: 'Событие успешно удалено',
+                    position: 'top',
+                    visibilityTime: 3000,
+                });
+                router.push("/(screens)/EventsScreen");
+            } else {
+                const errorData = await response.json().catch(() => ({}));
+                Toast.show({
+                    type: 'error',
+                    text1: 'Ошибка',
+                    text2: errorData.message || `Ошибка ${response.status}: не удалось удалить событие`,
+                    position: 'bottom',
+                    visibilityTime: 4000,
+                });
+            }
+        } catch (error: any) {
+            console.error('Delete error:', error);
+            Toast.show({
+                type: 'error',
+                text1: 'Ошибка',
+                text2: error.message || 'Произошла неизвестная ошибка',
+                position: 'bottom',
+                visibilityTime: 4000,
+            });
+        }
+    };
+
     return (
         <>
             <ScrollView
@@ -353,11 +353,11 @@ const EventDetailsScreen: React.FC = () => {
                             </View>
                         </TouchableOpacity>
 
-                        {(userRole === "Admin" || userId===event.id) && (
+                        {(userRole === "Admin" || userId === event.id) && (
                             <View style={styles.headerActions}>
                                 <TouchableOpacity
                                     style={styles.iconButton}
-                                    onPress={() => router.push({pathname: '/(screens)/EventsScreen/CreateEventScreen', params: { id: event.id, isEdit: 1 }})}
+                                    onPress={() => router.push({ pathname: '/(screens)/EventsScreen/CreateEventScreen', params: { id: event.id, isEdit: 1 } })}
                                 >
                                     <Edit size={20} color="white" />
                                 </TouchableOpacity>
@@ -377,7 +377,6 @@ const EventDetailsScreen: React.FC = () => {
                 </LinearGradient>
 
                 <View style={styles.content}>
-                    {/* Время */}
                     <View style={styles.card}>
                         <View style={styles.timeRow}>
                             <View style={styles.timeContent}>
@@ -392,32 +391,18 @@ const EventDetailsScreen: React.FC = () => {
                         </View>
                     </View>
 
-                    {/* Карта */}
                     {location.coordinates && (
                         <View style={styles.card}>
                             <Text style={styles.sectionTitle}>Место проведения</Text>
                             <Text style={styles.addressText}>{location.address}</Text>
                             <TouchableOpacity onPress={openMaps} activeOpacity={0.9}>
                                 <View style={styles.mapContainer}>
-                                    <Yamap
-                                        style={styles.map}
-                                        initialRegion={{
-                                            lat: location.coordinates.lat,
-                                            lon: location.coordinates.lon,
-                                            zoom: 14,
-                                            azimuth: 0,
-                                            tilt: 0
-                                        }}
-                                        interactiveDisabled={true}
-                                    >
-                                        <Marker point={{ lat: location.coordinates.lat, lon: location.coordinates.lon }} />
-                                    </Yamap>
+                                    <EventMap coordinates={location.coordinates} />
                                 </View>
                             </TouchableOpacity>
                         </View>
                     )}
 
-                    {/* Описание */}
                     {event.description && (
                         <View style={styles.card}>
                             <Text style={styles.sectionTitle}>О событии</Text>
@@ -425,7 +410,6 @@ const EventDetailsScreen: React.FC = () => {
                         </View>
                     )}
 
-                    {/* Прикрепленные документы */}
                     {event.attachments && event.attachments.length > 0 && (
                         <View style={styles.card}>
                             <Text style={styles.sectionTitle}>Материалы</Text>
@@ -439,7 +423,6 @@ const EventDetailsScreen: React.FC = () => {
                         </View>
                     )}
 
-                    {/* Участники */}
                     {event.attendees && event.attendees.length > 0 && (
                         <View style={styles.card}>
                             <Text style={styles.sectionTitle}>Участники ({event.attendees.filter(attendee => attendee.status === 'Yes').length})</Text>
@@ -450,7 +433,6 @@ const EventDetailsScreen: React.FC = () => {
                                     onPress={() => {
                                         if (attendee.status === 'No') {
                                             setSelectedExcuseAttendee(attendee);
-                                            console.log(selectedExcuseAttendee);
                                             setExcuseModalVisible(true);
                                         } else {
                                             router.push({ pathname: '/(screens)/ProfileScreen', params: { id: attendee.user_id } });
@@ -474,7 +456,6 @@ const EventDetailsScreen: React.FC = () => {
                         </View>
                     )}
 
-                    {/* Дополнительная информация */}
                     <View style={styles.metaCard}>
                         <View style={styles.metaRow}>
                             <Ionicons name="lock-open-outline" size={18} color="#6b7280" />
@@ -484,7 +465,6 @@ const EventDetailsScreen: React.FC = () => {
                         </View>
                     </View>
 
-                    {/* Кнопки управления */}
                     <View style={styles.actionGroup}>
                         <TouchableOpacity style={styles.secondaryButton} onPress={() => setShowUploader(true)}>
                             <FileText size={20} color="#0f6319" />
@@ -552,12 +532,10 @@ const styles = StyleSheet.create({
     map: { width: '100%', height: '100%' },
     description: { fontSize: 15, color: '#4b5563', lineHeight: 22 },
 
-    // Стили файлов
     fileRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f8fafc', padding: 12, borderRadius: 12, marginBottom: 8 },
     fileIconContainer: { width: 36, height: 36, borderRadius: 8, backgroundColor: '#eef2ff', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
     fileName: { flex: 1, fontSize: 14, color: '#1e293b', marginRight: 12 },
 
-    // Стили участников
     attendeeRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
     avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#e2e8f0', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
     avatarText: { fontSize: 14, fontWeight: '600', color: '#475569' },
@@ -573,111 +551,24 @@ const styles = StyleSheet.create({
     actionGroup: { gap: 12, marginBottom: 20 },
     secondaryButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb' },
     secondaryButtonText: { fontSize: 15, fontWeight: '600', color: '#0f6319', marginLeft: 8 },
-    attachmentContainer: {
-        marginBottom: 12,
-    },
-    imagePreviewContainer: {
-        height: 120,
-        borderRadius: 12,
-        overflow: 'hidden',
-        backgroundColor: '#f1f5f9',
-    },
-    imagePreview: {
-        width: '100%',
-        height: '100%',
-    },
-    imagePreviewOverlay: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        flexDirection: 'row',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        alignItems: 'center',
-        justifyContent: 'space-between',
-    },
-    imagePreviewName: {
-        color: '#fff',
-        fontSize: 12,
-        flex: 1,
-        marginRight: 8,
-    },
-    downloadIconButton: {
-        padding: 8,
-        backgroundColor: 'rgba(255,255,255,0.2)',
-        borderRadius: 8,
-    },
-    fileRowDownloading: {
-        opacity: 0.8,
-    },
-    progressText: {
-        fontSize: 12,
-        fontWeight: '600',
-        color: '#0f6319',
-    },
-    progressBarBackground: {
-        height: 4,
-        backgroundColor: '#e5e7eb',
-        borderRadius: 2,
-        marginTop: 4,
-        overflow: 'hidden',
-    },
-    progressBarFill: {
-        height: '100%',
-        backgroundColor: '#0f6319',
-        borderRadius: 2,
-    },
-    imageViewerOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.9)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    imageViewerCloseButton: {
-        position: 'absolute',
-        top: 50,
-        right: 20,
-        zIndex: 10,
-        padding: 8,
-    },
-    fullScreenImage: {
-        width: '100%',
-        height: '80%',
-    },
-    fullScreenOverlay: {
-        flex: 1,
-        backgroundColor: 'black',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    closePreviewButton: {
-        position: 'absolute',
-        right: 20,
-        zIndex: 10,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        borderRadius: 20,
-        padding: 5,
-    },
-    fullImage: {
-        width: '100%',
-        height: '80%',
-    },
-    previewFooter: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        backgroundColor: 'rgba(0,0,0,0.6)',
-        padding: 20,
-        alignItems: 'center',
-    },
-    previewFooterText: {
-        color: 'white',
-        fontSize: 16,
-        fontWeight: '500',
-    },
+    attachmentContainer: { marginBottom: 12 },
+    imagePreviewContainer: { height: 120, borderRadius: 12, overflow: 'hidden', backgroundColor: '#f1f5f9' },
+    imagePreview: { width: '100%', height: '100%' },
+    imagePreviewOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.5)', flexDirection: 'row', paddingHorizontal: 8, paddingVertical: 4, alignItems: 'center', justifyContent: 'space-between' },
+    imagePreviewName: { color: '#fff', fontSize: 12, flex: 1, marginRight: 8 },
+    downloadIconButton: { padding: 8, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 8 },
+    fileRowDownloading: { opacity: 0.8 },
+    progressText: { fontSize: 12, fontWeight: '600', color: '#0f6319' },
+    progressBarBackground: { height: 4, backgroundColor: '#e5e7eb', borderRadius: 2, marginTop: 4, overflow: 'hidden' },
+    progressBarFill: { height: '100%', backgroundColor: '#0f6319', borderRadius: 2 },
+    imageViewerOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' },
+    imageViewerCloseButton: { position: 'absolute', top: 50, right: 20, zIndex: 10, padding: 8 },
+    fullScreenImage: { width: '100%', height: '80%' },
+    fullScreenOverlay: { flex: 1, backgroundColor: 'black', justifyContent: 'center', alignItems: 'center' },
+    closePreviewButton: { position: 'absolute', right: 20, zIndex: 10, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 20, padding: 5 },
+    fullImage: { width: '100%', height: '80%' },
+    previewFooter: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.6)', padding: 20, alignItems: 'center' },
+    previewFooterText: { color: 'white', fontSize: 16, fontWeight: '500' },
 });
 
 export default EventDetailsScreen;

@@ -5,7 +5,8 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Yamap, Marker } from 'react-native-yamap-plus';
+import { LocationPickerMap } from "@/components/ui/LocationPickerMap/LocationPickerMap";
+import { Platform } from 'react-native';
 import * as Location from 'expo-location';
 
 const INITIAL_REGION = {
@@ -65,7 +66,8 @@ export default function LocationPickerModal({
 
             // Центрируем карту один раз при открытии
             setTimeout(() => {
-                if (mapRef.current) {
+                // ПРОВЕРКА: на вебе метода setCenter не будет
+                if (mapRef.current && typeof mapRef.current.setCenter === 'function') {
                     mapRef.current.setCenter(startCoords, INITIAL_REGION.zoom);
                 }
             }, 300);
@@ -269,15 +271,17 @@ export default function LocationPickerModal({
 
     // Зум теперь работает относительно текущего центра экрана, а не маркера
     const handleZoomIn = useCallback(() => {
-        if (!mapRef.current) return;
-        const newZoom = Math.min(currentCamera.zoom + 1, 18);
-        mapRef.current.setCenter({ lat: currentCamera.lat, lon: currentCamera.lon }, newZoom);
+        if (mapRef.current?.setCenter) {
+            const newZoom = Math.min(currentCamera.zoom + 1, 18);
+            mapRef.current.setCenter({ lat: currentCamera.lat, lon: currentCamera.lon }, newZoom);
+        }
     }, [currentCamera]);
 
     const handleZoomOut = useCallback(() => {
-        if (!mapRef.current) return;
-        const newZoom = Math.max(currentCamera.zoom - 1, 3);
-        mapRef.current.setCenter({ lat: currentCamera.lat, lon: currentCamera.lon }, newZoom);
+        if (mapRef.current?.setCenter) {
+            const newZoom = Math.max(currentCamera.zoom - 1, 3);
+            mapRef.current.setCenter({lat: currentCamera.lat, lon: currentCamera.lon}, newZoom);
+        }
     }, [currentCamera]);
 
     const handleCameraPositionChanged = useCallback((e: any) => {
@@ -354,23 +358,14 @@ export default function LocationPickerModal({
                 )}
 
                 {/* Карта */}
-                <Yamap
+                <LocationPickerMap
                     ref={mapRef}
-                    style={styles.map}
-                    showUserPosition={hasLocationPermission}
+                    hasPermission={hasLocationPermission}
                     initialRegion={INITIAL_REGION}
+                    coords={coords}
                     onMapPress={handleMapPress}
-                    onMapLongPress={handleMapPress}
                     onCameraPositionChange={handleCameraPositionChanged}
-                >
-                    {coords && (
-                        <Marker point={{ lat: coords.lat, lon: coords.lon }}>
-                            <View style={styles.markerContainer}>
-                                <View style={styles.markerDot} />
-                            </View>
-                        </Marker>
-                    )}
-                </Yamap>
+                />
 
                 {/* Кнопки управления */}
                 <View style={styles.zoomControls}>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Animated, StyleSheet, View } from 'react-native';
+import { Animated, StyleSheet, View, Platform } from 'react-native';
 
 const styles = StyleSheet.create({
     skeleton: {
@@ -30,12 +30,12 @@ export const SkeletonItem: React.FC<SkeletonItemProps> = ({
                 Animated.timing(shimmerAnimation, {
                     toValue: 1,
                     duration: 1000,
-                    useNativeDriver: true,
+                    useNativeDriver: Platform.OS !== 'web',
                 }),
                 Animated.timing(shimmerAnimation, {
                     toValue: 0,
                     duration: 1000,
-                    useNativeDriver: true,
+                    useNativeDriver: Platform.OS !== 'web',
                 }),
             ])
         ).start();

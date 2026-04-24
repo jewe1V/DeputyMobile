@@ -17,7 +17,7 @@ import {AuthManager} from "@/components/LoginScreen/LoginScreen";
 import * as FileSystem from 'expo-file-system/legacy';
 import {apiUrl} from "@/api/api";
 import Toast from "react-native-toast-message";
-import { open } from 'react-native-file-viewer-turbo';
+import { openFile } from "@/components/utils/FileLauncher/FileLauncher";
 import * as Sharing from 'expo-sharing';
 import * as ImagePicker from 'expo-image-picker';
 import {Alert} from "react-native";
