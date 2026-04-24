@@ -15,8 +15,8 @@ import { EventAttendanceModal } from "@/components/EventsScreen/EventAttendanceM
 import { useFileManagerPresenter } from "@/components/FileManagerScreen/FileManagerPresenter";
 import { formatDateTime } from "@/utils";
 import { AttendeeExcuseModal } from "@/components/EventsScreen/AttendeeExcuseModal";
-import * as Sharing from 'expo-sharing';
 import Toast from "react-native-toast-message";
+// @ts-ignore
 import { EventMap } from "@/components/ui/EventMap/EventMap";
 import {showLocation} from "react-native-map-link";
 
@@ -40,6 +40,7 @@ interface Attendee {
 
 interface EventData {
     id: string;
+    author_id: string;
     title: string;
     type: string;
     description: string;
@@ -64,6 +65,8 @@ const AttachmentItem: React.FC<AttachmentItemProps> = ({ file, onImagePress }) =
     const token = AuthManager.getToken();
     const { handlers } = useFileManagerPresenter();
     const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(file.url);
+    const isAdmin = AuthManager.getRole() === "Admin";
+    const userId = AuthManager.getUserId();
 
     const handleDownload = React.useCallback(() => {
         // @ts-ignore
@@ -466,10 +469,14 @@ const EventDetailsScreen: React.FC = () => {
                     </View>
 
                     <View style={styles.actionGroup}>
-                        <TouchableOpacity style={styles.secondaryButton} onPress={() => setShowUploader(true)}>
-                            <FileText size={20} color="#0f6319" />
-                            <Text style={styles.secondaryButtonText}>Прикрепить файл</Text>
-                        </TouchableOpacity>
+                        { (userRole === "Admin" || userId === event.author_id ) &&
+                            <TouchableOpacity style={styles.secondaryButton} onPress={() => setShowUploader(true)}>
+                                <FileText size={20} color="#0f6319" />
+                                <Text style={styles.secondaryButtonText}>Прикрепить файл</Text>
+                            </TouchableOpacity>
+
+                        }
+
 
                         <TouchableOpacity style={styles.secondaryButton} onPress={() => setShowAttendanceModal(true)}>
                             <CheckCircle2 size={20} color="#0f6319" />
