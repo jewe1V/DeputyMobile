@@ -1,35 +1,98 @@
-import React, { forwardRef } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from "@expo/vector-icons";
+import React, { forwardRef, useImperativeHandle, useRef } from 'react';
+import { View, StyleSheet } from 'react-native';
+import { YMaps, Map, Placemark } from '@pbe/react-yandex-maps';
 
-export const LocationPickerMap = forwardRef<any, any>((props, ref) => {
-    // На вебе ref не будет иметь методов setCenter,
-    // поэтому в основном компоненте добавим проверки.
+interface MapProps {
+    hasPermission: boolean;
+    initialRegion: any;
+    coords: { lat: number; lon: number } | null;
+    onMapPress: (e: any) => void;
+    onCameraPositionChange: (e: any) => void;
+}
+
+export const LocationPickerMap = forwardRef<any, MapProps>((props, ref) => {
+    const mapRef = useRef<any>(null);
+
+    // Экспортируем метод setCenter, чтобы модалка могла управлять картой
+    useImperativeHandle(ref, () => ({
+        setCenter: (coords: { lat: number; lon: number }, zoom: number = 16) => {
+            if (mapRef.current) {
+                // В веб-версии Яндекса координаты передаются как [lat, lon]
+                mapRef.current.setCenter([coords.lat, coords.lon], zoom, {
+                    checkZoomRange: true,
+                    duration: 300, // Плавная анимация, как на мобилке
+                });
+            }
+        }
+    }));
+
+    // Обработка клика по карте
+    const handleMapClick = (e: any) => {
+        const coords = e.get('coords'); // Возвращает массив [lat, lon]
+        if (props.onMapPress) {
+            props.onMapPress({
+                nativeEvent: {
+                    lat: coords[0],
+                    lon: coords[1],
+                }
+            });
+        }
+    };
+
+    // Обработка перемещения/зума камеры (для синхронизации стейта в модалке)
+    const handleBoundsChange = () => {
+        if (props.onCameraPositionChange && mapRef.current) {
+            const center = mapRef.current.getCenter();
+            const zoom = mapRef.current.getZoom();
+            props.onCameraPositionChange({
+                nativeEvent: {
+                    point: { lat: center[0], lon: center[1] },
+                    zoom: zoom
+                }
+            });
+        }
+    };
+
+    // Начальное состояние карты
+    const defaultState = {
+        center: props.initialRegion
+            ? [props.initialRegion.lat, props.initialRegion.lon]
+            : [56.837239, 60.597887], // Екатеринбург по умолчанию
+        zoom: props.initialRegion?.zoom || 16,
+    };
+
     return (
-        <View style={styles.webPlaceholder}>
-            <Ionicons name="map-outline" size={64} color="#ccc" />
-            <Text style={styles.webText}>
-                Интерактивная карта доступна только в мобильном приложении.
-            </Text>
-            {props.coords && (
-                <Text style={styles.coordsText}>
-                    Координаты: {props.coords.lat.toFixed(4)}, {props.coords.lon.toFixed(4)}
-                </Text>
-            )}
-            <Text style={styles.hint}>Используйте поиск сверху для выбора адреса</Text>
+        <View style={styles.mapContainer}>
+            <YMaps query={{ apikey: process.env.EXPO_PUBLIC_GEOCODER_API_KEY }}>
+                <Map
+                    instanceRef={mapRef}
+                    defaultState={defaultState}
+                    width="100%"
+                    height="100%"
+                    options={{
+                        suppressMapOpenBlock: true,
+                        yandexMapDisablePoiInteractivity: true
+                    }}
+                    onClick={handleMapClick}
+                    onBoundsChange={handleBoundsChange}
+                >
+                    {props.coords && (
+                        <Placemark
+                            geometry={[props.coords.lat, props.coords.lon]}
+                            options={{
+                                preset: 'islands#darkGreenDotIcon',
+                            }}
+                        />
+                    )}
+                </Map>
+            </YMaps>
         </View>
     );
 });
 
 const styles = StyleSheet.create({
-    webPlaceholder: {
+    mapContainer: {
         flex: 1,
         backgroundColor: '#f8fafc',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 20
-    },
-    webText: { color: '#64748b', fontSize: 16, textAlign: 'center', marginTop: 12 },
-    coordsText: { color: '#0f6319', fontWeight: 'bold', marginTop: 8 },
-    hint: { color: '#94a3b8', fontSize: 13, marginTop: 12 }
+    }
 });
