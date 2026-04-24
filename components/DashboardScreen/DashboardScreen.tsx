@@ -320,7 +320,7 @@ export function Dashboard() {
                             </TouchableOpacity>
                         </View>
                         <Text style={styles.jobTitle}>{data?.job_title || 'Сотрудник'}</Text>
-                        <Text style={styles.organization}>Городская Дума Екатеринбурга</Text>
+                        <Text style={styles.organization}>Екатеринбургская городская дума</Text>
                     </View>
                 </LinearGradient>
 
