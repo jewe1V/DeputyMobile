@@ -1,17 +1,7 @@
 import { CatalogItem, catalogService } from '@/api/catalogService';
 import { Document, documentService } from '@/api/documentService';
 import * as DocumentPicker from 'expo-document-picker';
-import {
-    File,
-    FileSpreadsheet,
-    FileText,
-    Folder,
-    Presentation,
-    Archive,
-    Music,
-    Video,
-} from 'lucide-react-native';
-
+import Icon from 'react-native-vector-icons/FontAwesome5';
 import {JSX, useMemo, useRef, useState} from 'react';
 import {AuthManager} from "@/components/LoginScreen/LoginScreen";
 import * as FileSystem from 'expo-file-system/legacy';
@@ -19,7 +9,7 @@ import {apiUrl} from "@/api/api";
 import Toast from "react-native-toast-message";
 import * as Sharing from 'expo-sharing';
 import * as ImagePicker from 'expo-image-picker';
-import {Alert} from "react-native";
+import {Alert, Platform} from "react-native";
 
 export interface FileManagerState {
     currentCatalog: CatalogItem | null;
@@ -444,59 +434,54 @@ export const useFileManagerPresenter = () => {
         }
     };
 
-    const getFileIcon = (item: CatalogItem, size = 20): JSX.Element => {
+    const getFileIcon = (item: CatalogItem, size = 32): JSX.Element => {
         if (item.children) {
-            return <Folder size={size} color="#2A6E3F" />;
+            return <Icon name="folder" size={size} color="#2A6E3F" />;
         }
 
         const ext = item.name.split('.').pop()?.toLowerCase();
 
-        switch (ext) {
+        // Маппинг расширений на иконки FontAwesome
+        const iconMap: Record<string, { name: string; color: string }> = {
             // Документы
-            case 'pdf':
-                return <FileText size={size} color="#ef4444" />;
-            case 'doc':
-            case 'docx':
-                return <FileText size={size} color="#3b82f6" />;
-            case 'xls':
-            case 'xlsx':
-                return <FileSpreadsheet size={size} color="#16a34a" />;
-            case 'txt':
-                return <FileText size={size} color="#6b7280" />;
+            pdf: { name: 'file-pdf', color: '#ef4444' },
+            doc: { name: 'file-word', color: '#3b82f6' },
+            docx: { name: 'file-word', color: '#3b82f6' },
+            xls: { name: 'file-excel', color: '#16a34a' },
+            xlsx: { name: 'file-excel', color: '#16a34a' },
+            ppt: { name: 'file-powerpoint', color: '#f97316' },
+            pptx: { name: 'file-powerpoint', color: '#f97316' },
+            txt: { name: 'file-alt', color: '#6b7280' },
 
-            // Презентации
-            case 'ppt':
-            case 'pptx':
-                return <Presentation size={size} color="#f97316" />;
+            // Изображения
+            jpg: { name: 'file-image', color: '#8b5cf6' },
+            jpeg: { name: 'file-image', color: '#8b5cf6' },
+            png: { name: 'file-image', color: '#8b5cf6' },
+            gif: { name: 'file-image', color: '#8b5cf6' },
+            svg: { name: 'file-image', color: '#8b5cf6' },
 
             // Архивы
-            case 'zip':
-            case 'rar':
-            case '7z':
-            case 'tar':
-            case 'gz':
-                return <Archive size={size} color="#f59e0b" />;
+            zip: { name: 'file-archive', color: '#f59e0b' },
+            rar: { name: 'file-archive', color: '#f59e0b' },
 
             // Аудио
-            case 'mp3':
-            case 'wav':
-            case 'ogg':
-            case 'flac':
-            case 'aac':
-                return <Music size={size} color="#10b981" />;
+            mp3: { name: 'file-audio', color: '#10b981' },
+            wav: { name: 'file-audio', color: '#10b981' },
 
             // Видео
-            case 'mp4':
-            case 'avi':
-            case 'mkv':
-            case 'mov':
-            case 'wmv':
-            case 'flv':
-                return <Video size={size} color="#ef4444" />;
+            mp4: { name: 'file-video', color: '#ef4444' },
+            avi: { name: 'file-video', color: '#ef4444' },
 
-            default:
-                return <File size={size} color="#6b7280" />;
-        }
+            // Код
+            js: { name: 'file-code', color: '#fbbf24' },
+            html: { name: 'file-code', color: '#f97316' },
+            css: { name: 'file-code', color: '#3b82f6' },
+            json: { name: 'file-code', color: '#6b7280' },
+        };
+
+        const icon = iconMap[ext || ''] || { name: 'file', color: '#6b7280' };
+
+        return <Icon name={icon.name} size={size} color={icon.color} />;
     };
 
     const getFileSize = (fileSize: number): string => {
@@ -515,24 +500,31 @@ export const useFileManagerPresenter = () => {
     };
 
     // Функция загрузки файла с прогрессом
-    const uploadFileToServer = async (fileInfo: { uri: string; name: string; mimeType?: string }, catalogId: string) => {
+    const uploadFileToServer = async (
+        fileInfo: { uri: string; name: string; mimeType?: string; file?: File },
+        catalogId: string
+    ) => {
         return new Promise<Document>((resolve, reject) => {
             const formData = new FormData();
 
-            // Добавляем файл
-            formData.append('File', {
-                uri: fileInfo.uri,
-                name: fileInfo.name,
-                type: fileInfo.mimeType || 'application/octet-stream',
-            } as any);
+            // ВАЖНОЕ ОТЛИЧИЕ ДЛЯ ВЕБА
+            if (Platform.OS === 'web' && fileInfo.file) {
+                // В вебе FormData ожидает стандартный объект File
+                formData.append('File', fileInfo.file);
+            } else {
+                // В React Native используется специальный объект
+                formData.append('File', {
+                    uri: fileInfo.uri,
+                    name: fileInfo.name,
+                    type: fileInfo.mimeType || 'application/octet-stream',
+                } as any);
+            }
 
-            // Добавляем CatalogId как обычное поле form-data (не JSON)
             formData.append('CatalogId', catalogId);
 
             const xhr = new XMLHttpRequest();
             xhrRef.current = xhr;
 
-            // Отслеживаем прогресс загрузки
             xhr.upload.addEventListener('progress', (event) => {
                 if (event.lengthComputable) {
                     const progress = event.loaded / event.total;
@@ -543,11 +535,9 @@ export const useFileManagerPresenter = () => {
             xhr.addEventListener('load', () => {
                 if (xhr.status >= 200 && xhr.status < 300) {
                     try {
-                        // Пытаемся распарсить ответ как JSON
                         const response = JSON.parse(xhr.response);
                         resolve(response);
                     } catch (e) {
-                        // Если ответ не JSON, возможно это просто текст
                         console.log('Response text:', xhr.response);
                         resolve({ id: xhr.response, success: true } as any);
                     }
@@ -556,24 +546,13 @@ export const useFileManagerPresenter = () => {
                 }
             });
 
-            xhr.addEventListener('error', () => {
-                reject(new Error('Network error during upload'));
-            });
-
-            xhr.addEventListener('abort', () => {
-                reject(new Error('Upload cancelled'));
-            });
+            xhr.addEventListener('error', () => reject(new Error('Network error during upload')));
+            xhr.addEventListener('abort', () => reject(new Error('Upload cancelled')));
 
             const token = AuthManager.getToken();
-
-            // Используем правильный URL (как в curl)
             xhr.open('POST', `${apiUrl}/api/Documents/upload`);
-
-            // Устанавливаем заголовки (Content-Type не устанавливаем, браузер сам добавит с boundary)
             xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-            xhr.setRequestHeader('Accept', 'text/plain'); // Как в curl примере
-
-            // Отправляем FormData
+            xhr.setRequestHeader('Accept', 'text/plain');
             xhr.send(formData);
         });
     };
@@ -584,19 +563,11 @@ export const useFileManagerPresenter = () => {
             return;
         }
 
-        Alert.alert('Загрузить файл', 'Выберите источник', [
-            { text: 'Отмена', style: 'cancel' },
-            { text: 'Галерея', onPress: () => processSelection('gallery') },
-            { text: 'Файлы', onPress: () => processSelection('files') },
-        ]);
-
-
-        // Внутренняя логика обработки (чтобы не дублировать код загрузки ниже)
         const processSelection = async (source: 'gallery' | 'files') => {
             try {
                 let result;
 
-                if (source === 'gallery') {
+                if (source === 'gallery' && Platform.OS !== 'web') {
                     result = await ImagePicker.launchImageLibraryAsync({
                         mediaTypes: ImagePicker.MediaTypeOptions.All,
                         quality: 0.8,
@@ -610,57 +581,44 @@ export const useFileManagerPresenter = () => {
 
                 if (result.canceled || !result.assets?.length) return;
 
-                // Начинаем процесс загрузки только после того, как файл выбран
                 setUploading(true);
                 setUploadProgress(0);
                 setUploadError(null);
 
                 const file = result.assets[0];
 
-                // Нормализация данных (у ImagePicker и DocumentPicker разные имена полей)
-                const fileName = (file as any).name || (file as any).fileName || file.uri.split('/').pop() || 'upload_file';
-                const fileSize = (file as any).size || (file as any).fileSize || 0;
+                const fileName = file.name || (file as any).fileName || file.uri.split('/').pop() || 'upload_file';
+                const fileSize = file.size || (file as any).fileSize || 0;
                 const fileMime = file.mimeType || 'application/octet-stream';
 
-                // Проверка размера (50 MB)
                 const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
                 if (fileSize > MAX_FILE_SIZE_BYTES) {
-                    Toast.show({
-                        type: 'error',
-                        text1: 'Файл слишком большой',
-                        text2: 'Максимальный размер 50 МБ',
-                    });
+                    Toast.show({ type: 'error', text1: 'Файл слишком большой', text2: 'Максимальный размер 50 МБ' });
                     setUploading(false);
                     return;
                 }
 
                 const currentCatalogId = currentCatalog.id;
 
-                // 2. Сама загрузка (твоя функция)
+                // Передаем file.file для веба (DocumentPicker создает его автоматически)
                 await uploadFileToServer(
                     {
                         uri: file.uri,
                         name: fileName,
                         mimeType: fileMime,
+                        file: (file as any).file // Нативный браузерный объект File
                     },
                     currentCatalogId
                 );
 
                 setUploadProgress(0);
-                Toast.show({
-                    type: 'success',
-                    text1: 'Успех',
-                    text2: 'Файл успешно загружен',
-                });
+                Toast.show({ type: 'success', text1: 'Успех', text2: 'Файл успешно загружен' });
 
-                // 3. Обновление списка и кэша
                 const newCache = new Map(documentsCache);
                 newCache.delete(currentCatalogId);
                 setDocumentsCache(newCache);
-
                 const docs = await documentService.getDocumentsByCatalog(currentCatalogId);
                 setDocuments(docs);
-
                 const updatedCache = new Map(newCache);
                 updatedCache.set(currentCatalogId, docs);
                 setDocumentsCache(updatedCache);
@@ -669,11 +627,7 @@ export const useFileManagerPresenter = () => {
                 console.error('[FileManager] Ошибка:', error);
                 if (error.message !== 'Upload cancelled') {
                     setUploadError(error?.message || 'Не удалось загрузить файл');
-                    Toast.show({
-                        type: 'error',
-                        text1: 'Ошибка',
-                        text2: error?.message || 'Не удалось загрузить файл',
-                    });
+                    Toast.show({ type: 'error', text1: 'Ошибка', text2: error?.message || 'Не удалось загрузить файл' });
                 }
                 setUploadProgress(0);
             } finally {
@@ -681,6 +635,17 @@ export const useFileManagerPresenter = () => {
                 xhrRef.current = null;
             }
         };
+
+        // В вебе пропускаем Alert и сразу открываем Picker
+        if (Platform.OS === 'web') {
+            processSelection('files');
+        } else {
+            Alert.alert('Загрузить файл', 'Выберите источник', [
+                { text: 'Отмена', style: 'cancel' },
+                { text: 'Галерея', onPress: () => processSelection('gallery') },
+                { text: 'Файлы', onPress: () => processSelection('files') },
+            ]);
+        }
     };
 
 // Функция для отмены загрузки
@@ -720,34 +685,52 @@ export const useFileManagerPresenter = () => {
     const handleDownloadDocument = async (doc: Document) => {
         try {
             const token = AuthManager.getToken();
-
             const extension = doc.content_type?.startsWith('.')
                 ? doc.content_type
                 : `.${MIME_TO_EXT[doc.content_type] || 'dat'}`;
-
             const localFileName = doc.file_name.endsWith(extension)
                 ? doc.file_name
                 : `${doc.file_name}${extension}`;
+            const downloadUrl = `${apiUrl}/api/files/${encodeURIComponent(doc.file_name)}`;
 
+            // --- ЛОГИКА ДЛЯ ВЕБА ---
+            if (Platform.OS === 'web') {
+                Toast.show({ type: 'info', text1: 'Загрузка...' });
+
+                // Скачиваем файл как Blob, чтобы можно было передать Authorization
+                const response = await fetch(downloadUrl, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Download failed');
+
+                const blob = await response.blob();
+                const blobUrl = window.URL.createObjectURL(blob);
+
+                // Создаем невидимый тег <a> для триггера скачивания в браузере
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                link.setAttribute('download', localFileName);
+                document.body.appendChild(link);
+                link.click();
+                link.parentNode?.removeChild(link);
+                window.URL.revokeObjectURL(blobUrl); // Очищаем память
+
+                return; // Завершаем выполнение, дальше идет нативный код
+            }
+
+            // --- ЛОГИКА ДЛЯ МОБИЛОК (Твой старый код) ---
             const fileUri = `${FileSystem.documentDirectory}${localFileName}`;
-
-            // --- ШАГ 1: ПРОВЕРКА ЛОКАЛЬНОГО ФАЙЛА ---
             const fileInfo = await FileSystem.getInfoAsync(fileUri);
 
             if (fileInfo.exists) {
                 console.log('Файл найден локально, открываем...');
                 await openFileWithFallback(fileUri, doc.content_type, localFileName);
-                return; // Запрос на сервер не улетает
+                return;
             }
 
-            // --- ШАГ 2: ЕСЛИ ФАЙЛА НЕТ, СКАЧИВАЕМ ---
-            const downloadUrl = `${apiUrl}/api/files/${encodeURIComponent(doc.file_name)}`;
             const tempUri = `${FileSystem.cacheDirectory}${doc.file_name}_temp`;
-
-            Toast.show({
-                type: 'info',
-                text1: 'Загрузка...',
-            });
+            Toast.show({ type: 'info', text1: 'Загрузка...' });
 
             const downloadResult = await FileSystem.downloadAsync(
                 downloadUrl,
@@ -757,12 +740,7 @@ export const useFileManagerPresenter = () => {
 
             if (downloadResult.status !== 200) throw new Error('Download failed');
 
-            // Перемещаем из временного кеша в постоянные документы
-            await FileSystem.moveAsync({
-                from: tempUri,
-                to: fileUri
-            });
-
+            await FileSystem.moveAsync({ from: tempUri, to: fileUri });
             await openFileWithFallback(fileUri, doc.content_type, localFileName);
 
         } catch (error) {

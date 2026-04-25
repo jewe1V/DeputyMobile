@@ -165,7 +165,6 @@ export const styles = StyleSheet.create({
     documentIconContainer: {
         width: 48,
         height: 48,
-        backgroundColor: '#f9fafb',
         borderRadius: 8,
         alignItems: 'center',
         justifyContent: 'center',
