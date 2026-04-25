@@ -21,7 +21,7 @@ jobs:
           host: ${{ env.SERVER_IP }}
           username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "Docker/docker-compose.frontend-pwa.yml"
+          source: "docker-compose.frontend-pwa.yml"
           target: "/home/DeputyApp"
           strip_components: 1
 
