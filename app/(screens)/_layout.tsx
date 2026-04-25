@@ -2,7 +2,7 @@ import { Tabs } from "expo-router";
 import React from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {AuthManager} from "@/components/LoginScreen/LoginScreen";
-import {CustomBottomTabBar} from "@/components/ui/CustomBottomTabBar";
+import {CustomBottomTabBar} from "@/components/ui/Shared/CustomBottomTabBar";
 
 // 2. Основной компонент роутинга
 export default function AppLayout() {

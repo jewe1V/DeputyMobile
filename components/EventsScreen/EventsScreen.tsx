@@ -21,9 +21,10 @@ import { Plus } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { AuthManager } from "@/components/LoginScreen/LoginScreen";
-import { Select } from "@/components/ui/Select";
+import { Select } from "@/components/ui/Shared/Select";
 import { SchedulePopup } from "@/components/EventsScreen/SchedulePopup";
 import { formatDate, formatDateTime, getLocalDateKey, getTodayLocalKey } from "@/utils";
+import { Filters } from '../ui/Shared/Filters';
 
 const EventsScreen: React.FC = () => {
     const now = new Date();
@@ -213,30 +214,27 @@ const EventsScreen: React.FC = () => {
                 </TouchableOpacity>
             </LinearGradient>
 
-            {/* Блок фильтров */}
-            <View style={styles.filtersSection}>
-                <View style={styles.filtersGrid}>
-                    <View style={styles.filterGroup}>
-                        <Text style={styles.filterLabel}>Отображение</Text>
-                        <Select
-                            value={viewMode}
-                            onValueChange={(v) => handleViewModeChange(v as 'calendar' | 'list')}
-                            items={[
-                                { label: 'Календарь', value: 'calendar' },
-                                { label: 'Список', value: 'list' },
-                            ]}
-                        />
-                    </View>
-                    <View style={styles.filterGroup}>
-                        <Text style={styles.filterLabel}>События</Text>
-                        <Select
-                            value={eventsFilter}
-                            onValueChange={(v) => setEventsFilter(v as any)}
-                            items={filterItems}
-                        />
-                    </View>
-                </View>
-            </View>
+            <Filters
+                title1={"Отображение"}
+                title2={"События"}
+                selectComponent1={
+                    <Select
+                        value={viewMode}
+                        onValueChange={(v) => handleViewModeChange(v as 'calendar' | 'list')}
+                        items={[
+                            { label: 'Календарь', value: 'calendar' },
+                            { label: 'Список', value: 'list' },
+                        ]}
+                    />
+                }
+                selectComponent2={
+                    <Select
+                        value={eventsFilter}
+                        onValueChange={(v) => setEventsFilter(v as any)}
+                        items={filterItems}
+                    />
+                }
+            />
 
             {viewMode === 'calendar' ? (
                 <ScrollView

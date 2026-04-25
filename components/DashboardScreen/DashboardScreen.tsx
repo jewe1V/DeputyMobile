@@ -25,7 +25,7 @@ import {EventCard} from "@/components/EventsScreen/EventCard";
 import {Task} from "@/models/TaskBoardModel";
 import {declOfNum, formatDateToDay} from "@/utils";
 import {TaskCard} from "@/components/TaskBoard/TaskCard";
-import { SkeletonItem } from '@/components/ui/SkeletonLoader';
+import { SkeletonItem } from '@/components/ui/Shared/SkeletonLoader';
 import {useFocusEffect} from "@react-navigation/native";
 
 interface DashboardData {

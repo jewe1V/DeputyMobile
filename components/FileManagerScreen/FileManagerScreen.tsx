@@ -1,6 +1,6 @@
 import { CatalogItem } from '@/api/catalogService';
 import { Document } from '@/api/documentService';
-import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
+import { SkeletonLoader } from '@/components/ui/Shared/SkeletonLoader';
 import { LinearGradient } from "expo-linear-gradient";
 import {
     AlertCircle,

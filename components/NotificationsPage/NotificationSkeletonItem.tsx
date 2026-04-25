@@ -1,7 +1,7 @@
 import { View } from "react-native";
 import { styles } from "./notifications-page";
 import React from "react";
-import { SkeletonItem } from "../ui/SkeletonLoader";
+import { SkeletonItem } from "../ui/Shared/SkeletonLoader";
 
 export const NotificationSkeletonItem = () => {
     return (

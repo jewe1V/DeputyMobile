@@ -34,7 +34,7 @@ import { Task, priorityMap } from '@/models/TaskBoardModel';
 import { styles } from './task-detail-style';
 import { AuthManager } from "@/components/LoginScreen/LoginScreen";
 import { apiUrl } from '@/api/api';
-import {SkeletonLoader, SkeletonItem} from "@/components/ui/SkeletonLoader";
+import {SkeletonLoader, SkeletonItem} from "@/components/ui/Shared/SkeletonLoader";
 
 interface TaskStatusServer {
     name: string;

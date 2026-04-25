@@ -3,7 +3,7 @@ import {
     View, Text, StyleSheet, ScrollView, TouchableOpacity,
     ActivityIndicator, RefreshControl, Modal, Alert, Platform, Image
 } from 'react-native';
-import { router, useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { AuthManager } from "@/components/LoginScreen/LoginScreen";
 import { apiUrl } from "@/api/api";
 import { LinearGradient } from 'expo-linear-gradient';

@@ -1,7 +1,7 @@
 import { taskService } from '@/api/taskService';
 import { TaskCard } from "@/components/TaskBoard/TaskCard";
-import { Select } from "@/components/ui/Select";
-import { SkeletonLoader } from "@/components/ui/SkeletonLoader";
+import { Select } from "@/components/ui/Shared/Select";
+import { SkeletonLoader } from "@/components/ui/Shared/SkeletonLoader";
 import { Task } from '@/models/TaskBoardModel';
 import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from "expo-linear-gradient";
@@ -24,6 +24,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { styles } from './task-board-style';
 import { AuthManager } from "@/components/LoginScreen/LoginScreen";
 import { declOfNum } from '@/utils';
+import { Filters } from '../ui/Shared/Filters';
 
 type TaskMode = 'all' | 'my_tasks' | 'assigned' | 'authored';
 type StatusItem = { name: string; isDefault: boolean };
@@ -187,28 +188,26 @@ export function TaskBoard() {
             </LinearGradient>
 
             {!error && (
-                <View style={styles.filtersSection}>
-                    <View style={styles.filtersGrid}>
-                        <View style={styles.filterGroup}>
-                            <Text style={styles.filterLabel}>Источник</Text>
-                            <Select
-                                value={taskMode}
-                                onValueChange={(v) => setTaskMode(v as TaskMode)}
-                                items={taskModeItems}
-                                placeholder="Источник"
-                            />
-                        </View>
-                        <View style={styles.filterGroup}>
-                            <Text style={styles.filterLabel}>Статус</Text>
-                            <Select
-                                value={filterStatus}
-                                onValueChange={(v) => setFilterStatus(v as string | 'all')}
-                                items={statusItems} // Передаем динамический список
-                                placeholder="Статус"
-                            />
-                        </View>
-                    </View>
-                </View>
+                <Filters
+                    title1={"Источник"}
+                    title2={"Статус"}
+                    selectComponent1={
+                        <Select
+                            value={taskMode}
+                            onValueChange={(v) => setTaskMode(v as TaskMode)}
+                            items={taskModeItems}
+                            placeholder="Источник"
+                        />
+                    }
+                    selectComponent2={
+                        <Select
+                            value={filterStatus}
+                            onValueChange={(v) => setFilterStatus(v as string | 'all')}
+                            items={statusItems}
+                            placeholder="Статус"
+                        />
+                    }
+                />
             )}
 
             {error ? (

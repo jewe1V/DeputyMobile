@@ -30,7 +30,7 @@ import { apiUrl } from '@/api/api';
 import { AuthManager } from '@/components/LoginScreen/LoginScreen';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
-import {SkeletonItem} from "@/components/ui/SkeletonLoader";
+import {SkeletonItem} from "@/components/ui/Shared/SkeletonLoader";
 import * as ImagePicker from "expo-image-picker";
 import Toast from "react-native-toast-message";
 

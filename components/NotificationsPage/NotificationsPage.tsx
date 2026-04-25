@@ -15,13 +15,14 @@ import {
 import { styles } from './notifications-page';
 import { router } from 'expo-router';
 import { LinearGradient } from "expo-linear-gradient";
-import { Select } from "@/components/ui/Select";
+import { Select } from "@/components/ui/Shared/Select";
 import { AuthManager } from "@/components/LoginScreen/LoginScreen";
 import {Notification, NotificationType} from "@/models/NotificationModel";
 import {apiUrl} from "@/api/api"
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 import {NotificationSkeletonItem} from "@/components/NotificationsPage/NotificationSkeletonItem";
-import {SkeletonItem} from "@/components/ui/SkeletonLoader";
+import {SkeletonItem} from "@/components/ui/Shared/SkeletonLoader";
+import { Filters } from '../ui/Shared/Filters';
 
 const notificationConfig: Record<NotificationType, { icon: any; iconColor: string }> = {
     Task: {
@@ -269,20 +270,17 @@ export function Notifications() {
                 </View>
             </LinearGradient>
 
-            {/* Фильтры */}
-            <LinearGradient colors={['#ebfdeb', '#fff']} style={styles.filtersSection}>
-                <View style={styles.filtersGrid}>
-                    <View style={styles.filterGroup}>
-                        <Text style={styles.filterLabel}>Фильтр</Text>
-                        <Select
-                            value={filterType}
-                            onValueChange={(value) => setFilterType(value as NotificationType | 'all')}
-                            items={filterOptions}
-                            placeholder="Выберите тип уведомлений"
-                        />
-                    </View>
-                </View>
-            </LinearGradient>
+            <Filters
+            title1={'Фильтр'}
+            selectComponent1={
+                <Select
+                    value={filterType}
+                    onValueChange={(value) => setFilterType(value as NotificationType | 'all')}
+                    items={filterOptions}
+                    placeholder="Выберите тип уведомлений"
+                />
+            }
+            />
 
             {/* Список уведомлений */}
             {error ? renderError() : (
