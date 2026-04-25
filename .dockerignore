@@ -1,0 +1,40 @@
+# Зависимости (самое тяжелое, Docker установит их сам внутри)
+node_modules
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Специфичные папки Expo и React Native
+.expo/
+.expo-shared/
+web-build/
+dist/
+build/
+
+# Нативные папки (они не нужны для PWA/Web версии)
+ios/
+android/
+
+# Секреты и настройки окружения
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Git
+.git
+.gitignore
+
+# Разное
+.DS_Store
+Thumbs.db
+*.md
+LICENSE
+.editorconfig
+.eslintcache
+
+# Docker (самому докеру эти файлы внутри образа не нужны)
+Dockerfile
+.dockerignore
+docker-compose*.yml
