@@ -20,17 +20,6 @@ export default function AppLayout() {
             <Tabs.Screen name="CatalogScreen" />
             <Tabs.Screen name="UsersScreen" />
             <Tabs.Screen name="DepartmentsScreen" />
-
-            {/* Скрытые экраны */}
-            <Tabs.Screen name="EventDetailsScreen" options={{ href: null }} />
-            <Tabs.Screen name="ProfileScreen" options={{ href: null }} />
-            <Tabs.Screen
-                name="CreateEventScreen"
-                options={{
-                    href: null,
-                    tabBarStyle: { display: 'none' }
-                }}
-            />
         </Tabs>
     );
 }

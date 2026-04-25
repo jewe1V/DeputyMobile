@@ -8,7 +8,6 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
-    Calendar,
     CheckCircle2,
     Bell,
     AlertCircle,
@@ -23,10 +22,10 @@ import { apiUrl } from '@/api/api';
 import {Event} from "@/models/EventModel"
 import {EventCard} from "@/components/EventsScreen/EventCard";
 import {Task} from "@/models/TaskBoardModel";
-import {declOfNum, formatDateToDay} from "@/utils";
+import {formatDateToDay} from "@/utils";
 import {TaskCard} from "@/components/TaskBoard/TaskCard";
-import { SkeletonItem } from '@/components/ui/Shared/SkeletonLoader';
-import {useFocusEffect} from "@react-navigation/native";
+import { StatCard } from './StatCard';
+import {HeaderSkeleton} from "@/components/DashboardScreen/HeaderSkeleton";
 
 interface DashboardData {
     job_title: string;
@@ -57,8 +56,6 @@ export function Dashboard() {
     useEffect(() => {
         fetchDashboardData(false);
     }, []);
-
-
 
     const fetchDashboardData = async (isRefresh = false) => {
         try {
@@ -104,7 +101,6 @@ export function Dashboard() {
         }
     };
 
-
     const onRefresh = useCallback(() => {
         setRefreshing(true);
         fetchDashboardData(true);
@@ -136,72 +132,6 @@ export function Dashboard() {
         }
     };
 
-    const HeaderSkeleton = () => (
-        <LinearGradient
-            colors={['#2A6E3F', '#349339']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={[styles.header, { paddingTop: insets.top + 15 }]}
-        >
-            <View style={styles.headerContent}>
-                <View style={styles.userInfoRow}>
-                    <TouchableOpacity style={styles.userProfileButton} disabled>
-                        <View style={styles.avatarContainer}>
-                            <SkeletonItem
-                                width={50}
-                                height={50}
-                                borderRadius={25}
-                                marginBottom={0}
-                            />
-                        </View>
-                        <View style={styles.userInfo}>
-                            <SkeletonItem
-                                width={80}
-                                height={14}
-                                borderRadius={4}
-                                marginBottom={8}
-                            />
-                            <SkeletonItem
-                                width={120}
-                                height={20}
-                                borderRadius={4}
-                                marginBottom={0}
-                            />
-                        </View>
-                    </TouchableOpacity>
-                    <View style={styles.notificationButton}>
-                        <SkeletonItem
-                            width={40}
-                            height={40}
-                            borderRadius={20}
-                            marginBottom={0}
-                        />
-                    </View>
-                    <View style={styles.notificationButton}>
-                        <SkeletonItem
-                            width={40}
-                            height={40}
-                            borderRadius={20}
-                            marginBottom={0}
-                        />
-                    </View>
-                </View>
-                <SkeletonItem
-                    width={150}
-                    height={18}
-                    borderRadius={4}
-                    marginBottom={8}
-                />
-                <SkeletonItem
-                    width={200}
-                    height={14}
-                    borderRadius={4}
-                    marginBottom={0}
-                />
-            </View>
-        </LinearGradient>
-    );
-
     if (isLoading) {
         return (
             <ScrollView
@@ -215,7 +145,7 @@ export function Dashboard() {
                     />
                 }
             >
-                <HeaderSkeleton />
+                <HeaderSkeleton insetsTop={insets.top}/>
             </ScrollView>
         );
     }
@@ -232,7 +162,7 @@ export function Dashboard() {
                     />
                 }
             >
-                <HeaderSkeleton />
+                <HeaderSkeleton insetsTop={insets.top}/>
                 <View style={[styles.content, { flex: 1, justifyContent: 'center', alignItems: 'center', minHeight: 300 }]}>
                     <View style={{
                         backgroundColor: '#FEF2F2',
@@ -326,7 +256,7 @@ export function Dashboard() {
                                     <Bell size={20} color="white" />
                                 </View>
                             </TouchableOpacity>
-                            <TouchableOpacity style={styles.notificationButton} onPress={() => router.push("/NotificationScreen")}>
+                            <TouchableOpacity style={styles.notificationButton} onPress={() => router.push("/PhonebookScreen")}>
                                 <View pointerEvents={"none"}>
                                     <Phone size={20} color="white" />
                                 </View>
@@ -339,29 +269,21 @@ export function Dashboard() {
 
                 <View style={styles.content}>
                     <View style={styles.statsGrid}>
-                        <Animated.View style={styles.statCardContainer} entering={FadeInDown.delay(200).duration(600).springify()}>
-                            <LinearGradient colors={['#ffffff', '#fffafa']} style={styles.statCard}>
-                                <View style={styles.statIcon}><Calendar size={20} color="black" /></View>
-                                <Text style={styles.statNumber}>{data.event_count || 0}</Text>
-                                <Text style={styles.statLabel}>{declOfNum(data.event_count, ['Мероприятие', 'Мероприятия', 'Мероприятий'])}</Text>
-                            </LinearGradient>
-                        </Animated.View>
-
-                        <Animated.View style={styles.statCardContainer} entering={FadeInDown.delay(400).duration(600).springify()}>
-                            <LinearGradient colors={['#ffffff', '#fffafa']} style={styles.statCard}>
-                                <View style={styles.statIcon}><CheckCircle2 size={20} color="black" /></View>
-                                <Text style={styles.statNumber}>{data.task_count || 0}</Text>
-                                <Text style={styles.statLabel}>{declOfNum(data.task_count, ['Задача', 'Задачи', 'Задач'])}</Text>
-                            </LinearGradient>
-                        </Animated.View>
-
-                        <Animated.View style={styles.statCardContainer} entering={FadeInDown.delay(600).duration(600).springify()}>
-                            <LinearGradient colors={['#ffffff', '#fffafa']} style={styles.statCard}>
-                                <View style={styles.statIcon}><AlertCircle size={20} color="black" /></View>
-                                <Text style={styles.statNumber}>{data.urgent_tasks_count || 0}</Text>
-                                <Text style={styles.statLabel}>{declOfNum(data.urgent_tasks_count, ['Срочная задача', 'Срочных задачи', 'Срочных задач'])}</Text>
-                            </LinearGradient>
-                        </Animated.View>
+                        <StatCard iconName={"Calendar"}
+                                  count={data.event_count || 0}
+                                  labels={['Мероприятие', 'Мероприятия', 'Мероприятий']}
+                                  delay={200}
+                        />
+                        <StatCard iconName={"CheckCircle2"}
+                                  count={data.task_count || 0}
+                                  labels={['Задача', 'Задачи', 'Задач']}
+                                  delay={400}
+                        />
+                        <StatCard iconName={"AlertCircle"}
+                                  count={data.urgent_tasks_count || 0}
+                                  labels={['Срочная задача', 'Срочных задачи', 'Срочных задач']}
+                                  delay={600}
+                        />
                     </View>
                     {displayTasks.length > 0 && (
                         <Animated.View

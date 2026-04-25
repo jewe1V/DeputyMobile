@@ -1,28 +1,48 @@
-import {LinearGradient} from "expo-linear-gradient";
-import {StyleSheet, Text, TextInput, TouchableOpacity, View} from "react-native";
-import {ArrowLeft} from "lucide-react-native";
-import React, {useCallback, useEffect, useState} from "react";
-import {useSafeAreaInsets} from "react-native-safe-area-context";
-import {useNavigation} from "@react-navigation/native";
-import {AuthManager} from "@/components/LoginScreen/LoginScreen";
-import {apiUrl} from "@/api/api";
-import {PhonebookModel} from "@/models/PhonebookModel";
-import {Ionicons} from "@expo/vector-icons";
-import {Search} from "@/components/ui/Shared/Search";
-import {placeholder} from "@babel/types";
+import { LinearGradient } from "expo-linear-gradient";
+import {
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+    ActivityIndicator,
+    FlatList,
+    Linking,
+    Platform,
+    StatusBar
+} from "react-native";
+import {ArrowLeft, Plus} from "lucide-react-native";
+import React, { useCallback, useEffect, useState, useMemo } from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
+import { AuthManager } from "@/components/LoginScreen/LoginScreen";
+import { apiUrl } from "@/api/api";
+import { Search } from "@/components/ui/Shared/Search";
+import {ContactCard} from "@/components/PhonebookScreen/ContactCard";
+import { Button } from "../ui/Shared/Button";
+import {declOfNum} from "@/utils";
+
+export interface PhonebookModel {
+    full_name: string;
+    job_title: string;
+    city_phone: string;
+    internal_phone: string;
+    office_number: string;
+}
 
 export const PhonebookScreen = () => {
     const insets = useSafeAreaInsets();
     const navigation = useNavigation();
-    const [phonebookData, setPhonebookData] = useState<PhonebookModel>();
+    const [phonebookData, setPhonebookData] = useState<PhonebookModel[]>([]);
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
-
+    const [searchQuery, setSearchQuery] = useState('');
 
     const loadPhonebook = useCallback(async (isRefresh = false) => {
         try {
-            setLoading(true);
-            const token = AuthManager.getToken();
+            if (isRefresh) setRefreshing(true);
+            else setLoading(true);
+
+            const token = await AuthManager.getToken(); // Убедитесь, что здесь не нужен await, если он синхронный в вашем AuthManager
 
             const response = await fetch(`${apiUrl}/api/PhoneBook`, {
                 headers: {
@@ -32,13 +52,13 @@ export const PhonebookScreen = () => {
             });
 
             if (!response.ok) {
-                throw new Error('Ошибка загрузки события');
+                throw new Error('Ошибка загрузки телефонной книги');
             }
 
-            const data: PhonebookModel = await response.json();
+            const data: PhonebookModel[] = await response.json();
             setPhonebookData(data);
         } catch (e) {
-            console.error('Ошибка при загрузке события:', e);
+            console.error('Ошибка при загрузке телефонной книги:', e);
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -49,138 +69,144 @@ export const PhonebookScreen = () => {
         loadPhonebook();
     }, [loadPhonebook]);
 
-    if (loading) {
-        return (
-            <View style={[styles.container]}>
-                <LinearGradient
-                    colors={['#2A6E3F', '#349339']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={[styles.header, {paddingTop: insets.top + 15}]}
-                >
-                    <View style={styles.headerContent}>
-                        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-                            <View pointerEvents="none">
-                                <ArrowLeft size={24} color="white" />
-                            </View>
-                        </TouchableOpacity>
-                        <View style={styles.headerTitleContainer}>
-                            <Text style={styles.headerTitle}>Уведомления</Text>
-                        </View>
-                    </View>
-                </LinearGradient>
-                <Search {placeholder()}/>
-                <View className="Content">
+    // Логика фильтрации
+    const filteredData = useMemo(() => {
+        if (!searchQuery.trim()) return phonebookData;
 
-                </View>
-            </View>
-        )
-    }
+        const lowerQuery = searchQuery.toLowerCase();
+        return phonebookData.filter(item =>
+            item.full_name?.toLowerCase().includes(lowerQuery) ||
+            item.job_title?.toLowerCase().includes(lowerQuery) ||
+            item.internal_phone?.includes(lowerQuery)
+        );
+    }, [phonebookData, searchQuery]);
+
+    // Функция для звонка
 
 
     return (
-        <View style={[styles.container]}>
+        <View style={{ flex: 1, backgroundColor: '#fff', paddingBottom: insets.bottom + 50 }}>
+            <StatusBar barStyle="light-content" translucent />
+
             <LinearGradient
                 colors={['#2A6E3F', '#349339']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={[styles.header, {paddingTop: insets.top + 15}]}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                style={[styles.header, { paddingTop: insets.top + 15 }]}
             >
+                <Button onClick={() => navigation.goBack()} iconName={"ArrowLeft"}/>
                 <View style={styles.headerContent}>
-                    <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-                        <View pointerEvents="none">
-                            <ArrowLeft size={24} color="white" />
-                        </View>
-                    </TouchableOpacity>
-                    <View style={styles.headerTitleContainer}>
-                        <Text style={styles.headerTitle}>Телефонная книга</Text>
-                    </View>
+                    <Text style={styles.headerTitle}>Телефонная книга</Text>
+                    <Text style={styles.headerSubtitle}>
+                        {loading ? 'Загрузка...' : `${phonebookData.length} ${declOfNum(phonebookData.length, ['контакт', 'контакта', 'контактов'])}`}
+                    </Text>
                 </View>
             </LinearGradient>
-            <View className="Content">
+            <Search
+                placeholder="Имя, должность или номер"
+                searchQuery={searchQuery}
+                onChangeText={setSearchQuery}
+            />
 
+            <View style={styles.content}>
+                {loading && !refreshing ? (
+                    <View style={styles.centerContainer}>
+                        <ActivityIndicator size="large" color="#2A6E3F" />
+                    </View>
+                ) : (
+                    <FlatList
+                        data={filteredData}
+                        keyExtractor={(item, index) => item.internal_phone + index}
+                        renderItem={({ item }) => <ContactCard item={item} />}
+                        contentContainerStyle={styles.listContainer}
+                        showsVerticalScrollIndicator={false}
+                        onRefresh={() => loadPhonebook(true)}
+                        refreshing={refreshing}
+                        ListEmptyComponent={
+                            <View style={styles.centerContainer}>
+                                <Text style={styles.emptyText}>Ничего не найдено</Text>
+                            </View>
+                        }
+                    />
+                )}
             </View>
         </View>
     );
-}
+};
 
 const styles = StyleSheet.create({
-    container: {
-        backgroundColor: '#ffffff',
-        flex: 1,
-
-    },
-    header: {
-        borderBottomLeftRadius: 24,
-        borderBottomRightRadius: 24,
-        paddingBottom: 32,
-        paddingHorizontal: 16,
-    },
-    headerContent: {
-        flexDirection: 'row',
-        paddingHorizontal: 4,
-    },
-    headerTitleContainer: {
-        marginRight: 12,
-        marginLeft: 8,
-        justifyContent: 'center',
-        minHeight: 40,
-    },
-    headerTitle: {
-        color: '#FFF',
-        fontSize: 20,
-        fontWeight: 600,
-        lineHeight: 24,
-        maxWidth: '100%',
-    },
-    headerSubtitle: {
-        fontSize: 14,
-        color: 'rgba(255, 255, 255, 0.8)',
-        marginTop: 1,
-    },
-    backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255, 255, 255, 0.2)', justifyContent: 'center', alignItems: 'center', marginRight: 15 },
-    filtersSection: {
-        padding: 12,
-        marginTop: -24,
-        borderRadius: 20,
-        marginHorizontal: 15,
-        backgroundColor: "rgb(250,254,250)",
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        elevation: 3,
-        zIndex: 10,
-    },
-    filtersGrid: {
-        flexDirection: 'row',
-        gap: 8,
-    },
-    filterGroup: {
-        flex: 1,
-    },
-    filterLabel: {
-        fontSize: 12,
-        color: '#6b7280',
-        marginBottom: 4,
-        marginLeft: 2,
-    },
-    searchWrapper: {
+     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        // Копируем стили из selectTrigger:
-        backgroundColor: '#ffffff',
-        borderRadius: 10,
-        borderWidth: 1,
-        borderColor: '#eee', // или тот цвет, что в вашем селекте
-        paddingHorizontal: 12,
-        height: 36, // Фиксированная высота как у триггера
+        borderBottomLeftRadius: 24,
+        borderBottomRightRadius: 24,
+        paddingBottom: 40,
+        paddingHorizontal: 20,
+         marginBottom: -5,
     },
-    searchInput: {
-        flex: 1,
+    headerContent: {
+    marginLeft: 16
+    },
+    headerTitle: { fontSize: 22, fontWeight: '500', color: '#FFFFFF'},
+    headerSubtitle: {
         fontSize: 14,
-        color: '#1e293b', // Темный цвет текста как в селекте
-        fontWeight: '400', // Средний вес
-        paddingVertical: 0, // Убираем внутренние отступы Android
+            color: 'rgba(255, 255, 255, 0.8)',
+            marginTop: 1,
     },
-})
+    newTaskButton: {
+        width: 40,
+            height: 40,
+            borderRadius: 20,
+            backgroundColor: 'rgba(255, 255, 255, 0.2)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginLeft: "auto"
+    },
+    taskList: { padding: 15, paddingTop: 10 },
+    listContainer: { padding: 15, paddingTop: 10 },
+    departmentCard: {
+        flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: '#fff',
+            padding: 12,
+            borderRadius: 16,
+            marginBottom: 12,
+            borderWidth: 1,
+            borderColor: '#f1f5f9',
+    },
+    departmentIcon: {
+        width: 40,
+            height: 40,
+            borderRadius: 25,
+            backgroundColor: '#ebfdeb',
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginRight: 12,
+    },
+    departmentInfo: { flex: 1 },
+    departmentName: { fontSize: 16, fontWeight: '600', color: '#1e293b', marginBottom: 4 },
+    departmentId: { fontSize: 12, color: '#64748b' },
+    deleteButton: {
+        padding: 8,
+            borderRadius: 8,
+    },
+    center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    emptyState: { alignItems: 'center', marginTop: 60 },
+    emptyTitle: { fontSize: 16, fontWeight: '600', color: '#4b5563', marginTop: 12 },
+    emptySubtitle: { fontSize: 14, color: '#9ca3af', marginTop: 4 },
+    searchWrapper: {
+        marginTop: 8,
+    },
+    content: {
+        flex: 1,
+    },
+    centerContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingTop: 40,
+    },
+    emptyText: {
+        color: '#888',
+        fontSize: 16,
+    },
+});

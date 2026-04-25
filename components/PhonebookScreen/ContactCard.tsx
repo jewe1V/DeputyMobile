@@ -1,0 +1,142 @@
+import {View, StyleSheet, Text, TouchableOpacity, Platform, Linking} from "react-native";
+import {PhonebookModel} from "@/models/PhonebookModel";
+import {MapPin, Phone, PhoneCall} from "lucide-react-native";
+import React from "react";
+
+interface ContactCardProps {
+    item: PhonebookModel;
+}
+
+const handleCall = (phoneString: string) => {
+    if (!phoneString) return;
+    const primaryPhone = phoneString.split(/[а-яА-Яa-zA-Z]/)[0];
+    const cleanedNumber = primaryPhone.replace(/[^\d+]/g, '');
+
+    if (cleanedNumber) {
+        Linking.openURL(`tel:${cleanedNumber}`).catch(err =>
+            console.error('Не удалось открыть приложение для звонка', err)
+        );
+    }
+};
+
+export const ContactCard = ({ item }: ContactCardProps) => {
+    return (
+    <View style={styles.card}>
+        <View style={styles.cardHeader}>
+            <Text style={styles.cardName}>{item.full_name}</Text>
+            <Text style={styles.cardJobTitle}>{item.job_title}</Text>
+        </View>
+
+        {item.office_number && (
+            <View style={styles.officeRow}>
+                <Text style={styles.officeText}>Кабинет: {item.office_number}</Text>
+            </View>
+        )}
+
+        <View style={styles.actionsContainer}>
+            <TouchableOpacity
+                style={[styles.actionButton, styles.primaryButton]}
+                onPress={() => handleCall(item.internal_phone)}
+            >
+                <PhoneCall size={16} color="#FFF" />
+                <View style={styles.actionTextContainer}>
+                    <Text style={[styles.actionLabel, { color: '#E0F2E9' }]}>Внутренний</Text>
+                    <Text style={[styles.actionPhone, { color: '#FFF', fontWeight: "500" }]}>{item.internal_phone}</Text>
+                </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+                style={[styles.actionButton, styles.secondaryButton]}
+                onPress={() => handleCall(item.city_phone)}
+            >
+                <Phone size={16} color="#2A6E3F" />
+                <View style={styles.actionTextContainer}>
+                    <Text style={[styles.actionLabel, { color: '#666' }]}>Городской</Text>
+                    <Text style={[styles.actionPhone, { color: '#2A6E3F' }]} numberOfLines={1}>
+                        {item.city_phone.split(' ')[0]} {/* Показываем только первый номер визуально */}
+                    </Text>
+                </View>
+            </TouchableOpacity>
+        </View>
+    </View>
+)};
+
+const styles = StyleSheet.create({
+    card: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: Platform.OS === 'web' ? 16 : 0,
+        ...Platform.select({
+            ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4 },
+            android: { elevation: 3 },
+            web: { boxShadow: '0px 2px 8px rgba(0,0,0,0.06)' } as any,
+        }),
+        borderWidth: 1,
+        borderColor: 'rgba(42, 110, 63, 0.08)',
+    },
+    cardHeader: {
+        marginBottom: 4,
+    },
+    cardName: {
+        fontSize: 17,
+        fontWeight: '700',
+        color: '#1A1A1A',
+        marginBottom: 2,
+    },
+    cardJobTitle: {
+        fontSize: 12,
+        color: '#818181',
+        lineHeight: 18,
+    },
+    officeRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 8,
+        backgroundColor: '#F3F4F6',
+        alignSelf: 'flex-start',
+        paddingHorizontal: 4,
+        paddingVertical: 2,
+        borderRadius: 6,
+    },
+    officeText: {
+        fontSize: 12,
+        color: '#444',
+        marginLeft: 6,
+        fontWeight: '500',
+    },
+    actionsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        gap: 10,
+    },
+    actionButton: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 6,
+        paddingHorizontal: 18,
+        borderRadius: 12,
+    },
+    primaryButton: {
+        backgroundColor: '#2A6E3F',
+    },
+    secondaryButton: {
+        backgroundColor: '#E8F3EB',
+    },
+    actionTextContainer: {
+        marginLeft: 8,
+        flexDirection: 'column',
+    },
+    actionLabel: {
+        fontSize: 9,
+        textTransform: 'uppercase',
+        fontWeight: '600',
+        letterSpacing: 0.5,
+    },
+    actionPhone: {
+        fontSize: 14,
+        fontWeight: '700',
+        marginTop: 1,
+    },
+})
