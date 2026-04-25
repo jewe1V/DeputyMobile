@@ -5,11 +5,9 @@ services:
     image: ${DOCKER_USERNAME}/deputy-pwa:latest
     container_name: deputy-frontend
     restart: always
-    # Порт 80 внутри контейнера, но мы не выставляем его наружу (ports:),
-    # так как Nginx на сервере будет обращаться к нему по имени "frontend"
     networks:
       - deputy-net
 
 networks:
-  app_network:
+  deputy-net:
     external: true
