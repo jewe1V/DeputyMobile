@@ -35,10 +35,10 @@ jobs:
             cd /home/DeputyApp
             
             # Pull frontend image
-            docker compose -f docker-compose.frontend.yml pull
+            docker compose -f docker-compose.frontend-pwa.yml pull
             
             # Run it (detached mode)
-            docker compose -f docker-compose.frontend.yml up -d
+            docker compose -f docker-compose.frontend-pwa.yml up -d
             
             # Reload Nginx on server to pick up new route
             docker exec nginx-proxy nginx -s reload
