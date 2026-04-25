@@ -8,7 +8,7 @@ services:
     # Порт 80 внутри контейнера, но мы не выставляем его наружу (ports:),
     # так как Nginx на сервере будет обращаться к нему по имени "frontend"
     networks:
-      - app_network
+      - deputy-net
 
 networks:
   app_network:
