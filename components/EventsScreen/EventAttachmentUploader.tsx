@@ -29,7 +29,7 @@ import { catalogService, CatalogItem } from '@/api/catalogService';
 import { apiUrl } from '@/api/api';
 import { AuthManager } from '@/components/LoginScreen/LoginScreen';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import DateTimePickerModal from 'react-native-modal-datetime-picker';
+import DateTimePickerModal from "@/components/ui/Shared/DateTimePickerModal";
 import {SkeletonItem} from "@/components/ui/Shared/SkeletonLoader";
 import * as ImagePicker from "expo-image-picker";
 import Toast from "react-native-toast-message";
@@ -753,18 +753,12 @@ return (
             mode="datetime"
             onConfirm={handleStartDateConfirm}
             onCancel={() => setStartPickerVisible(false)}
-            locale="ru_RU"
-            cancelTextIOS="Отмена"
-            confirmTextIOS="Подтвердить"
         />
         <DateTimePickerModal
             isVisible={isEndPickerVisible}
             mode="datetime"
             onConfirm={handleEndDateConfirm}
             onCancel={() => setEndPickerVisible(false)}
-            locale="ru_RU"
-            cancelTextIOS="Отмена"
-            confirmTextIOS="Подтвердить"
         />
     </>
 );

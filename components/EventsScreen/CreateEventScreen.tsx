@@ -5,7 +5,8 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import DateTimePickerModal from "react-native-modal-datetime-picker";
+//@ts-ignore
+import DateTimePickerModal from "@/components/ui/Shared/DateTimePickerModal";
 import { router, useLocalSearchParams } from "expo-router"; // Добавлен useLocalSearchParams
 import { apiUrl } from "@/api/api";
 import { AuthManager } from "@/components/LoginScreen/LoginScreen";
@@ -599,5 +600,5 @@ const styles = StyleSheet.create({
     inviteButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#f7f7f7', borderWidth: 1, borderColor: '#ddd', borderRadius: 10, padding: 12 },
     inviteButtonContent: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
     inviteButtonTitle: { fontSize: 15, fontWeight: '500', color: '#333' },
-    inviteButtonSubtitle: { fontSize: 12, color: '#6b7280', marginTop: 2 },
+    inviteButtonSubtitle: { fontSize: 11, color: '#6b7280', marginTop: 2 },
 });

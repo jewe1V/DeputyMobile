@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import DateTimePickerModal from 'react-native-modal-datetime-picker';
+import DateTimePickerModal from "@/components/ui/Shared/DateTimePickerModal";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import {router, useLocalSearchParams} from "expo-router";
@@ -301,21 +301,10 @@ export function TaskForm() {
             </ScrollView>
 
             <DateTimePickerModal
-
                 isVisible={isDatePickerVisible}
-
                 mode="datetime"
-
                 onConfirm={(date) => { setDueDate(date); setDatePickerVisibility(false); }}
-
                 onCancel={() => setDatePickerVisibility(false)}
-
-                locale="ru-RU"
-
-                confirmTextIOS="Выбрать"
-
-                cancelTextIOS="Отмена"
-
             />
         </KeyboardAvoidingView>
     );
