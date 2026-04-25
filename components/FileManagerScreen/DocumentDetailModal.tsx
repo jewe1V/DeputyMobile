@@ -7,7 +7,7 @@ import {
     Animated,
     Dimensions,
     Modal,
-    PanResponder,
+    PanResponder, Platform,
     ScrollView,
     StyleSheet,
     Text,
@@ -74,32 +74,44 @@ export function DocumentDetailModal({ visible, document, onClose, onDelete, onSt
     }, [visible]);
 
     const handleDelete = () => {
-        Alert.alert(
-            'Удалить файл?',
-            `Вы уверены, что хотите удалить файл "${document?.file_name}"? Это действие нельзя отменить.`,
-            [
-                { text: 'Отмена', style: 'cancel' },
-                {
-                    text: 'Удалить',
-                    onPress: async () => {
-                        if (!document) return;
-                        try {
-                            setDeleting(true);
-                            setDeleteError(null);
-                            await onDelete(document.id);
-                            closeAnim(onClose);
-                        } catch (error: any) {
-                            console.error('[DocumentDetailModal] Ошибка при удалении:', error);
-                            setDeleteError(error?.message || 'Не удалось удалить файл');
-                        } finally {
-                            setDeleting(false);
-                        }
+        const confirmMessage = `Вы уверены, что хотите удалить файл "${document?.file_name}"? Это действие нельзя отменить.`;
+
+        if (Platform.OS === 'web') {
+            // Для веба используем confirm
+            if (window.confirm(confirmMessage)) {
+                performDelete();
+            }
+        } else {
+            // Для нативных платформ используем Alert
+            Alert.alert(
+                'Удалить файл?',
+                confirmMessage,
+                [
+                    { text: 'Отмена', style: 'cancel' },
+                    {
+                        text: 'Удалить',
+                        onPress: performDelete,
+                        style: 'destructive',
                     },
-                    style: 'destructive',
-                },
-            ],
-            { cancelable: true }
-        );
+                ],
+                { cancelable: true }
+            );
+        }
+    };
+
+    const performDelete = async () => {
+        if (!document) return;
+        try {
+            setDeleting(true);
+            setDeleteError(null);
+            await onDelete(document.id);
+            closeAnim(onClose);
+        } catch (error: any) {
+            console.error('[DocumentDetailModal] Ошибка при удалении:', error);
+            setDeleteError(error?.message || 'Не удалось удалить файл');
+        } finally {
+            setDeleting(false);
+        }
     };
 
     if (!document) return null;

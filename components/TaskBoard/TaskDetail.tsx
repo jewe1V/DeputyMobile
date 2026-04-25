@@ -21,7 +21,6 @@ import {
     Edit,
     Trash2,
     User,
-    Users,
     Search,
     X
 } from 'lucide-react-native';
@@ -123,9 +122,7 @@ export function TaskDetail() {
         setSearchQuery('');
 
         if (allUsers.length === 0) {
-            InteractionManager.runAfterInteractions(() => {
-                fetchAllUsers();
-            });
+            fetchAllUsers();
         }
     };
 
@@ -164,67 +161,90 @@ export function TaskDetail() {
     };
 
     const handleRemoveUser = (targetUserId: string, targetUserName: string) => {
-        Alert.alert('Удаление исполнителя', `Удалить ${targetUserName} из задачи?`, [
-            { text: 'Отмена', style: 'cancel' },
-            {
-                text: 'Удалить',
-                style: 'destructive',
-                onPress: async () => {
-                    setRemovingUserId(targetUserId);
-                    try {
-                        const response = await fetch(`${apiUrl}/api/task/remove-user-task/${task?.task_id}?userId=${targetUserId}`, {
-                            method: 'DELETE',
-                            headers: {
-                                'accept': '*/*',
-                                'Authorization': `Bearer ${token}`
-                            }
-                        });
+        const confirmMessage = `Удалить ${targetUserName} из задачи?`;
 
-                        if (!response.ok) throw new Error('Ошибка сервера');
-
-                        setTask(prev => prev ? {
-                            ...prev,
-                            users: prev.users?.filter(u => u.id !== targetUserId)
-                        } : null);
-
-                        Toast.show({ type: 'success', text1: 'Успешно', text2: 'Исполнитель удален' });
-                    } catch (error) {
-                        Toast.show({ type: 'error', text1: 'Ошибка', text2: 'Не удалось удалить исполнителя' });
-                    } finally {
-                        setRemovingUserId(null);
-                    }
-                }
+        if (Platform.OS === 'web') {
+            // Для веба используем confirm
+            if (window.confirm(confirmMessage)) {
+                performRemoveUser(targetUserId);
             }
-        ]);
+        } else {
+            // Для нативных платформ используем Alert
+            Alert.alert('Удаление исполнителя', confirmMessage, [
+                { text: 'Отмена', style: 'cancel' },
+                {
+                    text: 'Удалить',
+                    style: 'destructive',
+                    onPress: () => performRemoveUser(targetUserId)
+                }
+            ]);
+        }
     };
 
     const handleArchiveTask = () => {
-        Alert.alert('Завершение задачи', 'Перенести задачу в архив?', [
-            { text: 'Отмена', style: 'cancel' },
-            {
-                text: 'Завершить',
-                onPress: async () => {
-                    setIsCompleting(true);
-                    try {
-                        const response = await fetch(`${apiUrl}/api/task/set-tasks-archived-status/${task?.task_id}?archive=true`, {
-                            method: 'POST',
-                            headers: {
-                                'accept': '*/*',
-                                'Authorization': `Bearer ${token}`
-                            }
-                        });
+        const confirmMessage = 'Перенести задачу в архив?';
 
-                        if (!response.ok) throw new Error('Ошибка сервера');
-
-                        Toast.show({ type: 'success', text1: 'Успешно', text2: 'Задача перенесена в архив' });
-                        router.push("/(screens)/TaskBoardScreen");
-                    } catch (error) {
-                        Toast.show({ type: 'error', text1: 'Ошибка', text2: 'Не удалось завершить задачу' });
-                        setIsCompleting(false);
-                    }
-                }
+        if (Platform.OS === 'web') {
+            if (window.confirm(confirmMessage)) {
+                performArchiveTask();
             }
-        ]);
+        } else {
+            Alert.alert('Завершение задачи', confirmMessage, [
+                { text: 'Отмена', style: 'cancel' },
+                {
+                    text: 'Завершить',
+                    onPress: () => performArchiveTask()
+                }
+            ]);
+        }
+    };
+
+// Вынесенная логика удаления пользователя
+    const performRemoveUser = async (targetUserId: string) => {
+        setRemovingUserId(targetUserId);
+        try {
+            const response = await fetch(`${apiUrl}/api/task/remove-user-task/${task?.task_id}?userId=${targetUserId}`, {
+                method: 'DELETE',
+                headers: {
+                    'accept': '*/*',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) throw new Error('Ошибка сервера');
+
+            setTask(prev => prev ? {
+                ...prev,
+                users: prev.users?.filter(u => u.id !== targetUserId)
+            } : null);
+
+            Toast.show({ type: 'success', text1: 'Успешно', text2: 'Исполнитель удален' });
+        } catch (error) {
+            Toast.show({ type: 'error', text1: 'Ошибка', text2: 'Не удалось удалить исполнителя' });
+        } finally {
+            setRemovingUserId(null);
+        }
+    };
+
+    const performArchiveTask = async () => {
+        setIsCompleting(true);
+        try {
+            const response = await fetch(`${apiUrl}/api/task/set-tasks-archived-status/${task?.task_id}?archive=true`, {
+                method: 'POST',
+                headers: {
+                    'accept': '*/*',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) throw new Error('Ошибка сервера');
+
+            Toast.show({ type: 'success', text1: 'Успешно', text2: 'Задача перенесена в архив' });
+            router.push("/(screens)/TaskBoardScreen");
+        } catch (error) {
+            Toast.show({ type: 'error', text1: 'Ошибка', text2: 'Не удалось завершить задачу' });
+            setIsCompleting(false);
+        }
     };
 
     const filteredUsers = useMemo(() => {

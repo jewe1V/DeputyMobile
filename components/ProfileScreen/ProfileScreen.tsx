@@ -10,7 +10,7 @@ import {
     TouchableOpacity,
     ActivityIndicator,
     RefreshControl,
-    Alert
+    Alert, Platform
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useNavigation } from '@react-navigation/native';
@@ -87,17 +87,24 @@ export function ProfileScreen() {
     };
 
     const handleLogout = () => {
-        Alert.alert('Выход', 'Вы уверены, что хотите выйти?', [
-            { text: 'Отмена', style: 'cancel' },
-            {
-                text: 'Выйти',
-                style: 'destructive',
-                onPress: async () => {
-                    await AuthManager.clearAuth();
-                    router.push("/login");
-                }
-            },
-        ]);
+        if (Platform.OS === 'web') {
+            if (window.confirm('Вы уверены, что хотите выйти?')) {
+                AuthManager.clearAuth();
+                router.push("/login");
+            }
+        } else {
+            Alert.alert('Выход', 'Вы уверены, что хотите выйти?', [
+                { text: 'Отмена', style: 'cancel' },
+                {
+                    text: 'Выйти',
+                    style: 'destructive',
+                    onPress: async () => {
+                        await AuthManager.clearAuth();
+                        router.push("/login");
+                    }
+                },
+            ]);
+        }
     };
 
     if (loading) {

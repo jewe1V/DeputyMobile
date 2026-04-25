@@ -17,7 +17,6 @@ import {AuthManager} from "@/components/LoginScreen/LoginScreen";
 import * as FileSystem from 'expo-file-system/legacy';
 import {apiUrl} from "@/api/api";
 import Toast from "react-native-toast-message";
-import { openFile } from "@/components/utils/FileLauncher/FileLauncher";
 import * as Sharing from 'expo-sharing';
 import * as ImagePicker from 'expo-image-picker';
 import {Alert} from "react-native";
@@ -579,7 +578,6 @@ export const useFileManagerPresenter = () => {
         });
     };
 
-// Обновленная функция handleUploadFile
     const handleUploadFile = async () => {
         if (!currentCatalog || currentCatalog.id === 'empty') {
             setUploadError('Выберите каталог для загрузки файла');
@@ -798,7 +796,6 @@ export const useFileManagerPresenter = () => {
         }
     };
 
-// Выносим Sharing в отдельную чистую функцию
     const triggerShare = async (uri: string, mime: string, name: string) => {
         try {
             await Sharing.shareAsync(uri, {
@@ -840,7 +837,6 @@ export const useFileManagerPresenter = () => {
     const handleStatusChange = async (documentId: string, newStatus: string) => {
         try {
             const updated = await documentService.updateDocumentStatus(documentId, newStatus);
-            // Обновить локальный список документов при необходимости
             return updated;
         } catch (error) {
             console.error('Ошибка изменения статуса:', error);

@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { styles } from './style';
 import {Profile} from "@/models/ProfileModel"
+import Toast from "react-native-toast-message";
 
 class AuthManager {
     private static token: string | null = null;
@@ -116,10 +117,13 @@ const LoginScreen = () => {
 
     const handleLogin = async () => {
         if (!email || !password) {
-            Alert.alert('Ошибка', 'Пожалуйста, заполните все поля');
+            Toast.show({
+                type: 'error',
+                text1: 'Ошибка',
+                text2: 'Пожалуйста, заполните все поля'
+            });
             return;
         }
-
         setIsLoading(true);
 
         try {
@@ -150,7 +154,11 @@ const LoginScreen = () => {
             router.push('/(screens)/DashboardScreen');
         } catch (error) {
             console.error('Ошибка авторизации:', error);
-            Alert.alert('Ошибка', 'Не удалось войти. Проверьте логин и пароль');
+            Toast.show({
+                type: 'error',
+                text1: 'Ошибка',
+                text2: 'Не удалось войти. Проверьте логин и пароль'
+            });
         } finally {
             setIsLoading(false);
         }
