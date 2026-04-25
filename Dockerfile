@@ -1,3 +1,4 @@
+# Сборка
 FROM node:20-alpine as build
 WORKDIR /app
 COPY package*.json ./
@@ -5,9 +6,11 @@ RUN npm install
 COPY . .
 RUN npx expo export -p web
 
-FROM nginx:stable-alpine
-COPY --from=build /app/dist /usr/share/nginx/html
-# Копируем конфиг nginx (если нужно кастомное роутирование)
-# COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Раздача
+FROM node:20-alpine
+WORKDIR /app
+RUN npm install -g serve
+COPY --from=build /app/dist ./dist
 EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+# Флаг -s важен для корректной работы роутинга в PWA
+CMD ["serve", "-s", "dist", "-l", "80"]

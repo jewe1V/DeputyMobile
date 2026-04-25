@@ -1,44 +1,29 @@
-name: Deploy PWA to Server
+- name: Copy docker-compose to server
+  uses: appleboy/scp-action@v0.1.4
+  with:
+    host: ${{ env.SERVER_IP }}
+    username: root
+    key: ${{ secrets.SSH_PRIVATE_KEY }}
+    # Добавляем твой новый конфиг через запятую
+    source: "Docker/docker-compose.yml,docker-compose.frontend.yml,Docker/nginx/conf.d,Docker/static"
+    target: "/home/DeputyApp/"
+    strip_components: 1
 
-on:
-  push:
-    branches: [ main ]
 
-env:
-  DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-  SERVER_IP: 185.56.162.117
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Build and Push Frontend
-        run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/deputy-pwa:latest .
-          docker push ${{ secrets.DOCKER_USERNAME }}/deputy-pwa:latest
-
-      - name: Deploy to server via SSH
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ env.SERVER_IP }}
-          username: root
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd /home/DeputyApp
-
-            docker compose pull frontend
-
-            docker compose up -d
-
-            docker image prune -f
-
-            docker exec nginx-proxy nginx -s reload
+- name: Deploy to server
+  uses: appleboy/ssh-action@v1.0.0
+  with:
+    host: ${{ env.SERVER_IP }}
+    username: root
+    key: ${{ secrets.SSH_PRIVATE_KEY }}
+    script: |
+      cd /home/DeputyApp
+      
+      # Подтягиваем образ фронтенда
+      docker compose -f docker-compose.frontend.yml pull
+      
+      # Запускаем его (флаг -d — в фоновом режиме)
+      docker compose -f docker-compose.frontend.yml up -d
+      
+      # Перезагружаем Nginx на сервере, чтобы он увидел новый маршрут
+      docker exec nginx-proxy nginx -s reload
