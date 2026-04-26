@@ -5,9 +5,3 @@ services:
     image: ${DOCKER_USERNAME}/deputy-pwa:latest
     container_name: deputy-frontend
     restart: always
-    networks:
-      - deputy-net
-
-networks:
-  deputy-net:
-    external: true
