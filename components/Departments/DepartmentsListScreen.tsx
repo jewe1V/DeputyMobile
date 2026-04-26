@@ -5,20 +5,17 @@ import {
     StyleSheet,
     FlatList,
     TouchableOpacity,
-    TextInput,
     ActivityIndicator,
     StatusBar,
     RefreshControl,
-    Modal,
     Alert, Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { apiUrl } from "@/api/api";
+import {apiClient} from "@/api/api";
 import { Department } from "@/models/DepartmentModel";
-import { AuthManager } from "@/components/LoginScreen/LoginScreen";
 import Toast from "react-native-toast-message";
 import {Building2, Plus, Trash2} from "lucide-react-native";
 import {CreateDepartmentPopup} from "@/components/Departments/CreateDepartmentPopup";
@@ -38,8 +35,6 @@ const DepartmentsListScreen = () => {
     const [modalVisible, setModalVisible] = useState(false);
     const [creating, setCreating] = useState(false);
 
-    const token = AuthManager.getToken();
-
     const applyFilters = useCallback((allDepartments: Department[], query: string) => {
         if (!query.trim()) {
             setFilteredDepartments(allDepartments);
@@ -55,25 +50,19 @@ const DepartmentsListScreen = () => {
 
     const fetchDepartments = async () => {
         try {
-            const response = await fetch(`${apiUrl}/api/Department/get-all`, {
+            const response = await apiClient.get('/api/Department/get-all', {
                 headers: {
-                    'Accept': 'application/json',
-                    'Authorization': `Bearer ${token}`
+                    'Accept': 'application/json'
                 }
             });
 
-            if (!response.ok) {
-                setDepartments([]);
-                setFilteredDepartments([]);
-                return;
-            }
-
-            const text = await response.text();
-            const data = text ? JSON.parse(text) : [];
+            const data = response.data;
 
             setDepartments(data);
             applyFilters(data, searchQuery);
         } catch (error) {
+            setDepartments([]);
+            setFilteredDepartments([]);
             console.error("Ошибка при загрузке отделов:", error);
             Toast.show({
                 type: 'error',
@@ -89,27 +78,20 @@ const DepartmentsListScreen = () => {
     const createDepartment = async (name: string) => {
         setCreating(true);
         try {
-            const response = await fetch(
-                `${apiUrl}/api/Department/create?department=${encodeURIComponent(name.trim())}`,
-                {
-                    method: 'POST',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    }
+            await apiClient.post('/api/Department/create', null, {
+                params: {
+                    department: name.trim()
+                },
+                headers: {
+                    'Accept': 'application/json'
                 }
-            );
+            });
 
-            if (response.ok) {
-                Toast.show({ type: 'success', text1: 'Успешно', text2: 'Отдел создан' });
-                await fetchDepartments();
-                // Закрытие модалки произойдет внутри CreateDepartmentPopup после вызова handleCreate
-            } else {
-                throw new Error('Ошибка сервера');
-            }
+            Toast.show({ type: 'success', text1: 'Успешно', text2: 'Отдел создан' });
+            await fetchDepartments();
         } catch (error) {
             Toast.show({ type: 'error', text1: 'Ошибка', text2: 'Не удалось создать отдел' });
-            throw error; // Чтобы попап не закрылся при ошибке
+            throw error;
         } finally {
             setCreating(false);
         }
@@ -126,26 +108,14 @@ const DepartmentsListScreen = () => {
                     style: 'destructive',
                     onPress: async () => {
                         try {
-                            const response = await fetch(
-                                `${apiUrl}/api/Department/delete/${departmentId}`,
-                                {
-                                    method: 'DELETE',
-                                    headers: {
-                                        'Authorization': `Bearer ${token}`
-                                    }
-                                }
-                            );
+                            await apiClient.delete(`/api/Department/delete/${departmentId}`);
 
-                            if (response.ok) {
-                                Toast.show({
-                                    type: 'success',
-                                    text1: 'Успешно',
-                                    text2: 'Отдел удален'
-                                });
-                                await fetchDepartments();
-                            } else {
-                                throw new Error('Ошибка при удалении');
-                            }
+                            Toast.show({
+                                type: 'success',
+                                text1: 'Успешно',
+                                text2: 'Отдел удален'
+                            });
+                            await fetchDepartments();
                         } catch (error) {
                             console.error("Ошибка при удалении отдела:", error);
                             Toast.show({

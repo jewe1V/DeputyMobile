@@ -5,7 +5,6 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { AuthManager } from "@/components/LoginScreen/LoginScreen";
-import { apiUrl } from "@/api/api";
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -19,6 +18,7 @@ import Toast from "react-native-toast-message";
 // @ts-ignore
 import { EventMap } from "@/components/ui/EventMap/EventMap";
 import {showLocation} from "react-native-map-link";
+import {apiClient, apiUrl} from '@/api/api';
 
 
 interface Attachment {
@@ -67,6 +67,10 @@ const AttachmentItem: React.FC<AttachmentItemProps> = ({ file, onImagePress }) =
     const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(file.url);
     const isAdmin = AuthManager.getRole() === "Admin";
     const userId = AuthManager.getUserId();
+    const imageHeaders = {
+        Authorization: `Bearer ${token}`,
+        ...(process.env.EXPO_PUBLIC_X_APP_SECRET && { 'X-App-Secret': process.env.EXPO_PUBLIC_X_APP_SECRET })
+    };
 
     const handleDownload = React.useCallback(() => {
         // @ts-ignore
@@ -83,7 +87,7 @@ const AttachmentItem: React.FC<AttachmentItemProps> = ({ file, onImagePress }) =
                     <Image
                         source={{
                             uri: `${apiUrl}/api/files/${encodeURIComponent(file.file_name)}`,
-                            headers: { Authorization: `Bearer ${token}` }
+                            headers: imageHeaders
                         }}
                         style={styles.imagePreview}
                     />
@@ -151,20 +155,7 @@ const EventDetailsScreen: React.FC = () => {
 
     const loadEvent = useCallback(async (isRefresh = false) => {
         try {
-            const token = AuthManager.getToken();
-
-            const response = await fetch(`${apiUrl}/api/Events/${id}`, {
-                headers: {
-                    Accept: 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-            });
-
-            if (!response.ok) {
-                throw new Error('Ошибка загрузки события');
-            }
-
-            const data: EventData = await response.json();
+            const { data } = await apiClient.get<EventData>(`/api/Events/${id}`);
             setEvent(data);
         } catch (e) {
             console.error('Ошибка при загрузке события:', e);
@@ -297,40 +288,24 @@ const EventDetailsScreen: React.FC = () => {
 
     const executeDelete = async () => {
         try {
-            const token = AuthManager.getToken();
-            const response = await fetch(`${apiUrl}/api/Events/${id}`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-            });
+            await apiClient.delete(`/api/Events/${id}`);
 
-            if (response.ok) {
-                Toast.show({
-                    type: 'success',
-                    text1: 'Успешно',
-                    text2: 'Событие успешно удалено',
-                    position: 'top',
-                    visibilityTime: 3000,
-                });
-                router.push("/(screens)/EventsScreen");
-            } else {
-                const errorData = await response.json().catch(() => ({}));
-                Toast.show({
-                    type: 'error',
-                    text1: 'Ошибка',
-                    text2: errorData.message || `Ошибка ${response.status}: не удалось удалить событие`,
-                    position: 'bottom',
-                    visibilityTime: 4000,
-                });
-            }
+            Toast.show({
+                type: 'success',
+                text1: 'Успешно',
+                text2: 'Событие успешно удалено',
+                position: 'top',
+                visibilityTime: 3000,
+            });
+            router.push("/(screens)/EventsScreen");
         } catch (error: any) {
             console.error('Delete error:', error);
+
+            const errorMessage = error.response?.data?.message || error.message || 'Произошла неизвестная ошибка';
             Toast.show({
                 type: 'error',
                 text1: 'Ошибка',
-                text2: error.message || 'Произошла неизвестная ошибка',
+                text2: errorMessage,
                 position: 'bottom',
                 visibilityTime: 4000,
             });

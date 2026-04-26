@@ -15,13 +15,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { apiUrl } from "@/api/api";
 import { Profile } from "@/models/ProfileModel";
 import { AuthManager } from "@/components/LoginScreen/LoginScreen";
 import {renderUserItem} from "@/components/UsersScreen/RenderUserItem";
 import {declOfNum} from "@/utils";
 import {Plus} from "lucide-react-native";
 import {Search} from "@/components/ui/Shared/Search";
+import {apiClient} from "@/api/api";
 
 const UsersListScreen = () => {
     const router = useRouter();
@@ -59,27 +59,17 @@ const UsersListScreen = () => {
 
     const fetchUsers = async () => {
         try {
-            const response = await fetch(`${apiUrl}/api/Auth/all`, {
-                headers: {
-                    'Accept': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                }
+            const response = await apiClient.get('/api/Auth/all', {
+                headers: { 'Accept': 'application/json' }
             });
 
-            // ПРОВЕРКА: Если ответ пустой или не OK, не пытаемся парсить JSON
-            if (!response.ok) {
-                setUsers([]);
-                setFilteredUsers([]);
-                return;
-            }
-
-            const text = await response.text(); // Сначала берем как текст
-            const data = text ? JSON.parse(text) : []; // Если текст есть — парсим, иначе пустой массив
-
+            const data = response.data ? response.data : [];
             setUsers(data);
             applyFilters(data, searchQuery, roleFilter);
         } catch (error) {
             console.error("Ошибка при загрузке:", error);
+            setUsers([]);
+            setFilteredUsers([]);
         } finally {
             setLoading(false);
             setRefreshing(false);

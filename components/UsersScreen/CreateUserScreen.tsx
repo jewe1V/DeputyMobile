@@ -16,12 +16,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
-import { apiUrl } from "@/api/api";
 import { Profile } from "@/models/ProfileModel";
 import { AuthManager } from "@/components/LoginScreen/LoginScreen";
 import { SelectionPopup } from "@/components/UsersScreen/SelectionPopup";
 import Toast from "react-native-toast-message";
 import { Building2 } from "lucide-react-native";
+import { apiClient } from '@/api/api';
 
 const CreateUserScreen = () => {
     const router = useRouter();
@@ -57,50 +57,48 @@ const CreateUserScreen = () => {
             try {
                 // 1. Загружаем справочники параллельно
                 const [depsRes, deptsRes] = await Promise.all([
-                    fetch(`${apiUrl}/api/Auth/role/Deputy`, {
-                        headers: { 'Accept': 'application/json', 'Authorization': `Bearer ${token}` }
+                    apiClient.get('/api/Auth/role/Deputy', {
+                        headers: { 'Accept': 'application/json' }
                     }),
-                    fetch(`${apiUrl}/api/Department/get-all`, {
-                        headers: { 'Accept': 'application/json', 'Authorization': `Bearer ${token}` }
+                    apiClient.get('/api/Department/get-all', {
+                        headers: { 'Accept': 'application/json' }
                     })
                 ]);
 
-                const fetchedDeputies = await depsRes.json();
-                const fetchedDepartments = await deptsRes.json();
+                const fetchedDeputies = depsRes.data;
+                const fetchedDepartments = deptsRes.data;
 
                 setDeputies(fetchedDeputies);
                 setDepartments(fetchedDepartments);
 
                 // 2. Если режим редактирования, подтягиваем данные пользователя
                 if (isEditMode) {
-                    const profileRes = await fetch(`${apiUrl}/api/Auth/${id}`, {
-                        headers: { 'Accept': 'application/json', 'Authorization': `Bearer ${token}` }
+                    const profileRes = await apiClient.get(`/api/Auth/${id}`, {
+                        headers: { 'Accept': 'application/json' }
                     });
 
-                    if (profileRes.ok) {
-                        const profileData = await profileRes.json();
+                    const profileData = profileRes.data;
 
-                        setFullName(profileData.full_name || '');
-                        setEmail(profileData.email || '');
-                        setJobTitle(profileData.job_title || '');
+                    setFullName(profileData.full_name || '');
+                    setEmail(profileData.email || '');
+                    setJobTitle(profileData.job_title || '');
 
-                        if (profileData.roles && profileData.roles.length > 0) {
-                            setSelectedRole(profileData.roles[0]);
-                        }
+                    if (profileData.roles && profileData.roles.length > 0) {
+                        setSelectedRole(profileData.roles[0]);
+                    }
 
-                        // Пытаемся привязать департамент
-                        if (profileData.department_id || profileData.department) {
-                            const foundDept = fetchedDepartments.find(
-                                (d: any) => d.id === profileData.department_id || d.name === profileData.department
-                            );
-                            if (foundDept) setSelectedDepartment(foundDept);
-                        }
+                    // Пытаемся привязать департамент
+                    if (profileData.department_id || profileData.department) {
+                        const foundDept = fetchedDepartments.find(
+                            (d: any) => d.id === profileData.department_id || d.name === profileData.department
+                        );
+                        if (foundDept) setSelectedDepartment(foundDept);
+                    }
 
-                        // Пытаемся привязать депутата (если он помощник)
-                        if (profileData.deputy_id) {
-                            const foundDeputy = fetchedDeputies.find((d: any) => d.id === profileData.deputy_id);
-                            if (foundDeputy) setSelectedDeputy(foundDeputy);
-                        }
+                    // Пытаемся привязать депутата (если он помощник)
+                    if (profileData.deputy_id) {
+                        const foundDeputy = fetchedDeputies.find((d: any) => d.id === profileData.deputy_id);
+                        if (foundDeputy) setSelectedDeputy(foundDeputy);
                     }
                 }
             } catch (error) {
@@ -156,7 +154,7 @@ const CreateUserScreen = () => {
 
         // 2. Формируем Payload строго по схемам
         let payload: any;
-        const endpoint = isEditMode ? `${apiUrl}/api/Auth/update` : `${apiUrl}/api/Auth/create`;
+        const endpoint = isEditMode ? '/api/Auth/update' : '/api/Auth/create';
 
         if (isEditMode) {
             // Схема для РЕДАКТИРОВАНИЯ
@@ -183,33 +181,23 @@ const CreateUserScreen = () => {
         }
 
         try {
-            const response = await fetch(endpoint, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(payload)
-            });
+            await apiClient.post(endpoint, payload);
 
-            if (response.ok) {
-                Toast.show({
-                    type: 'success',
-                    text1: 'Успешно',
-                    text2: isEditMode ? 'Профиль обновлен' : 'Пользователь создан',
-                });
-                setTimeout(() => router.back(), 1500);
-            } else {
-                const errorData = await response.json().catch(() => ({}));
-                console.error("Ошибка API:", errorData);
-                Toast.show({
-                    type: 'error',
-                    text1: 'Ошибка сервера',
-                    text2: errorData.message || 'Что-то пошло не так',
-                });
-            }
-        } catch (error) {
-            console.error(error);
+            Toast.show({
+                type: 'success',
+                text1: 'Успешно',
+                text2: isEditMode ? 'Профиль обновлен' : 'Пользователь создан',
+            });
+            setTimeout(() => router.back(), 1500);
+        } catch (error: any) {
+            console.error("Ошибка API:", error);
+
+            const errorMessage = error.response?.data?.message || 'Что-то пошло не так';
+            Toast.show({
+                type: 'error',
+                text1: 'Ошибка сервера',
+                text2: errorMessage,
+            });
         } finally {
             setIsSubmitting(false);
         }

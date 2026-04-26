@@ -7,8 +7,10 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { X, Upload, FileText } from 'lucide-react-native';
 import { AuthManager } from '@/components/LoginScreen/LoginScreen';
-import { apiUrl } from '@/api/api';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {apiClient, apiUrl} from "@/api/api";
+import axios, { AxiosProgressEvent } from 'axios';
+
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -106,7 +108,6 @@ export const EventAttendanceModal: React.FC<Props> = ({
             setUploadProgress(0);
             setError(null);
 
-            const token = AuthManager.getToken();
             const formData = new FormData();
             formData.append('file', {
                 uri: fileInfo.uri,
@@ -114,50 +115,28 @@ export const EventAttendanceModal: React.FC<Props> = ({
                 type: fileInfo.mimeType || 'application/octet-stream',
             } as any);
 
-            const xhr = new XMLHttpRequest();
-            xhrRef.current = xhr;
+            // Создаем cancel token для возможности отмены
+            const source = axios.CancelToken.source();
 
-            const uploadPromise = new Promise<Response>((resolve, reject) => {
-                xhr.upload.addEventListener('progress', (event) => {
-                    if (event.lengthComputable) {
-                        setUploadProgress(event.loaded / event.total);
-                    }
-                });
-
-                xhr.addEventListener('load', () => {
-                    if (xhr.status >= 200 && xhr.status < 300) {
-                        resolve(new Response(xhr.response, {
-                            status: xhr.status,
-                            statusText: xhr.statusText,
-                            headers: new Headers(),
-                        }));
-                    } else {
-                        reject(new Error(`Upload failed with status ${xhr.status}`));
-                    }
-                });
-
-                xhr.addEventListener('error', () => {
-                    reject(new Error('Network error during upload'));
-                });
-
-                xhr.addEventListener('abort', () => {
-                    reject(new Error('Upload cancelled'));
-                });
-
-                xhr.open('POST', `${apiUrl}/api/Documents/upload/document`);
-                xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-                xhr.setRequestHeader('Accept', 'text/plain');
-                xhr.send(formData);
-            });
-
-            const response = await uploadPromise;
-
-            if (response.status !== 200 && response.status !== 201) {
-                throw new Error('Ошибка сервера при загрузке');
+            // Сохраняем функцию отмены в ref
+            if (xhrRef) {
+                xhrRef.current = { cancel: () => source.cancel('Upload cancelled') };
             }
 
-            const responseText = await response.text();
-            const document = JSON.parse(responseText || '{}');
+            const response = await apiClient.post('/api/Documents/upload/document', formData, {
+                headers: {
+                    'Accept': 'text/plain',
+                },
+                onUploadProgress: (progressEvent: AxiosProgressEvent) => {
+                    if (progressEvent.total) {
+                        setUploadProgress(progressEvent.loaded / progressEvent.total);
+                    }
+                },
+                cancelToken: source.token
+            });
+
+            // response.data уже содержит распарсенные данные
+            const document = response.data || {};
 
             setExcuseDocument({
                 ...document,
@@ -165,13 +144,16 @@ export const EventAttendanceModal: React.FC<Props> = ({
             });
 
         } catch (e: any) {
-            if (e.message !== 'Upload cancelled') {
+            if (!axios.isCancel(e) && e.message !== 'Upload cancelled') {
                 Alert.alert('Ошибка загрузки', e.message);
+                setError(e.message);
             }
         } finally {
             setUploading(false);
             setUploadProgress(0);
-            xhrRef.current = null;
+            if (xhrRef) {
+                xhrRef.current = null;
+            }
         }
     };
 
@@ -223,19 +205,15 @@ export const EventAttendanceModal: React.FC<Props> = ({
         if (selectedStatus === 'Unknown') return;
         try {
             setSubmitting(true);
-            const token = AuthManager.getToken();
             const body: any = { status: selectedStatus };
             if (selectedStatus === 'No') {
                 if (excuseNote) body.excuse_note = excuseNote;
                 if (excuseDocument) body.excuse_document_id = excuseDocument.id;
             }
-            const response = await fetch(`${apiUrl}/api/Events/${eventId}/rsvp`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
-            });
-            if (response.ok) closeAnim(() => { onSuccess?.(); onClose(); });
-            else setError('Ошибка сохранения');
+
+            await apiClient.post(`/api/Events/${eventId}/rsvp`, body);
+
+            closeAnim(() => { onSuccess?.(); onClose(); });
         } catch (e) {
             setError('Ошибка сети');
         } finally {
@@ -245,6 +223,10 @@ export const EventAttendanceModal: React.FC<Props> = ({
 
     const getImageSource = (): ImageSourcePropType | undefined => {
         if (!excuseDocument) return undefined;
+        const imageHeaders = {
+            Authorization: `Bearer ${token}`,
+            ...(process.env.EXPO_PUBLIC_X_APP_SECRET && { 'X-App-Secret': process.env.EXPO_PUBLIC_X_APP_SECRET })
+        };
 
         if (excuseDocument.localUri) {
             return { uri: excuseDocument.localUri };
@@ -252,7 +234,7 @@ export const EventAttendanceModal: React.FC<Props> = ({
 
         return {
             uri: `${apiUrl}/api/files/${encodeURIComponent(excuseDocument.file_name_encoded)}`,
-            headers: { Authorization: `Bearer ${token}` }
+            headers: imageHeaders
         };
     };
 

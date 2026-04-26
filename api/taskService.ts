@@ -1,5 +1,5 @@
-import { AuthManager } from '@/components/LoginScreen/LoginScreen';
-import { apiUrl } from './api';
+import { AxiosError } from 'axios';
+import { apiClient } from './api';
 
 export interface CreateTaskPayload {
   title: string;
@@ -21,40 +21,10 @@ export interface Task {
 }
 
 class TaskService {
-  private getAuthHeaders() {
-    const token = AuthManager.getToken();
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': token ? `Bearer ${token}` : '',
-    };
-  }
-
-  private async fetchWithTimeout(url: string, options: RequestInit = {}, timeout: number = 10000): Promise<Response> {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-    try {
-      const response = await fetch(url, {
-        ...options,
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-      return response;
-    } catch (error) {
-      clearTimeout(timeoutId);
-      throw error;
-    }
-  }
-
   async createTask(payload: CreateTaskPayload): Promise<Task> {
     try {
-      const response = await this.fetchWithTimeout(`${apiUrl}/api/task/create`, {
-        method: 'POST',
-        headers: this.getAuthHeaders(),
-        body: JSON.stringify(payload),
-      });
-
-      return await response.json();
+      const response = await apiClient.post<Task>('/api/task/create', payload);
+      return response.data;
     } catch (error) {
       console.error('Ошибка при создании задачи:', error);
       throw error;
@@ -62,78 +32,58 @@ class TaskService {
   }
 
   async getStatuses(): Promise<{ name: string; isDefault: boolean }[]> {
-    const response = await this.fetchWithTimeout(`${apiUrl}/api/Status/get-all`, {
-      method: 'GET',
-      headers: this.getAuthHeaders(),
-    });
-    if (!response.ok) throw new Error('Ошибка загрузки статусов');
-    return await response.json();
+    try {
+      const response = await apiClient.get<{ name: string; isDefault: boolean }[]>('/api/Status/get-all');
+      return response.data;
+    } catch (error) {
+      console.error('Ошибка загрузки статусов:', error);
+      throw new Error('Ошибка загрузки статусов');
+    }
   }
 
   async getAllTasks(): Promise<Task[]> {
     try {
-      const response = await this.fetchWithTimeout(`${apiUrl}/api/task/get-tasks`, {
-        method: 'GET',
-        headers: this.getAuthHeaders(),
-      });
-
-      const data = await response.json();
-      return Array.isArray(data) ? data : [];
+      const response = await apiClient.get<Task[]>('/api/task/get-tasks');
+      return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
       console.error('Ошибка при получении задач:', error);
       throw error;
     }
   }
+
   async getTasksByCurrentUser(): Promise<Task[]> {
     try {
-      const response = await this.fetchWithTimeout(`${apiUrl}/api/task/get-tasks-by-current-user`, {
-        method: 'GET',
-        headers: this.getAuthHeaders(),
-      });
-
-
-      const data = await response.json();
-      return Array.isArray(data) ? data : [];
+      const response = await apiClient.get<Task[]>('/api/task/get-tasks-by-current-user');
+      return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
       console.error('Ошибка при получении задач:', error);
       throw error;
     }
   }
+
   async getAssignedTasks(): Promise<Task[]> {
     try {
-      const response = await this.fetchWithTimeout(`${apiUrl}/api/task/get-assigned-tasks`, {
-        method: 'GET',
-        headers: this.getAuthHeaders(),
-      });
-
-      const data = await response.json();
-      return Array.isArray(data) ? data : [];
+      const response = await apiClient.get<Task[]>('/api/task/get-assigned-tasks');
+      return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
       console.error('Ошибка при получении задач:', error);
       throw error;
     }
   }
+
   async getAuthorTasks(): Promise<Task[]> {
     try {
-      const response = await this.fetchWithTimeout(`${apiUrl}/api/task/get-author-tasks`, {
-        method: 'GET',
-        headers: this.getAuthHeaders(),
-      });
-
-      const data = await response.json();
-      return Array.isArray(data) ? data : [];
+      const response = await apiClient.get<Task[]>('/api/task/get-author-tasks');
+      return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
       console.error('Ошибка при получении задач:', error);
       throw error;
     }
   }
 
-  async deleteTask(id: string) {
+  async deleteTask(id: string): Promise<void> {
     try {
-      await this.fetchWithTimeout(`${apiUrl}/api/task/delete/${id}`, {
-        method: 'DELETE',
-        headers: this.getAuthHeaders(),
-      });
+      await apiClient.delete(`/api/task/delete/${id}`);
     } catch (error) {
       console.error('Ошибка при удалении задач:', error);
       throw error;
@@ -142,14 +92,9 @@ class TaskService {
 
   async getTaskById(id: string): Promise<Task> {
     try {
-      const response = await this.fetchWithTimeout(`${apiUrl}/api/task/get-task/${id}`, {
-        method: 'GET',
-        headers: this.getAuthHeaders(),
-      });
-
-      const data = await response.json();
-      console.log('[TaskService] Задача успешно получена:', data);
-      return data;
+      const response = await apiClient.get<Task>(`/api/task/get-task/${id}`);
+      console.log('[TaskService] Задача успешно получена:', response.data);
+      return response.data;
     } catch (error) {
       console.error('[TaskService] Ошибка при получении задачи:', error);
       throw error;
@@ -157,15 +102,17 @@ class TaskService {
   }
 
   async updateTask(taskId: string, payload: CreateTaskPayload): Promise<void> {
-    const response = await this.fetchWithTimeout(`${apiUrl}/api/task/update/${taskId}`, {
-      method: 'POST', // Как указано в твоем требовании
-      headers: this.getAuthHeaders(),
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText || 'Ошибка при обновлении задачи');
+    try {
+      await apiClient.post(`/api/task/update/${taskId}`, payload);
+    } catch (error) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response) {
+        const errorText = typeof axiosError.response.data === 'string'
+            ? axiosError.response.data
+            : JSON.stringify(axiosError.response.data);
+        throw new Error(errorText || 'Ошибка при обновлении задачи');
+      }
+      throw error;
     }
   }
 }

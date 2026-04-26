@@ -12,7 +12,7 @@ import {
     KeyboardAvoidingView,
     TextInput,
     FlatList,
-    Platform, InteractionManager
+    Platform,
 } from 'react-native';
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
@@ -32,8 +32,8 @@ import { taskService } from '@/api/taskService';
 import { Task, priorityMap } from '@/models/TaskBoardModel';
 import { styles } from './task-detail-style';
 import { AuthManager } from "@/components/LoginScreen/LoginScreen";
-import { apiUrl } from '@/api/api';
-import {SkeletonLoader, SkeletonItem} from "@/components/ui/Shared/SkeletonLoader";
+import {SkeletonItem} from "@/components/ui/Shared/SkeletonLoader";
+import { apiClient } from '@/api/api';
 
 interface TaskStatusServer {
     name: string;
@@ -67,7 +67,6 @@ export function TaskDetail() {
 
     const userRole = AuthManager.getRole();
     const userId = AuthManager.getUserId();
-    const token = AuthManager.getToken ? AuthManager.getToken() : '';
 
     const loadData = useCallback(() => {
         if (!id) return;
@@ -101,14 +100,7 @@ export function TaskDetail() {
     const fetchAllUsers = async () => {
         setIsUsersLoading(true);
         try {
-            const response = await fetch(`${apiUrl}/api/Auth/all`, {
-                method: 'GET',
-                headers: {
-                    'accept': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            const data = await response.json();
+            const { data } = await apiClient.get('/api/Auth/all');
             setAllUsers(data);
         } catch (error) {
             Toast.show({ type: 'error', text1: 'Ошибка', text2: 'Не удалось загрузить список пользователей' });
@@ -131,15 +123,10 @@ export function TaskDetail() {
         setAddingUserId(selectedUser.id);
 
         try {
-            const response = await fetch(`${apiUrl}/api/task/add-user-task/${task.task_id}?userId=${selectedUser.id}`, {
-                method: 'POST',
-                headers: {
-                    'accept': '*/*',
-                    'Authorization': `Bearer ${token}`
-                }
+            await apiClient.post(`/api/task/add-user-task/${task.task_id}`, null, {
+                params: { userId: selectedUser.id },
+                headers: { 'accept': '*/*' }
             });
-
-            if (!response.ok) throw new Error('Ошибка сервера');
 
             setTask(prev => prev ? {
                 ...prev,
@@ -155,7 +142,7 @@ export function TaskDetail() {
             setIsAddUserModalVisible(false);
         } catch (error) {
             Toast.show({ type: 'error', text1: 'Ошибка', text2: 'Не удалось добавить пользователя' });
-        } finally {
+        }  finally {
             setAddingUserId(null);
         }
     };
@@ -203,15 +190,10 @@ export function TaskDetail() {
     const performRemoveUser = async (targetUserId: string) => {
         setRemovingUserId(targetUserId);
         try {
-            const response = await fetch(`${apiUrl}/api/task/remove-user-task/${task?.task_id}?userId=${targetUserId}`, {
-                method: 'DELETE',
-                headers: {
-                    'accept': '*/*',
-                    'Authorization': `Bearer ${token}`
-                }
+            await apiClient.delete(`/api/task/remove-user-task/${task?.task_id}`, {
+                params: { userId: targetUserId },
+                headers: { 'accept': '*/*' }
             });
-
-            if (!response.ok) throw new Error('Ошибка сервера');
 
             setTask(prev => prev ? {
                 ...prev,
@@ -229,15 +211,10 @@ export function TaskDetail() {
     const performArchiveTask = async () => {
         setIsCompleting(true);
         try {
-            const response = await fetch(`${apiUrl}/api/task/set-tasks-archived-status/${task?.task_id}?archive=true`, {
-                method: 'POST',
-                headers: {
-                    'accept': '*/*',
-                    'Authorization': `Bearer ${token}`
-                }
+            await apiClient.post(`/api/task/set-tasks-archived-status/${task?.task_id}`, null, {
+                params: { archive: true },
+                headers: { 'accept': '*/*' }
             });
-
-            if (!response.ok) throw new Error('Ошибка сервера');
 
             Toast.show({ type: 'success', text1: 'Успешно', text2: 'Задача перенесена в архив' });
             router.push("/(screens)/TaskBoardScreen");

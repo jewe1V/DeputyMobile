@@ -16,13 +16,12 @@ import { styles } from './notifications-page';
 import { router } from 'expo-router';
 import { LinearGradient } from "expo-linear-gradient";
 import { Select } from "@/components/ui/Shared/Select";
-import { AuthManager } from "@/components/LoginScreen/LoginScreen";
 import {Notification, NotificationType} from "@/models/NotificationModel";
-import {apiUrl} from "@/api/api"
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 import {NotificationSkeletonItem} from "@/components/NotificationsPage/NotificationSkeletonItem";
 import {SkeletonItem} from "@/components/ui/Shared/SkeletonLoader";
 import { Filters } from '../ui/Shared/Filters';
+import {apiClient} from "@/api/api";
 
 const notificationConfig: Record<NotificationType, { icon: any; iconColor: string }> = {
     Task: {
@@ -55,27 +54,11 @@ export function Notifications() {
             if (!refreshing) setLoading(true);
             setError(null);
 
-            const token = await AuthManager.getToken();
-
-            const response = await fetch(`${apiUrl}/api/Notify/my`, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                },
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || `Ошибка сервера: ${response.status}`);
-            }
-
-            const data = await response.json();
-
+            const { data } = await apiClient.get('/api/Notify/my');
             setNotifications(data);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Не удалось загрузить уведомления');
+        } catch (err: any) {
+            const errorMessage = err.response?.data?.message || err.message || 'Не удалось загрузить уведомления';
+            setError(errorMessage);
             console.error('Fetch Error:', err);
         } finally {
             setLoading(false);

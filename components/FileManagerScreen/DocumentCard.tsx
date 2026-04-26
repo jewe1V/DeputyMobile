@@ -20,6 +20,10 @@ export function DocumentCard({ document, getFileIcon, getFileSize, onInfoPress, 
     const isImage = imageExtensions.includes(document.content_type?.toLowerCase());
     const token = AuthManager.getToken();
     const imageUrl = `${apiUrl}/api/files/${encodeURIComponent(`${document.file_name}`)}`;
+    const imageHeaders = {
+        Authorization: `Bearer ${token}`,
+        ...(process.env.EXPO_PUBLIC_X_APP_SECRET && { 'X-App-Secret': process.env.EXPO_PUBLIC_X_APP_SECRET })
+    };
 
     // Состояние для хранения локальной ссылки на картинку (только для веба)
     const [webPreviewUrl, setWebPreviewUrl] = useState<string | null>(null);
@@ -32,7 +36,7 @@ export function DocumentCard({ document, getFileIcon, getFileSize, onInfoPress, 
             const fetchImageForWeb = async () => {
                 try {
                     const response = await fetch(imageUrl, {
-                        headers: { Authorization: `Bearer ${token}` }
+                        headers: imageHeaders
                     });
                     if (!response.ok) throw new Error('Failed to fetch image');
 
@@ -64,8 +68,8 @@ export function DocumentCard({ document, getFileIcon, getFileSize, onInfoPress, 
         ? { uri: webPreviewUrl || undefined } // В вебе используем blob-ссылку
         : {
             uri: imageUrl,
-            headers: { Authorization: `Bearer ${token}` }
-        }; // В мобилке используем прямую ссылку с заголовками
+            headers: imageHeaders
+        };
 
     return (
         <View style={styles.documentItem}>

@@ -1,5 +1,4 @@
-import { AuthManager } from '@/components/LoginScreen/LoginScreen';
-import { apiUrl } from './api';
+import {apiClient} from './api';
 
 export interface DocumentApiResponse {
     id: string;
@@ -44,35 +43,6 @@ export interface Document {
 }
 
 class DocumentService {
-    private getAuthHeaders() {
-        const token = AuthManager.getToken();
-        return {
-            'Content-Type': 'application/json',
-            'Authorization': token ? `Bearer ${token}` : '',
-        };
-    }
-
-    private async fetchWithTimeout(
-        url: string,
-        options: RequestInit = {},
-        timeout: number = 10000
-    ): Promise<Response> {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-        try {
-            const response = await fetch(url, {
-                ...options,
-                signal: controller.signal,
-            });
-            clearTimeout(timeoutId);
-            return response;
-        } catch (error) {
-            clearTimeout(timeoutId);
-            throw error;
-        }
-    }
-
     private adaptDocument(data: DocumentApiResponse): Document {
         return {
             id: data.id,
@@ -91,26 +61,14 @@ class DocumentService {
 
     async getDocumentsByCatalog(catalogId: string): Promise<Document[]> {
         try {
-            const response = await this.fetchWithTimeout(
-                `${apiUrl}/api/Documents/by-catalog/${catalogId}`,
-                {
-                    method: 'GET',
-                    headers: this.getAuthHeaders(),
-                }
-            );
+            const response = await apiClient.get(`/api/Documents/by-catalog/${catalogId}`);
 
-            if (!response.ok) {
-                throw new Error(`Ошибка при получении файлов: ${response.status}`);
-            }
-
-            const data = await response.json();
+            const data = response.data;
 
             let documentsData = Array.isArray(data) ? data : (data?.data || []);
-            const documents = Array.isArray(documentsData)
+            return Array.isArray(documentsData)
                 ? documentsData.map(item => this.adaptDocument(item))
                 : [];
-
-            return documents;
         } catch (error) {
             console.error('[DocumentService] Ошибка при получении файлов:', error);
             throw error;
@@ -142,28 +100,11 @@ class DocumentService {
                 formData.append('EndDate', endDate);
             }
 
-            const token = AuthManager.getToken();
+            const response = await apiClient.post('/api/Documents/upload', formData, {
+                headers: { 'Accept': 'application/json' }
+            });
 
-            const response = await fetch(
-                `${apiUrl}/api/Documents/upload`,
-                {
-                    method: 'POST',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Authorization': token ? `Bearer ${token}` : '',
-                        'Content-Type': 'multipart/form-data',
-                    },
-                    body: formData,
-                }
-            );
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('[DocumentService] Ошибка ответа сервера:', errorText);
-                throw new Error(`Ошибка при загрузке файла: ${response.status} - ${errorText}`);
-            }
-
-            const data: DocumentApiResponse = await response.json();
+            const data: DocumentApiResponse = response.data;
             return this.adaptDocument(data);
         } catch (error) {
             console.error('[DocumentService] Ошибка при загрузке файла:', error);
@@ -173,19 +114,7 @@ class DocumentService {
 
     async deleteDocument(documentId: string): Promise<void> {
         try {
-            const response = await this.fetchWithTimeout(
-                `${apiUrl}/api/Documents/${documentId}`,
-                {
-                    method: 'DELETE',
-                    headers: this.getAuthHeaders(),
-                }
-            );
-
-            if (!response.ok) {
-                throw new Error(`Ошибка при удалении файла: ${response.status}`);
-            }
-
-            console.log('[DocumentService] Файл успешно удален:', documentId);
+            await apiClient.delete(`/api/Documents/${documentId}`);
         } catch (error) {
             console.error('[DocumentService] Ошибка при удалении файла:', error);
             throw error;
@@ -193,18 +122,22 @@ class DocumentService {
     }
 
     async updateDocumentStatus(documentId: string, newStatus: string): Promise<Document> {
-        const response = await this.fetchWithTimeout(`${apiUrl}/Documents/update?documentId=${documentId}&newStatus=${newStatus}`, {
-            method: 'POST',
-            headers: this.getAuthHeaders(),
+        const response = await apiClient.post('/Documents/update', null, {
+            params: {
+                documentId: documentId,
+                newStatus: newStatus
+            },
+            validateStatus: (status) => true
         });
 
-        if (!response.ok) {
-            const errorText = await response.text();
+        if (response.status < 200 || response.status >= 300) {
+            const errorText = typeof response.data === 'string'
+                ? response.data
+                : JSON.stringify(response.data);
             throw new Error(errorText || 'Не удалось изменить статус документа');
         }
 
-        const updatedDocument: Document = await response.json();
-        return updatedDocument;
+        return response.data;
     };
 }
 

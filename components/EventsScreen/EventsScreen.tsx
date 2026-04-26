@@ -16,14 +16,13 @@ import { Calendar } from '@/components/EventsScreen/Calendar';
 import { EventCard } from '@/components/EventsScreen/EventCard';
 import { Event } from '@/models/EventModel';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { apiUrl } from "@/api/api";
+import {apiClient} from "@/api/api";
 import { Plus } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import { AuthManager } from "@/components/LoginScreen/LoginScreen";
 import { Select } from "@/components/ui/Shared/Select";
 import { SchedulePopup } from "@/components/EventsScreen/SchedulePopup";
-import { formatDate, formatDateTime, getLocalDateKey, getTodayLocalKey } from "@/utils";
+import { formatDate, getLocalDateKey, getTodayLocalKey } from "@/utils";
 import { Filters } from '../ui/Shared/Filters';
 
 const EventsScreen: React.FC = () => {
@@ -58,22 +57,24 @@ const EventsScreen: React.FC = () => {
 
     const loadEvents = useCallback(async (year: number, month: number, isRefresh = false, isOnlyMy = false) => {
         try {
-            const token = AuthManager.getToken();
             if (!isRefresh) setLoading(true);
 
-            // Сохраняем, какой месяц мы загрузили
             setViewDate({ year, month });
 
             const from = new Date(year, month, 1).toISOString();
             const to = new Date(year, month + 1, 0, 23, 59, 59).toISOString();
 
-            const response = await fetch(
-                `${apiUrl}/api/Events/upcoming?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&onlyMy=${isOnlyMy}`,
-                {
-                    headers: { Accept: 'text/plain', Authorization: `Bearer ${token}` },
+            const response = await apiClient.get('/api/Events/upcoming', {
+                params: {
+                    from: from,
+                    to: to,
+                    onlyMy: isOnlyMy
+                },
+                headers: {
+                    Accept: 'text/plain'
                 }
-            );
-            const data: Event[] = await response.json();
+            });
+            const data: Event[] = await response.data;
             console.log(data);
             setEvents(data);
             return data;
@@ -86,7 +87,6 @@ const EventsScreen: React.FC = () => {
         }
     }, []);
 
-    // Обновление данных при фокусе на экране
     useFocusEffect(
         useCallback(() => {
             if (isReady) {
@@ -120,7 +120,7 @@ const EventsScreen: React.FC = () => {
         loadEvents(viewDate.year, viewDate.month, false, eventsFilter === 'mine');
 
         return () => task.cancel();
-    }, [eventsFilter]); // Убрал viewDate из зависимостей, чтобы не было лишних вызовов
+    }, [eventsFilter]);
 
     const onRefresh = useCallback(async () => {
         setRefreshing(true);
@@ -146,7 +146,7 @@ const EventsScreen: React.FC = () => {
             }
             return eventDateKey >= todayKey;
         });
-    }, [events, selectedDate, viewMode, eventsFilter, todayKey]);
+    }, [events, selectedDate, viewMode, todayKey]);
 
     const grouped = useMemo(() => {
         const map: Record<string, Event[]> = {};

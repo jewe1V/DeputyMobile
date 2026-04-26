@@ -2,24 +2,19 @@ import { LinearGradient } from "expo-linear-gradient";
 import {
     StyleSheet,
     Text,
-    TouchableOpacity,
     View,
     ActivityIndicator,
     FlatList,
-    Linking,
-    Platform,
     StatusBar
 } from "react-native";
-import {ArrowLeft, Plus} from "lucide-react-native";
 import React, { useCallback, useEffect, useState, useMemo } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
-import { AuthManager } from "@/components/LoginScreen/LoginScreen";
-import { apiUrl } from "@/api/api";
 import { Search } from "@/components/ui/Shared/Search";
 import {ContactCard} from "@/components/PhonebookScreen/ContactCard";
 import { Button } from "../ui/Shared/Button";
 import {declOfNum} from "@/utils";
+import {apiClient} from "@/api/api";
 
 export interface PhonebookModel {
     full_name: string;
@@ -42,24 +37,11 @@ export const PhonebookScreen = () => {
             if (isRefresh) setRefreshing(true);
             else setLoading(true);
 
-            const token = await AuthManager.getToken(); // Убедитесь, что здесь не нужен await, если он синхронный в вашем AuthManager
-
-            const response = await fetch(`${apiUrl}/api/PhoneBook`, {
-                headers: {
-                    Accept: 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-            });
-
-            if (!response.ok) {
-                throw new Error('Ошибка загрузки телефонной книги');
-            }
-
-            const data: PhonebookModel[] = await response.json();
+            const { data } = await apiClient.get<PhonebookModel[]>('/api/PhoneBook');
             setPhonebookData(data);
         } catch (e) {
             console.error('Ошибка при загрузке телефонной книги:', e);
-        } finally {
+        }  finally {
             setLoading(false);
             setRefreshing(false);
         }

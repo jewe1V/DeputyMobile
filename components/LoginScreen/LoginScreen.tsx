@@ -1,46 +1,48 @@
-import { apiUrl } from "@/api/api";
+import {apiClient, apiUrl} from "@/api/api";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from "expo-router";
-import React, { useState } from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
     ActivityIndicator,
-    Alert,
+    Animated, Easing,
     Image,
+    Keyboard,
     KeyboardAvoidingView,
     Platform,
     Text,
     TextInput,
     TouchableOpacity,
+    TouchableWithoutFeedback,
     View
 } from 'react-native';
 import { styles } from './style';
 import {Profile} from "@/models/ProfileModel"
 import Toast from "react-native-toast-message";
+import {LinearGradient} from "expo-linear-gradient";
 
 class AuthManager {
     private static token: string | null = null;
+    private static refreshToken: string | null = null;
     private static role: string | null = null;
     private static userId: string | null = null;
     private static listeners: ((token: string | null) => void)[] = [];
 
     static async initialize() {
         try {
-            const [token, role, expiry, userId] = await Promise.all([
+            const [token, refreshToken, role, userId] = await Promise.all([
                 AsyncStorage.getItem('authToken'),
+                AsyncStorage.getItem('refreshToken'),
                 AsyncStorage.getItem('userRole'),
-                AsyncStorage.getItem('authTokenExpiry'),
                 AsyncStorage.getItem('userId')
             ]);
 
-            if (token && expiry) {
-                const now = Date.now();
-                if (now < parseInt(expiry, 10)) {
-                    this.token = token;
-                    this.role = role;
-                    this.userId = userId;
-                } else {
-                    await this.clearAuth();
-                }
+            if (token && refreshToken) {
+                this.token = token;
+                this.refreshToken = refreshToken;
+                this.role = role;
+                this.userId = userId;
+            } else {
+                await this.clearAuth();
             }
         } catch (e) {
             console.error('Auth initialization error:', e);
@@ -48,25 +50,22 @@ class AuthManager {
     }
 
     static getToken() { return this.token; }
+    static getRefreshToken() { return this.refreshToken; }
     static getRole() { return this.role; }
     static getUserId() { return this.userId; }
 
-    static async setAuth(token: string, userId: string, roles: string[], expiresInDays: number = 30) {
+    static async setAuth(token: string, refreshToken: string, userId: string, roles: any[]) {
         this.token = token;
-        this.userId = userId; // Добавлено
-        // @ts-ignore
+        this.refreshToken = refreshToken;
+        this.userId = userId;
         this.role = roles.length > 0 ? roles[0].role.name : null;
-
-        const expiryDate = new Date();
-        expiryDate.setDate(expiryDate.getDate() + expiresInDays);
-        const expiryTimestamp = expiryDate.getTime().toString();
 
         try {
             await AsyncStorage.multiSet([
                 ['authToken', token],
-                ['userId', userId], // Добавлено
-                ['userRole', this.role || ''],
-                ['authTokenExpiry', expiryTimestamp]
+                ['refreshToken', refreshToken],
+                ['userId', userId],
+                ['userRole', this.role || '']
             ]);
         } catch (e) {
             console.error('Error saving auth data:', e);
@@ -77,14 +76,67 @@ class AuthManager {
 
     static async clearAuth() {
         this.token = null;
+        this.refreshToken = null;
         this.role = null;
-        this.userId = null; // Добавлено
+        this.userId = null;
         try {
-            await AsyncStorage.multiRemove(['authToken', 'userRole', 'authTokenExpiry', 'userData', 'userId']);
+            await AsyncStorage.multiRemove([
+                'authToken',
+                'refreshToken',
+                'userRole',
+                'userData',
+                'userId'
+            ]);
         } catch (e) {
             console.error('Error clearing auth:', e);
         }
         this.notifyListeners();
+    }
+
+    static async refreshAuthTokens(): Promise<string | null> {
+        if (!this.token || !this.refreshToken) {
+            await this.clearAuth();
+            return null;
+        }
+
+        try {
+            const response = await fetch(`${apiUrl}/api/Auth/refresh`, {
+                method: 'POST',
+                headers: {
+                    'accept': 'text/plain',
+                    'Content-Type': 'application/json-patch+json',
+                    'Authorization': `Bearer ${this.token}`,
+                    'X-App-Secret': process.env.EXPO_PUBLIC_X_APP_SECRET || ''
+                },
+                body: JSON.stringify({
+                    access_token: this.token,
+                    refresh_token: this.refreshToken
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Refresh failed');
+            }
+
+            const data = await response.json();
+
+            // Сохраняем новые токены
+            await this.setAuth(
+                data.token,
+                data.refresh_token,
+                data.user.id,
+                data.user.user_roles || []
+            );
+
+            // Обновляем userData в сторадже, если это необходимо
+            await AsyncStorage.setItem('userData', JSON.stringify(data));
+
+            return data.token;
+        } catch (error) {
+            console.error('Token refresh error:', error);
+            await this.clearAuth(); // Разлогиниваем пользователя, если рефреш протух
+            return null;
+        }
     }
 
     static addListener(listener: (token: string | null) => void) {
@@ -107,6 +159,7 @@ AuthManager.initialize();
 
 interface AuthResponse {
     token: string;
+    refresh_token: string;
     user: Profile;
 }
 
@@ -114,6 +167,38 @@ const LoginScreen = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+
+    // Состояния фокуса для инпутов
+    const [isEmailFocused, setIsEmailFocused] = useState(false);
+    const [isPasswordFocused, setIsPasswordFocused] = useState(false);
+
+    // Анимации
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+    const slideAnim = useRef(new Animated.Value(40)).current;
+    const formFadeAnim = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        Animated.sequence([
+            Animated.timing(fadeAnim, {
+                toValue: 1,
+                duration: 600,
+                useNativeDriver: Platform.OS !== "web",
+            }),
+            Animated.parallel([
+                Animated.timing(formFadeAnim, {
+                    toValue: 1,
+                    duration: 500,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(slideAnim, {
+                    toValue: 0,
+                    duration: 500,
+                    easing: Easing.out(Easing.cubic),
+                    useNativeDriver: true,
+                }),
+            ])
+        ]).start();
+    }, []);
 
     const handleLogin = async () => {
         if (!email || !password) {
@@ -125,34 +210,23 @@ const LoginScreen = () => {
             return;
         }
         setIsLoading(true);
-
         try {
-            const response = await fetch(`${apiUrl}/api/Auth/login`, {
-                method: 'POST',
-                headers: {
-                    'accept': 'text/plain',
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    email: email,
-                    password: password
-                })
+            const response = await apiClient.post<AuthResponse>('/api/Auth/login', {
+                email: email,
+                password: password
             });
-
-            if (!response.ok) {
-                throw new Error(`Ошибка сервера: ${response.status}`);
-            }
-
-            const data: AuthResponse = await response.json();
-
-            // @ts-ignore
-            await AuthManager.setAuth(data.token, data.user.id, data.user.user_roles || []);
-
+            const data = response.data;
+            await AuthManager.setAuth(
+                data.token,
+                data.refresh_token,
+                data.user.id,
+                // @ts-ignore
+                data.user.user_roles || []
+            );
             await AsyncStorage.setItem('userData', JSON.stringify(data));
-
-            console.log('Успешная авторизация, токен сохранен в глобальное хранилище');
+            console.log('Успешная авторизация, токены сохранены');
             router.push('/(screens)/DashboardScreen');
-        } catch (error) {
+        } catch (error: any) {
             console.error('Ошибка авторизации:', error);
             Toast.show({
                 type: 'error',
@@ -164,54 +238,95 @@ const LoginScreen = () => {
         }
     };
 
+
+
     return (
-        <KeyboardAvoidingView
-            style={styles.container}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        >
-            <View style={styles.header}>
-                <Image
-                    style={styles.emblem}
-                    resizeMode="contain"
-                    source={require('@/assets/images/ekb-emblem.png')}
-                />
-                <Text style={styles.title}>Цифровой кабинет депутата</Text>
-            </View>
-
-            <View style={styles.form}>
-                <TextInput
-                    placeholder="Email"
-                    placeholderTextColor="#9CA3AF"
-                    style={styles.input}
-                    value={email}
-                    onChangeText={setEmail}
-                    autoCapitalize="none"
-                    keyboardType="email-address"
-                    autoComplete="email"
-                />
-                <TextInput
-                    placeholder="Пароль"
-                    placeholderTextColor="#9CA3AF"
-                    secureTextEntry
-                    style={styles.input}
-                    value={password}
-                    onChangeText={setPassword}
-                    autoComplete="password"
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <KeyboardAvoidingView
+                style={styles.container}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            >
+                {/* Фоновый декоративный элемент */}
+                <LinearGradient
+                    colors={['#095a25', '#489a4d']}
+                    start={{ x: 0, y: 1 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.backgroundAccent}
                 />
 
-                <TouchableOpacity
-                    style={[styles.loginButton, isLoading && styles.disabledButton]}
-                    onPress={handleLogin}
-                    disabled={isLoading}
+                <Animated.View style={[styles.header, { opacity: fadeAnim }]}>
+                    <View style={styles.emblemContainer}>
+                        <Image
+                            style={styles.emblem}
+                            resizeMode="contain"
+                            source={require('@/assets/images/ekb-emblem.png')} // Ваш путь
+                        />
+                    </View>
+                    <Text style={styles.subtitle}>Екатеринбургская городская Дума</Text>
+                    <Text style={styles.title}>Цифровой кабинет{'\n'}депутата</Text>
+                </Animated.View>
+
+                <Animated.View
+                    style={[
+                        styles.formContainer,
+                        {
+                            opacity: formFadeAnim,
+                            transform: [{ translateY: slideAnim }]
+                        }
+                    ]}
                 >
-                    {isLoading ? (
-                        <ActivityIndicator color="#fff" />
-                    ) : (
-                        <Text style={styles.loginButtonText}>Войти</Text>
-                    )}
-                </TouchableOpacity>
-            </View>
-        </KeyboardAvoidingView>
+                    <View style={styles.formCard}>
+                        <View style={styles.inputWrapper}>
+                            <Text style={styles.inputLabel}>Электронная почта</Text>
+                            <TextInput
+                                placeholderTextColor="#9CA3AF"
+                                style={[
+                                    styles.input,
+                                    isEmailFocused && styles.inputFocused
+                                ]}
+                                value={email}
+                                onChangeText={setEmail}
+                                autoCapitalize="none"
+                                keyboardType="email-address"
+                                autoComplete="email"
+                                onFocus={() => setIsEmailFocused(true)}
+                                onBlur={() => setIsEmailFocused(false)}
+                            />
+                        </View>
+
+                        <View style={styles.inputWrapper}>
+                            <Text style={styles.inputLabel}>Пароль</Text>
+                            <TextInput
+                                placeholderTextColor="#9CA3AF"
+                                secureTextEntry
+                                style={[
+                                    styles.input,
+                                    isPasswordFocused && styles.inputFocused
+                                ]}
+                                value={password}
+                                onChangeText={setPassword}
+                                autoComplete="password"
+                                onFocus={() => setIsPasswordFocused(true)}
+                                onBlur={() => setIsPasswordFocused(false)}
+                            />
+                        </View>
+
+                        <TouchableOpacity
+                            style={[styles.loginButton, isLoading && styles.disabledButton]}
+                            onPress={handleLogin}
+                            disabled={isLoading}
+                            activeOpacity={0.8}
+                        >
+                            {isLoading ? (
+                                <ActivityIndicator color="#ffffff" size="small" />
+                            ) : (
+                                <Text style={styles.loginButtonText}>Войти</Text>
+                            )}
+                        </TouchableOpacity>
+                    </View>
+                </Animated.View>
+            </KeyboardAvoidingView>
+        </TouchableWithoutFeedback>
     );
 };
 

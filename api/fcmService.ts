@@ -1,22 +1,25 @@
 import {Platform} from 'react-native';
-import {apiUrl} from "@/api/api";
-import { getMessaging, getToken, requestPermission,setBackgroundMessageHandler,AuthorizationStatus } from '@react-native-firebase/messaging';
+import {apiClient} from "@/api/api";
+import {
+    AuthorizationStatus,
+    getMessaging,
+    getToken,
+    requestPermission,
+    setBackgroundMessageHandler
+} from '@react-native-firebase/messaging';
 
 const messagingInstance = getMessaging();
 
-export const registerDeviceToken = async (authToken: string, fcmToken: string) => {
+export const registerDeviceToken = async (fcmToken: string) => {
     try {
-        return await fetch(`${apiUrl}/api/device/register`, {
-            method: 'POST',
+        return await apiClient.post('/api/device/register', {
+            token: fcmToken,
+            platform: Platform.OS
+        }, {
             headers: {
                 'accept': '*/*',
-                'Authorization': `Bearer ${authToken}`,
                 'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                token: fcmToken,
-                platform: Platform.OS
-            })
+            }
         });
     } catch (e) {
         console.error("Device register error:", e);

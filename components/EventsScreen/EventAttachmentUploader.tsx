@@ -26,13 +26,14 @@ import {
     FileText
 } from 'lucide-react-native';
 import { catalogService, CatalogItem } from '@/api/catalogService';
-import { apiUrl } from '@/api/api';
 import { AuthManager } from '@/components/LoginScreen/LoginScreen';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePickerModal from "@/components/ui/Shared/DateTimePickerModal";
 import {SkeletonItem} from "@/components/ui/Shared/SkeletonLoader";
 import * as ImagePicker from "expo-image-picker";
 import Toast from "react-native-toast-message";
+import axios from 'axios';
+import { apiClient, apiUrl } from '@/api/api';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -226,50 +227,34 @@ export const EventAttachmentUploader: React.FC<Props> = ({
                 type: fileInfo.mimeType || 'application/octet-stream',
             } as any);
 
-            const xhr = new XMLHttpRequest();
-            xhrRef.current = xhr;
+            // Создаем cancel token для возможности отмены
+            const source = axios.CancelToken.source();
 
-            const uploadPromise = new Promise<Response>((resolve, reject) => {
-                xhr.upload.addEventListener('progress', (event) => {
-                    if (event.lengthComputable) {
-                        setUploadProgress(event.loaded / event.total);
-                    }
-                });
+            // Сохраняем cancel функцию для отмены
+            const cancelUpload = () => {
+                source.cancel('Upload cancelled');
+            };
 
-                xhr.addEventListener('load', () => {
-                    if (xhr.status >= 200 && xhr.status < 300) {
-                        resolve(new Response(xhr.response, {
-                            status: xhr.status,
-                            statusText: xhr.statusText,
-                            headers: new Headers(),
-                        }));
-                    } else {
-                        reject(new Error(`Upload failed with status ${xhr.status}`));
-                    }
-                });
-
-                xhr.addEventListener('error', () => {
-                    reject(new Error('Network error during upload'));
-                });
-
-                xhr.addEventListener('abort', () => {
-                    reject(new Error('Upload cancelled'));
-                });
-
-                xhr.open('POST', `${apiUrl}/api/Documents/upload/document`);
-                xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-                xhr.setRequestHeader('Accept', 'text/plain');
-                xhr.send(formData);
-            });
-
-            const response = await uploadPromise;
-
-            if (response.status !== 200 && response.status !== 201) {
-                throw new Error('Ошибка сервера при загрузке');
+            // Если нужна отмена через xhrRef
+            if (xhrRef) {
+                xhrRef.current = { cancel: cancelUpload };
             }
 
-            const responseText = await response.text();
-            const document = JSON.parse(responseText || '{}');
+            const response = await apiClient.post('/api/Documents/upload/document', formData, {
+                headers: {
+                    'Accept': 'text/plain',
+                    'Content-Type': 'multipart/form-data',
+                },
+                onUploadProgress: (progressEvent) => {
+                    if (progressEvent.total) {
+                        setUploadProgress(progressEvent.loaded / progressEvent.total);
+                    }
+                },
+                cancelToken: source.token
+            });
+
+            // response.data уже содержит распарсенные данные
+            const document = response.data || {};
 
             setSelectedFile({
                 ...document,
@@ -282,13 +267,15 @@ export const EventAttachmentUploader: React.FC<Props> = ({
             });
 
         } catch (e: any) {
-            if (e.message !== 'Upload cancelled') {
+            if (e.message !== 'Upload cancelled' && !axios.isCancel(e)) {
                 Alert.alert('Ошибка загрузки', e.message);
             }
         } finally {
             setUploading(false);
             setUploadProgress(0);
-            xhrRef.current = null;
+            if (xhrRef) {
+                xhrRef.current = null;
+            }
         }
     };
 
@@ -365,19 +352,9 @@ export const EventAttachmentUploader: React.FC<Props> = ({
             if (startDate) formData.append('StartDate', startDate.toISOString());
             if (endDate) formData.append('EndDate', endDate.toISOString());
 
-            const response = await fetch(`${apiUrl}/api/Events/${eventId}/attachments`, {
-method: 'POST',
-    headers: {
-    'Accept': '*/*',
-        'Authorization': `Bearer ${token}`,
-},
-body: formData
-});
-
-if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Upload failed: ${response.status} - ${errorText}`);
-}
+            await apiClient.post(`/api/Events/${eventId}/attachments`, formData, {
+                headers: { 'Accept': '*/*' }
+            });
 
             Toast.show({
                 type: 'success',
@@ -388,14 +365,19 @@ if (!response.ok) {
                 topOffset: 50,
             });
             handleClose();
-resetForm();
-} catch (error) {
-    console.error('Ошибка при загрузке файла:', error);
-    setError('Не удалось загрузить файл. Попробуйте позже.');
-} finally {
+            resetForm();
+        } catch (error) {
+            console.error('Ошибка при загрузке файла:', error);
+            setError('Не удалось загрузить файл. Попробуйте позже.');
+        } finally {
     setUploading(false);
 }
 };
+
+    const imageHeaders = {
+        Authorization: `Bearer ${token}`,
+        ...(process.env.EXPO_PUBLIC_X_APP_SECRET && { 'X-App-Secret': process.env.EXPO_PUBLIC_X_APP_SECRET })
+    };
 
 const renderCatalogContent = () => {
     if (loading) {
@@ -511,7 +493,7 @@ return (
                                                     : selectedFile.assets[0].uri;
                                                 return (
                                                     <Image
-                                                        source={{ uri: imageUri, headers: { Authorization: `Bearer ${token}` } }}
+                                                        source={{ uri: imageUri, headers: imageHeaders }}
                                                         style={styles.thumbnail}
                                                     />
                                                 );
@@ -731,7 +713,7 @@ return (
                     if (imageUri) {
                         return (
                             <Image
-                                source={{ uri: imageUri, headers: { Authorization: `Bearer ${token}` } }}
+                                source={{ uri: imageUri, headers: imageHeaders }}
                                 style={styles.fullImage}
                                 resizeMode="contain"
                             />

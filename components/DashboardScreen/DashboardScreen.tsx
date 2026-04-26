@@ -17,8 +17,6 @@ import { styles } from './style';
 import Animated, { FadeInDown} from 'react-native-reanimated';
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import {AuthManager} from "@/components/LoginScreen/LoginScreen";
-import { apiUrl } from '@/api/api';
 import {Event} from "@/models/EventModel"
 import {EventCard} from "@/components/EventsScreen/EventCard";
 import {Task} from "@/models/TaskBoardModel";
@@ -26,6 +24,7 @@ import {formatDateToDay} from "@/utils";
 import {TaskCard} from "@/components/TaskBoard/TaskCard";
 import { StatCard } from './StatCard';
 import {HeaderSkeleton} from "@/components/DashboardScreen/HeaderSkeleton";
+import {apiClient} from "@/api/api";
 
 interface DashboardData {
     job_title: string;
@@ -64,35 +63,21 @@ export function Dashboard() {
             }
             setError(null);
 
-            const token = AuthManager.getToken();
-
-            if (!token) {
-                setError('Не найден токен авторизации');
-                return;
-            }
-
-            const response = await fetch(`${apiUrl}/api/Dashboard/get`, {
-                method: 'GET',
-                headers: {
-                    'accept': '*/*',
-                    'Authorization': `Bearer ${token}`
-                }
+            const response = await apiClient.get('/api/Dashboard/get', {
+                headers: { 'accept': '*/*' }
             });
 
-            if (!response.ok) {
-                if (response.status === 401) {
-                    setError('Сессия истекла. Пожалуйста, войдите снова');
-                } else {
-                    setError(`Ошибка сервера: ${response.status}`);
-                }
-                return;
-            }
-
-            const json = await response.json();
-            setData(json);
-        } catch (error) {
+            setData(response.data);
+        } catch (error: any) {
             console.error(error);
-            setError('Не удалось загрузить данные дашборда. Проверьте подключение к интернету');
+
+            if (error.response?.status === 401) {
+                setError('Сессия истекла. Пожалуйста, войдите снова');
+            } else if (error.response?.status) {
+                setError(`Ошибка сервера: ${error.response.status}`);
+            } else {
+                setError('Не удалось загрузить данные дашборда. Проверьте подключение к интернету');
+            }
         } finally {
             if (!isRefresh) {
                 setIsLoading(false);

@@ -1,4 +1,3 @@
-import {apiUrl} from '@/api/api'
 import {AuthManager} from '@/components/LoginScreen/LoginScreen';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState, useCallback, useEffect } from 'react';
@@ -19,6 +18,7 @@ import {UserX, LogOut, Mail, Shield, Calendar, ListTodo, ChevronRight, Building2
 import {Profile} from "@/models/ProfileModel";
 import {declOfNum} from "@/utils";
 import { useFocusEffect } from '@react-navigation/native';
+import {apiClient} from "@/api/api";
 
 
 const getInitials = (name: string) => {
@@ -51,17 +51,9 @@ export function ProfileScreen() {
 
     const loadProfile = useCallback(async () => {
         try {
-            const token = AuthManager.getToken();
-            const url = id ? `${apiUrl}/api/Auth/${id}` : `${apiUrl}/api/Auth/current`;
+            const url = id ? `/api/Auth/${id}` : '/api/Auth/current';
 
-            const response = await fetch(url, {
-                headers: {
-                    'Accept': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-            });
-
-            const data = await response.json();
+            const { data } = await apiClient.get(url);
             setProfile(data);
         } catch (error) {
             console.error('Profile load error:', error);

@@ -7,8 +7,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 //@ts-ignore
 import DateTimePickerModal from "@/components/ui/Shared/DateTimePickerModal";
-import { router, useLocalSearchParams } from "expo-router"; // Добавлен useLocalSearchParams
-import { apiUrl } from "@/api/api";
+import { router, useLocalSearchParams } from "expo-router";
+import {apiClient } from "@/api/api";
 import { AuthManager } from "@/components/LoginScreen/LoginScreen";
 import { LinearGradient } from "expo-linear-gradient";
 import LocationPickerModal from "./LocationPickerModal";
@@ -74,24 +74,16 @@ export default function CreateEventScreen() {
         if (!token) return;
 
         try {
-            const headers = {
-                accept: "application/json",
-                Authorization: `Bearer ${token}`,
-            };
-
             const [depsRes, usersRes] = await Promise.all([
-                fetch(`${apiUrl}/api/Department/get-all`, { headers }),
-                fetch(`${apiUrl}/api/Auth/all`, { headers })
+                apiClient.get('/api/Department/get-all', {
+                    headers: { accept: "application/json" }
+                }),
+                apiClient.get('/api/Auth/all', {
+                    headers: { accept: "application/json" }
+                })
             ]);
-
-            if (depsRes.ok) {
-                const depsData = await depsRes.json();
-                setDepartments(depsData);
-            }
-            if (usersRes.ok) {
-                const usersData = await usersRes.json();
-                setUsers(usersData);
-            }
+            setDepartments(depsRes.data);
+            setUsers(usersRes.data);
         } catch (error) {
             console.error("Ошибка загрузки списков:", error);
         }
@@ -103,38 +95,26 @@ export default function CreateEventScreen() {
         if (!token) return;
 
         try {
-            // Укажи здесь правильный эндпоинт твоего API для получения события по ID
-            const response = await fetch(`${apiUrl}/api/Events/${id}`, {
-                headers: {
-                    accept: "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-            });
+            const { data } = await apiClient.get(`/api/Events/${id}`);
 
-            if (response.ok) {
-                const data = await response.json();
-                setTitle(data.title || "");
-                setDescription(data.description || "");
-                setStartAt(new Date(data.start_at));
-                setEndAt(new Date(data.end_at));
-                setEventType(data.type);
-                setIsPublic(data.is_public ?? isAdmin);
+            setTitle(data.title || "");
+            setDescription(data.description || "");
+            setStartAt(new Date(data.start_at));
+            setEndAt(new Date(data.end_at));
+            setEventType(data.type);
+            setIsPublic(data.is_public ?? isAdmin);
 
-                // Восстанавливаем локацию и координаты, если они были сохранены в формате "Адрес|lat,lon"
-                if (data.location) {
-                    const parts = data.location.split('|');
-                    setLocation(parts[0]);
-                    if (parts.length > 1) {
-                        const [lat, lon] = parts[1].split(',');
-                        setCoords({ lat: parseFloat(lat), lon: parseFloat(lon) });
-                    }
+            if (data.location) {
+                const parts = data.location.split('|');
+                setLocation(parts[0]);
+                if (parts.length > 1) {
+                    const [lat, lon] = parts[1].split(',');
+                    setCoords({ lat: parseFloat(lat), lon: parseFloat(lon) });
                 }
-
-                if (data.user_ids) setSelectedUserIds(data.user_ids);
-                if (data.department_ids) setSelectedDepartmentIds(data.department_ids);
-            } else {
-                throw new Error("Не удалось загрузить данные события");
             }
+
+            if (data.user_ids) setSelectedUserIds(data.user_ids);
+            if (data.department_ids) setSelectedDepartmentIds(data.department_ids);
         } catch (error) {
             console.error("Ошибка загрузки события:", error);
             Toast.show({
@@ -225,12 +205,12 @@ export default function CreateEventScreen() {
                 type: eventType,
             };
 
-            let endpoint = "";
+            let endpoint: string;
             let method = isEditMode ? "PUT" : "POST";
-            let requestBody: any = {};
+            let requestBody: any;
 
             if (isEditMode) {
-                endpoint = `${apiUrl}/api/Events/${id}`;
+                endpoint = `/api/Events/${id}`;
                 requestBody = {
                     ...baseEventData,
                     is_public: isPublic,
@@ -239,10 +219,10 @@ export default function CreateEventScreen() {
                 };
             } else {
                 if (isPublic) {
-                    endpoint = `${apiUrl}/api/Events/create-public`;
+                    endpoint = `/api/Events/create-public`;
                     requestBody = baseEventData;
                 } else {
-                    endpoint = `${apiUrl}/api/Events/create-private`;
+                    endpoint = `/api/Events/create-private`;
                     requestBody = {
                         ...baseEventData,
                         user_ids: selectedUserIds,
@@ -253,37 +233,33 @@ export default function CreateEventScreen() {
 
             console.log("Эндпоинт:", endpoint, "Метод:", method);
 
-            const response = await fetch(endpoint, {
-                method: method,
-                headers: {
-                    "accept": "application/json",
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify(requestBody),
-            });
-
-            const responseText = await response.text();
-
-            if (!response.ok) {
-                let errorMessage = responseText;
-                try {
-                    const errorJson = JSON.parse(responseText);
-                    errorMessage = errorJson.message || errorJson.title || responseText;
-                } catch {}
-                throw new Error(errorMessage || `Ошибка ${isEditMode ? 'обновления' : 'создания'} события`);
+            let response;
+            if (method === "PUT") {
+                response = await apiClient.put(endpoint, requestBody, {
+                    headers: {
+                        "accept": "application/json",
+                        "Content-Type": "application/json",
+                    }
+                });
+            } else {
+                response = await apiClient.post(endpoint, requestBody, {
+                    headers: {
+                        "accept": "application/json",
+                        "Content-Type": "application/json",
+                    }
+                });
             }
 
-            // Парсим ответ сервера
-            let eventData;
+            const eventData = response.data;
+
+            let parsedEventData;
             try {
-                eventData = JSON.parse(responseText);
+                parsedEventData = eventData;
             } catch {
-                eventData = null;
+                parsedEventData = null;
             }
 
-            // Получаем ID созданного события
-            const newEventId = eventData?.id;
+            const newEventId = parsedEventData?.id;
 
             if (!isEditMode && !newEventId) {
                 throw new Error('Не удалось получить ID созданного события');

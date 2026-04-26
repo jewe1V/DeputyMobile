@@ -14,7 +14,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { apiUrl } from "@/api/api";
 import { Profile } from "@/models/ProfileModel";
 import { AuthManager } from "@/components/LoginScreen/LoginScreen";
 import Toast from "react-native-toast-message";
@@ -22,6 +21,7 @@ import {renderUserItem} from "@/components/UsersScreen/RenderUserItem";
 import { AddUserPopup } from "./AddUserPopup";
 import {ArrowLeft, Plus} from "lucide-react-native";
 import {declOfNum} from "@/utils";
+import { apiClient } from '@/api/api';
 
 const DepartmentDetailScreen = () => {
     const router = useRouter();
@@ -40,23 +40,11 @@ const DepartmentDetailScreen = () => {
 
     const fetchDepartmentUsers = async () => {
         try {
-            const response = await fetch(`${apiUrl}/api/Department/get-users/${id}`, {
-                headers: {
-                    'Accept': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            if (!response.ok) {
-                setUsers([]);
-                return;
-            }
-
-            const text = await response.text();
-            const data = text ? JSON.parse(text) : [];
+            const { data } = await apiClient.get(`/api/Department/get-users/${id}`);
             setUsers(data);
         } catch (error) {
             console.error("Ошибка при загрузке пользователей отдела:", error);
+            setUsers([]);
         }
     };
 
@@ -77,23 +65,11 @@ const DepartmentDetailScreen = () => {
 
     const fetchAllUsers = async () => {
         try {
-            const response = await fetch(`${apiUrl}/api/Auth/all`, {
-                headers: {
-                    'Accept': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            if (!response.ok) {
-                setAllUsers([]);
-                return;
-            }
-
-            const text = await response.text();
-            const data = text ? JSON.parse(text) : [];
+            const { data } = await apiClient.get('/api/Auth/all');
             setAllUsers(data);
         } catch (error) {
             console.error("Ошибка при загрузке всех пользователей:", error);
+            setAllUsers([]);
         }
     };
 
@@ -117,27 +93,20 @@ const DepartmentDetailScreen = () => {
     const addUsersToDepartment = async (userIds: string[]) => {
         setAddingUser(true);
         try {
-            const response = await fetch(`${apiUrl}/api/Department/add-users/${id}`, {
-                method: 'POST',
+            await apiClient.post(`/api/Department/add-users/${id}`, userIds, {
                 headers: {
                     'Accept': '*/*',
-                    'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json-patch+json'
-                },
-                body: JSON.stringify(userIds)
+                }
             });
 
-            if (response.ok) {
-                Toast.show({
-                    type: 'success',
-                    text1: 'Успешно',
-                    text2: 'Пользователи добавлены в отдел'
-                });
-                setAddUserModal(false);
-                await fetchDepartmentUsers();
-            } else {
-                throw new Error('Ошибка при добавлении');
-            }
+            Toast.show({
+                type: 'success',
+                text1: 'Успешно',
+                text2: 'Пользователи добавлены в отдел'
+            });
+            setAddUserModal(false);
+            await fetchDepartmentUsers();
         } catch (error) {
             console.error("Ошибка при добавлении пользователей:", error);
             Toast.show({
