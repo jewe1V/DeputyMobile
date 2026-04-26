@@ -40,7 +40,8 @@
       "themeColor": "#000000",
       "backgroundColor": "#ffffff",
       "display": "standalone",
-      "orientation": "portrait"
+      "orientation": "portrait",
+      "bundler": "metro",
     },
     "plugins": [
       "@react-native-firebase/app",
