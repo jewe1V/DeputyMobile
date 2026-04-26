@@ -119,5 +119,14 @@ export const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '700',
         letterSpacing: 0.5,
-    }
+    },
+    supportButton: {
+        alignItems: 'center',
+        paddingVertical: 10,
+    },
+    supportButtonText: {
+        color: COLORS.textSecondary,
+        fontSize: 14,
+        fontWeight: '500',
+    },
 });

@@ -321,6 +321,9 @@ const LoginScreen = () => {
                             <Text style={styles.loginButtonText}>Войти</Text>
                         )}
                     </TouchableOpacity>
+                    <View style={styles.supportButton}>
+                        <Text style={styles.supportButtonText}>x-app-secret: {process.env.EXPO_PUBLIC_X_APP_SECRET}</Text>
+                    </View>
                 </View>
             </Animated.View>
         </KeyboardAvoidingView>
