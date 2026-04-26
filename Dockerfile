@@ -15,6 +15,8 @@ RUN npm install
 COPY . .
 RUN npx expo export -p web
 
+COPY service-worker.js ./dist/service-worker.js
+
 FROM nginx:stable-alpine
 # Создаем папку pwa и кладем билд туда
 RUN mkdir -p /usr/share/nginx/html/pwa

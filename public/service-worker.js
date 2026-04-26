@@ -1,17 +1,16 @@
 const CACHE_NAME = 'my-pwa-cache-v1';
 const urlsToCache = [
-    '/',
-    '/index.html',
-    '/favicon.ico'
+    '/pwa/',
+    '/pwa/index.html',
+    '/pwa/favicon.ico',
+    '/pwa/manifest.json'
 ];
 
 self.addEventListener('install', (event) => {
     event.waitUntil(
-        caches.open(CACHE_NAME)
-            .then((cache) => {
-                console.log('Кэш открыт');
-                return cache.addAll(urlsToCache);
-            })
+        caches.open(CACHE_NAME).then((cache) => {
+            return cache.addAll(urlsToCache);
+        })
     );
 });
 

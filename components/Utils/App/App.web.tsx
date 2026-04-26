@@ -25,12 +25,13 @@ const AppWeb: React.FC = () => {
     useEffect(() => {
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/service-worker.js')
+                // Регистрация должна идти по пути /pwa/
+                navigator.serviceWorker.register('/pwa/service-worker.js')
                     .then((registration) => {
-                        console.log('Service Worker успешно зарегистрирован:', registration.scope);
+                        console.log('SW зарегистрирован в области:', registration.scope);
                     })
                     .catch((error) => {
-                        console.log('Ошибка регистрации Service Worker:', error);
+                        console.log('Ошибка SW:', error);
                     });
             });
         }

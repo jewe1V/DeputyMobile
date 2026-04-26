@@ -35,18 +35,13 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/favicon.png",
-      "shortName": "Кабинет депутата",
-      "themeColor": "#000000",
-      "backgroundColor": "#ffffff",
-      "display": "standalone",
-      "orientation": "portrait",
       "bundler": "metro",
+      "baseUrl": "/pwa",
+      "display": "standalone",
       "startUrl": "/pwa/",
-      "baseUrl": "/pwa/",
-      "build": {
-        "baseUrl": "/pwa/"
-      }
+      "scope": "/pwa/",
+      "favicon": "./assets/favicon.png",
+      "shortName": "Кабинет"
     },
     "plugins": [
       "@react-native-firebase/app",
