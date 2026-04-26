@@ -17,21 +17,29 @@ RUN npx expo export -p web
 
 # Этап 2: Раздача
 FROM nginx:stable-alpine
-# Копируем билд в стандартный корень Nginx
-COPY --from=build /app/dist /usr/share/nginx/html
+# Очищаем стандартную папку
+RUN rm -rf /usr/share/nginx/html/*
+# Создаем структуру, которую ожидает baseUrl
+RUN mkdir -p /usr/share/nginx/html/pwa
+COPY --from=build /app/dist /usr/share/nginx/html/pwa
 
 RUN echo 'server { \
     listen 8081; \
-    root /usr/share/nginx/html; \
-    index index.html; \
+    # Отключаем редиректы с портом \
+    absolute_redirect off; \
     \
-    location / { \
-        try_files $uri $uri/ /index.html; \
+    root /usr/share/nginx/html; \
+    \
+    location /pwa/ { \
+        alias /usr/share/nginx/html/pwa/; \
+        index index.html; \
+        # Это "магия" для SPA роутинга: если путь не найден, отдаем index.html \
+        try_files $uri $uri/ /pwa/index.html; \
     } \
     \
-    # Фикс для статики Expo \
-    location ~* ^/(_expo|assets)/ { \
-        try_files $uri =404; \
+    # Редирект для удобства: с / на /pwa/ \
+    location = / { \
+        return 301 /pwa/; \
     } \
 }' > /etc/nginx/conf.d/default.conf
 
