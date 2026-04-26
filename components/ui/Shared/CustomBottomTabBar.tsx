@@ -113,16 +113,17 @@ export function CustomBottomTabBar({ state, descriptors, navigation, insets, rol
 
 const styles = StyleSheet.create({
     tabBarContainer: {
-        position: "absolute",
+        // На вебе используем fixed, чтобы он не уезжал при скролле контента
+        position: Platform.OS === "web" ? "fixed" : "absolute",
         bottom: 0,
+        left: 0, // Добавь это
+        right: 0, // И это
         width: "100%",
         alignItems: "center",
         justifyContent: "center",
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.1,
-        shadowRadius: 15,
-        elevation: 10,
+        zIndex: 1000, // Чтобы быть поверх всего
+        // Убираем лишний paddingBottom, если он мешает,
+        // но оставляем расчет через insets в самом компоненте
     },
     blurView: {
         flexDirection: "row",

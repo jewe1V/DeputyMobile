@@ -11,8 +11,8 @@ export const styles = StyleSheet.create({
         paddingBottom: 32,
     },
     headerContent: {
-        paddingLeft: 10,
-        paddingRight: 5,
+        paddingLeft: 20,
+        paddingRight: 10,
     },
     userInfoRow: {
         flexDirection: 'row',
