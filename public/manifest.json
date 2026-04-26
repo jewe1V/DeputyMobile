@@ -1,0 +1,16 @@
+{
+  "short_name": "Кабинет",
+  "name": "Цифровой Кабинет Депутата",
+  "icons": [
+    {
+      "src": "favicon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "/pwa/",
+  "scope": "/pwa/",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+}

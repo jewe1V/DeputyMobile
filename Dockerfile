@@ -23,16 +23,20 @@ COPY --from=build /app/dist /usr/share/nginx/html/pwa
 RUN echo 'server { \
     listen 8081; \
     root /usr/share/nginx/html; \
-    absolute_redirect off; \
+    \
+    # Правильная обработка манифеста и иконок \
+    location ~* \.(json|png|ico|js)$ { \
+        root /usr/share/nginx/html; \
+        add_header Access-Control-Allow-Origin "*"; \
+        expires 1y; \
+    } \
     \
     location /pwa/ { \
         alias /usr/share/nginx/html/pwa/; \
         index index.html; \
-        # Любой путь внутри /pwa/ отправляем на index.html \
         try_files $uri $uri/ /pwa/index.html; \
     } \
     \
-    # Редирект с корня контейнера \
     location = / { \
         return 301 /pwa/; \
     } \
