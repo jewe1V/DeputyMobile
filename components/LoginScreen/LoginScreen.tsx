@@ -241,92 +241,89 @@ const LoginScreen = () => {
 
 
     return (
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <KeyboardAvoidingView
-                style={styles.container}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            >
-                {/* Фоновый декоративный элемент */}
-                <LinearGradient
-                    colors={['#095a25', '#489a4d']}
-                    start={{ x: 0, y: 1 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.backgroundAccent}
-                />
+        <KeyboardAvoidingView
+            style={styles.container}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+            <LinearGradient
+                colors={['#095a25', '#489a4d']}
+                start={{ x: 0, y: 1 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.backgroundAccent}
+            />
 
-                <Animated.View style={[styles.header, { opacity: fadeAnim }]}>
-                    <View style={styles.emblemContainer}>
-                        <Image
-                            style={styles.emblem}
-                            resizeMode="contain"
-                            source={require('@/assets/images/ekb-emblem.png')} // Ваш путь
+            <Animated.View style={[styles.header, { opacity: fadeAnim }]}>
+                <View style={styles.emblemContainer}>
+                    <Image
+                        style={styles.emblem}
+                        resizeMode="contain"
+                        source={require('@/assets/images/ekb-emblem.png')} // Ваш путь
+                    />
+                </View>
+                <Text style={styles.subtitle}>Екатеринбургская городская Дума</Text>
+                <Text style={styles.title}>Цифровой кабинет{'\n'}депутата</Text>
+            </Animated.View>
+
+            <Animated.View
+                style={[
+                    styles.formContainer,
+                    {
+                        opacity: formFadeAnim,
+                        transform: [{ translateY: slideAnim }]
+                    }
+                ]}
+            >
+                <View style={styles.formCard}>
+                    <View style={styles.inputWrapper}>
+                        <Text style={styles.inputLabel}>Электронная почта</Text>
+                        <TextInput
+                            placeholderTextColor="#9CA3AF"
+                            style={[
+                                styles.input,
+                                isEmailFocused && styles.inputFocused
+                            ]}
+                            value={email}
+                            onChangeText={setEmail}
+                            autoCapitalize="none"
+                            keyboardType="email-address"
+                            autoComplete="email"
+                            onFocus={() => setIsEmailFocused(true)}
+                            onBlur={() => setIsEmailFocused(false)}
                         />
                     </View>
-                    <Text style={styles.subtitle}>Екатеринбургская городская Дума</Text>
-                    <Text style={styles.title}>Цифровой кабинет{'\n'}депутата</Text>
-                </Animated.View>
 
-                <Animated.View
-                    style={[
-                        styles.formContainer,
-                        {
-                            opacity: formFadeAnim,
-                            transform: [{ translateY: slideAnim }]
-                        }
-                    ]}
-                >
-                    <View style={styles.formCard}>
-                        <View style={styles.inputWrapper}>
-                            <Text style={styles.inputLabel}>Электронная почта</Text>
-                            <TextInput
-                                placeholderTextColor="#9CA3AF"
-                                style={[
-                                    styles.input,
-                                    isEmailFocused && styles.inputFocused
-                                ]}
-                                value={email}
-                                onChangeText={setEmail}
-                                autoCapitalize="none"
-                                keyboardType="email-address"
-                                autoComplete="email"
-                                onFocus={() => setIsEmailFocused(true)}
-                                onBlur={() => setIsEmailFocused(false)}
-                            />
-                        </View>
-
-                        <View style={styles.inputWrapper}>
-                            <Text style={styles.inputLabel}>Пароль</Text>
-                            <TextInput
-                                placeholderTextColor="#9CA3AF"
-                                secureTextEntry
-                                style={[
-                                    styles.input,
-                                    isPasswordFocused && styles.inputFocused
-                                ]}
-                                value={password}
-                                onChangeText={setPassword}
-                                autoComplete="password"
-                                onFocus={() => setIsPasswordFocused(true)}
-                                onBlur={() => setIsPasswordFocused(false)}
-                            />
-                        </View>
-
-                        <TouchableOpacity
-                            style={[styles.loginButton, isLoading && styles.disabledButton]}
-                            onPress={handleLogin}
-                            disabled={isLoading}
-                            activeOpacity={0.8}
-                        >
-                            {isLoading ? (
-                                <ActivityIndicator color="#ffffff" size="small" />
-                            ) : (
-                                <Text style={styles.loginButtonText}>Войти</Text>
-                            )}
-                        </TouchableOpacity>
+                    <View style={styles.inputWrapper}>
+                        <Text style={styles.inputLabel}>Пароль</Text>
+                        <TextInput
+                            placeholderTextColor="#9CA3AF"
+                            secureTextEntry
+                            style={[
+                                styles.input,
+                                isPasswordFocused && styles.inputFocused
+                            ]}
+                            value={password}
+                            onChangeText={setPassword}
+                            autoComplete="password"
+                            onFocus={() => setIsPasswordFocused(true)}
+                            onBlur={() => setIsPasswordFocused(false)}
+                        />
                     </View>
-                </Animated.View>
-            </KeyboardAvoidingView>
-        </TouchableWithoutFeedback>
+
+                    <TouchableOpacity
+                        style={[styles.loginButton, isLoading && styles.disabledButton]}
+                        onPress={handleLogin}
+                        disabled={isLoading}
+                        activeOpacity={0.8}
+                    >
+                        {isLoading ? (
+                            <ActivityIndicator color="#ffffff" size="small" />
+                        ) : (
+                            <Text style={styles.loginButtonText}>Войти</Text>
+                        )}
+                    </TouchableOpacity>
+                </View>
+            </Animated.View>
+        </KeyboardAvoidingView>
     );
 };
 
