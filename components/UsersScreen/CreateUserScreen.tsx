@@ -10,6 +10,8 @@ import {
     Platform,
     ActivityIndicator,
     StatusBar,
+    Modal,
+    FlatList,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -20,7 +22,7 @@ import { Profile } from "@/models/ProfileModel";
 import { AuthManager } from "@/components/LoginScreen/LoginScreen";
 import { SelectionPopup } from "@/components/UsersScreen/SelectionPopup";
 import Toast from "react-native-toast-message";
-import { Building2 } from "lucide-react-native";
+import { Building2, X } from "lucide-react-native";
 import { apiClient } from '@/api/api';
 
 const CreateUserScreen = () => {
@@ -36,7 +38,7 @@ const CreateUserScreen = () => {
     const [password, setPassword] = useState('');
     const [selectedRole, setSelectedRole] = useState<string | null>(null);
     const [selectedDeputy, setSelectedDeputy] = useState<Profile | null>(null);
-    const [selectedDepartment, setSelectedDepartment] = useState<{id: string, name: string} | null>(null);
+    const [selectedDepartments, setSelectedDepartments] = useState<{id: string, name: string}[]>([]);
 
     // Состояния UI
     const [isLoading, setIsLoading] = useState(isEditMode);
@@ -48,6 +50,7 @@ const CreateUserScreen = () => {
 
     const [deputyPopupVisible, setDeputyPopupVisible] = useState(false);
     const [departmentPopupVisible, setDepartmentPopupVisible] = useState(false);
+    const [tempSelectedDepartments, setTempSelectedDepartments] = useState<{id: string, name: string}[]>([]);
 
     const token = AuthManager.getToken();
     const roles = ['Admin', 'Deputy', 'Helper'];
@@ -57,12 +60,8 @@ const CreateUserScreen = () => {
             try {
                 // 1. Загружаем справочники параллельно
                 const [depsRes, deptsRes] = await Promise.all([
-                    apiClient.get('/api/Auth/role/Deputy', {
-                        headers: { 'Accept': 'application/json' }
-                    }),
-                    apiClient.get('/api/Department/get-all', {
-                        headers: { 'Accept': 'application/json' }
-                    })
+                    apiClient.get('/api/Auth/role/Deputy'),
+                    apiClient.get('/api/Department/get-all')
                 ]);
 
                 const fetchedDeputies = depsRes.data;
@@ -73,10 +72,7 @@ const CreateUserScreen = () => {
 
                 // 2. Если режим редактирования, подтягиваем данные пользователя
                 if (isEditMode) {
-                    const profileRes = await apiClient.get(`/api/Auth/${id}`, {
-                        headers: { 'Accept': 'application/json' }
-                    });
-
+                    const profileRes = await apiClient.get(`/api/Auth/${id}`);
                     const profileData = profileRes.data;
 
                     setFullName(profileData.full_name || '');
@@ -87,12 +83,18 @@ const CreateUserScreen = () => {
                         setSelectedRole(profileData.roles[0]);
                     }
 
-                    // Пытаемся привязать департамент
-                    if (profileData.department_id || profileData.department) {
+                    // Загружаем отделы пользователя (если есть)
+                    if (profileData.departments && Array.isArray(profileData.departments)) {
+                        const userDepartments = fetchedDepartments.filter((d: any) =>
+                            profileData.departments.includes(d.id) || profileData.departments.includes(d.name)
+                        );
+                        setSelectedDepartments(userDepartments);
+                    } else if (profileData.department_id) {
+                        // Fallback для старой структуры
                         const foundDept = fetchedDepartments.find(
                             (d: any) => d.id === profileData.department_id || d.name === profileData.department
                         );
-                        if (foundDept) setSelectedDepartment(foundDept);
+                        if (foundDept) setSelectedDepartments([foundDept]);
                     }
 
                     // Пытаемся привязать депутата (если он помощник)
@@ -138,7 +140,6 @@ const CreateUserScreen = () => {
 
     const handleSubmit = async () => {
         // 1. Валидация
-        // Пароль проверяем только при создании
         const isPasswordValid = isEditMode ? true : !!password;
         if (!fullName || !email || !isPasswordValid || !selectedRole) {
             Toast.show({
@@ -156,6 +157,9 @@ const CreateUserScreen = () => {
         let payload: any;
         const endpoint = isEditMode ? '/api/Auth/update' : '/api/Auth/create';
 
+        // Массив ID отделов (всегда массив)
+        const departmentIds = selectedDepartments.map(dept => dept.id);
+
         if (isEditMode) {
             // Схема для РЕДАКТИРОВАНИЯ
             payload = {
@@ -164,8 +168,8 @@ const CreateUserScreen = () => {
                 job_title: jobTitle,
                 full_name: fullName,
                 deputy_id: selectedRole === 'Helper' ? selectedDeputy?.id : null,
-                department_id: selectedDepartment?.id || null,
-                user_roles: [selectedRole] // В схеме обновления именно user_roles
+                department_id: departmentIds, // Всегда массив
+                user_roles: [selectedRole]
             };
         } else {
             // Схема для СОЗДАНИЯ
@@ -174,9 +178,9 @@ const CreateUserScreen = () => {
                 job_title: jobTitle,
                 full_name: fullName,
                 password,
-                roles: [selectedRole], // В схеме создания именно roles
+                roles: [selectedRole],
                 deputy_id: selectedRole === 'Helper' ? selectedDeputy?.id : null,
-                department_id: selectedDepartment?.id || null,
+                department_id: departmentIds, // Всегда массив
             };
         }
 
@@ -201,6 +205,29 @@ const CreateUserScreen = () => {
         } finally {
             setIsSubmitting(false);
         }
+    };
+
+    const openDepartmentModal = () => {
+        setTempSelectedDepartments([...selectedDepartments]);
+        setDepartmentPopupVisible(true);
+    };
+
+    const toggleDepartmentSelection = (department: {id: string, name: string}) => {
+        const exists = tempSelectedDepartments.some(d => d.id === department.id);
+        if (exists) {
+            setTempSelectedDepartments(tempSelectedDepartments.filter(d => d.id !== department.id));
+        } else {
+            setTempSelectedDepartments([...tempSelectedDepartments, department]);
+        }
+    };
+
+    const confirmDepartmentSelection = () => {
+        setSelectedDepartments(tempSelectedDepartments);
+        setDepartmentPopupVisible(false);
+    };
+
+    const removeDepartment = (departmentId: string) => {
+        setSelectedDepartments(selectedDepartments.filter(d => d.id !== departmentId));
     };
 
     if (isLoading) {
@@ -238,17 +265,34 @@ const CreateUserScreen = () => {
                 </LinearGradient>
 
                 <View style={styles.card}>
-                    {/* ФИО, Email, Должность, Департамент — остаются без изменений */}
+                    {/* ФИО, Email, Должность */}
                     <TextInput style={styles.input} value={fullName} onChangeText={setFullName} placeholder="ФИО *" />
                     <TextInput style={styles.input} value={email} onChangeText={setEmail} placeholder="Email *" />
                     <TextInput style={styles.input} value={jobTitle} onChangeText={setJobTitle} placeholder="Должность" />
 
-                    {/* Выбор департамента */}
-                    <TouchableOpacity style={styles.selectTrigger} onPress={() => setDepartmentPopupVisible(true)}>
-                        <Text style={selectedDepartment ? styles.selectValue : styles.placeholderText}>
-                            {selectedDepartment ? selectedDepartment.name : 'Департамент'}
+                    {/* Выбор отделов (множественный) */}
+                    <TouchableOpacity style={styles.selectTrigger} onPress={openDepartmentModal}>
+                        <Text style={selectedDepartments.length > 0 ? styles.selectValue : styles.placeholderText}>
+                            {selectedDepartments.length > 0
+                                ? `Выбрано отделов: ${selectedDepartments.length}`
+                                : 'Выберите отделы'}
                         </Text>
+                        <Ionicons name="chevron-down" size={20} color="#6b7280" />
                     </TouchableOpacity>
+
+                    {/* Список выбранных отделов */}
+                    {selectedDepartments.length > 0 && (
+                        <View style={styles.selectedDepartmentsContainer}>
+                            {selectedDepartments.map((dept) => (
+                                <View key={dept.id} style={styles.selectedDepartmentChip}>
+                                    <Text style={styles.selectedDepartmentText}>{dept.name}</Text>
+                                    <TouchableOpacity onPress={() => removeDepartment(dept.id)}>
+                                        <X size={16} color="#2A6E3F" />
+                                    </TouchableOpacity>
+                                </View>
+                            ))}
+                        </View>
+                    )}
 
                     {/* ПАРОЛЬ: Показываем только если НЕ режим редактирования */}
                     {!isEditMode && (
@@ -355,7 +399,68 @@ const CreateUserScreen = () => {
                 </View>
             </ScrollView>
 
-            {/* Попапы */}
+            {/* Модальное окно выбора отделов (множественный выбор) */}
+            <Modal
+                visible={departmentPopupVisible}
+                animationType="slide"
+                transparent={true}
+                onRequestClose={() => setDepartmentPopupVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Выберите отделы</Text>
+                            <TouchableOpacity onPress={() => setDepartmentPopupVisible(false)}>
+                                <Ionicons name="close" size={24} color="#333" />
+                            </TouchableOpacity>
+                        </View>
+
+                        <FlatList
+                            data={departments}
+                            keyExtractor={(item) => item.id}
+                            renderItem={({ item }) => {
+                                const isSelected = tempSelectedDepartments.some(d => d.id === item.id);
+                                return (
+                                    <TouchableOpacity
+                                        style={[styles.modalDeptItem, isSelected && styles.modalDeptItemSelected]}
+                                        onPress={() => toggleDepartmentSelection(item)}
+                                    >
+                                        <View style={styles.modalDeptIcon}>
+                                            <Building2 size={20} color={isSelected ? "#fff" : "#2A6E3F"} />
+                                        </View>
+                                        <Text style={[styles.modalDeptName, isSelected && styles.modalDeptNameSelected]}>
+                                            {item.name}
+                                        </Text>
+                                        {isSelected && (
+                                            <Ionicons name="checkmark-circle" size={24} color="#fff" />
+                                        )}
+                                    </TouchableOpacity>
+                                );
+                            }}
+                            style={styles.modalList}
+                        />
+
+                        <View style={styles.modalFooter}>
+                            <TouchableOpacity
+                                style={styles.modalCancelButton}
+                                onPress={() => setDepartmentPopupVisible(false)}
+                            >
+                                <Text style={styles.modalCancelText}>Отмена</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.modalConfirmButton}
+                                onPress={confirmDepartmentSelection}
+                            >
+                                <Text style={styles.modalConfirmText}>
+                                    Подтвердить ({tempSelectedDepartments.length})
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Попап выбора депутата */}
             <SelectionPopup
                 visible={deputyPopupVisible}
                 title="Выберите депутата"
@@ -376,22 +481,6 @@ const CreateUserScreen = () => {
                             </Text>
                             <Text style={styles.deputyJob}>{item.job_title || 'Депутат'}</Text>
                         </View>
-                    </View>
-                )}
-            />
-            <SelectionPopup
-                visible={departmentPopupVisible}
-                title="Выберите департамент"
-                onClose={() => setDepartmentPopupVisible(false)}
-                data={departments}
-                keyExtractor={(item) => item.id}
-                onSelect={(dept) => setSelectedDepartment(dept)}
-                renderItem={(item) => (
-                    <View style={styles.deptItem}>
-                        <View style={styles.deptIcon}>
-                            <Building2 size={20} color="#2A6E3F" />
-                        </View>
-                        <Text style={styles.deptName}>{item.name}</Text>
                     </View>
                 )}
             />
@@ -529,6 +618,118 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#1e293b',
         fontWeight: '500'
+    },
+    // Новые стили для множественного выбора отделов
+    selectedDepartmentsContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        marginBottom: 14,
+        marginTop: -8,
+    },
+    selectedDepartmentChip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#e8f5e9',
+        borderRadius: 20,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        marginRight: 8,
+        marginBottom: 8,
+    },
+    selectedDepartmentText: {
+        color: '#2A6E3F',
+        fontSize: 14,
+        marginRight: 6,
+    },
+    // Стили для модального окна
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'flex-end',
+    },
+    modalContent: {
+        backgroundColor: '#fff',
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        maxHeight: '80%',
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#e5e7eb',
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#1f2937',
+    },
+    modalList: {
+        maxHeight: 400,
+    },
+    modalDeptItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingVertical: 14,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f3f4f6',
+    },
+    modalDeptItemSelected: {
+        backgroundColor: '#2A6E3F',
+    },
+    modalDeptIcon: {
+        width: 36,
+        height: 36,
+        borderRadius: 8,
+        backgroundColor: '#f0fdf4',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
+    },
+    modalDeptName: {
+        flex: 1,
+        fontSize: 16,
+        color: '#374151',
+    },
+    modalDeptNameSelected: {
+        color: '#fff',
+        fontWeight: '500',
+    },
+    modalFooter: {
+        flexDirection: 'row',
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+        borderTopWidth: 1,
+        borderTopColor: '#e5e7eb',
+        gap: 12,
+    },
+    modalCancelButton: {
+        flex: 1,
+        paddingVertical: 12,
+        borderRadius: 10,
+        backgroundColor: '#f3f4f6',
+        alignItems: 'center',
+    },
+    modalCancelText: {
+        color: '#6b7280',
+        fontSize: 16,
+        fontWeight: '500',
+    },
+    modalConfirmButton: {
+        flex: 1,
+        paddingVertical: 12,
+        borderRadius: 10,
+        backgroundColor: '#2A6E3F',
+        alignItems: 'center',
+    },
+    modalConfirmText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '600',
     },
 });
 

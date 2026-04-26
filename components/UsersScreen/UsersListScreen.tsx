@@ -5,7 +5,6 @@ import {
     StyleSheet,
     FlatList,
     TouchableOpacity,
-    TextInput,
     ActivityIndicator,
     StatusBar,
     RefreshControl,
@@ -16,7 +15,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Profile } from "@/models/ProfileModel";
-import { AuthManager } from "@/components/LoginScreen/LoginScreen";
 import {renderUserItem} from "@/components/UsersScreen/RenderUserItem";
 import {declOfNum} from "@/utils";
 import {Plus} from "lucide-react-native";
@@ -35,8 +33,6 @@ const UsersListScreen = () => {
     // Добавляем недостающие состояния для фильтрации
     const [searchQuery, setSearchQuery] = useState('');
     const [roleFilter, setRoleFilter] = useState('all');
-
-    const token = AuthManager.getToken();
 
     // Выносим фильтрацию в отдельную функцию, чтобы не дублировать логику
     const applyFilters = useCallback((allUsers: Profile[], query: string, role: string) => {
