@@ -42,6 +42,7 @@
       "display": "standalone",
       "orientation": "portrait",
       "bundler": "metro",
+      "startUrl": "/pwa/",
       "baseUrl": "/pwa/",
       "build": {
         "baseUrl": "/pwa/"
