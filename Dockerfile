@@ -5,14 +5,20 @@ RUN npm install
 COPY . .
 RUN npx expo export -p web
 FROM nginx:stable-alpine
-COPY --from=build /app/dist /usr/share/nginx/html
+RUN mkdir -p /usr/share/nginx/html/pwa
+COPY --from=build /app/dist /usr/share/nginx/html/pwa
 
 RUN echo 'server { \
     listen 8081; \
-    location / { \
-        root /usr/share/nginx/html; \
-        index index.html; \
-        try_files $uri $uri/ /index.html; \
+    root /usr/share/nginx/html; \
+    \
+    location /pwa/ { \
+        alias /usr/share/nginx/html/pwa/; \
+        try_files $uri $uri/ /pwa/index.html; \
+    } \
+    \
+    location = / { \
+        return 301 /pwa/; \
     } \
 }' > /etc/nginx/conf.d/default.conf
 
