@@ -122,10 +122,10 @@ export const styles = StyleSheet.create({
     },
     supportButton: {
         alignItems: 'center',
-        paddingVertical: 10,
+        marginTop: 16,
     },
     supportButtonText: {
-        color: COLORS.textSecondary,
+        color: "#858585",
         fontSize: 14,
         fontWeight: '500',
     },
