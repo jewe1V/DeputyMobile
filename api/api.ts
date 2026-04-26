@@ -7,7 +7,7 @@ export const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 export const apiClient: AxiosInstance = axios.create({
     baseURL: apiUrl,
     headers: {
-        'X-App-Secret': process.env.EXPO_PUBLIC_X_APP_SECRET,
+        'X-App-Secret': "AAUMisSb1yxKapDSZbWKvNCUEFQJaM7Zwa4ViPSxMhGsi9bWk7mJBjOlvc9w",
         'Content-Type': 'application/json',
     },
 });
