@@ -33,7 +33,7 @@ import {SkeletonItem} from "@/components/ui/Shared/SkeletonLoader";
 import * as ImagePicker from "expo-image-picker";
 import Toast from "react-native-toast-message";
 import axios from 'axios';
-import { apiClient, apiUrl } from '@/api/api';
+import {apiClient, apiUrl, xAppSecret} from '@/api/api';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -376,7 +376,7 @@ export const EventAttachmentUploader: React.FC<Props> = ({
 
     const imageHeaders = {
         Authorization: `Bearer ${token}`,
-        ...(process.env.EXPO_PUBLIC_X_APP_SECRET && { 'X-App-Secret': process.env.EXPO_PUBLIC_X_APP_SECRET })
+        ...({ 'X-App-Secret': xAppSecret })
     };
 
 const renderCatalogContent = () => {

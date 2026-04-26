@@ -1,4 +1,4 @@
-import {apiClient, apiUrl} from "@/api/api";
+import {apiClient, apiUrl, xAppSecret} from "@/api/api";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from "expo-router";
 import React, {useEffect, useRef, useState} from 'react';
@@ -106,7 +106,7 @@ class AuthManager {
                     'accept': 'text/plain',
                     'Content-Type': 'application/json-patch+json',
                     'Authorization': `Bearer ${this.token}`,
-                    'X-App-Secret': process.env.EXPO_PUBLIC_X_APP_SECRET || ''
+                    'X-App-Secret': xAppSecret
                 },
                 body: JSON.stringify({
                     access_token: this.token,

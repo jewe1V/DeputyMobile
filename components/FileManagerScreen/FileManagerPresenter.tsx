@@ -5,7 +5,7 @@ import Icon from 'react-native-vector-icons/FontAwesome5';
 import {JSX, useMemo, useRef, useState} from 'react';
 import {AuthManager} from "@/components/LoginScreen/LoginScreen";
 import * as FileSystem from 'expo-file-system/legacy';
-import {apiUrl} from "@/api/api";
+import {apiUrl, xAppSecret} from "@/api/api";
 import Toast from "react-native-toast-message";
 import * as Sharing from 'expo-sharing';
 import * as ImagePicker from 'expo-image-picker';
@@ -553,6 +553,7 @@ export const useFileManagerPresenter = () => {
             xhr.open('POST', `${apiUrl}/api/Documents/upload`);
             xhr.setRequestHeader('Authorization', `Bearer ${token}`);
             xhr.setRequestHeader('Accept', 'text/plain');
+            xhr.setRequestHeader('X-App-Secret', xAppSecret);
             xhr.send(formData);
         });
     };

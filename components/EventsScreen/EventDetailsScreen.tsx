@@ -18,7 +18,7 @@ import Toast from "react-native-toast-message";
 // @ts-ignore
 import { EventMap } from "@/components/ui/EventMap/EventMap";
 import {showLocation} from "react-native-map-link";
-import {apiClient, apiUrl} from '@/api/api';
+import {apiClient, apiUrl, xAppSecret} from '@/api/api';
 
 
 interface Attachment {
@@ -69,7 +69,7 @@ const AttachmentItem: React.FC<AttachmentItemProps> = ({ file, onImagePress }) =
     const userId = AuthManager.getUserId();
     const imageHeaders = {
         Authorization: `Bearer ${token}`,
-        ...(process.env.EXPO_PUBLIC_X_APP_SECRET && { 'X-App-Secret': process.env.EXPO_PUBLIC_X_APP_SECRET })
+        ...({ 'X-App-Secret': xAppSecret })
     };
 
     const handleDownload = React.useCallback(() => {

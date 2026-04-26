@@ -4,7 +4,7 @@ import { Info } from 'lucide-react-native';
 import { Text, TouchableOpacity, View, Image, Platform } from 'react-native'; // Добавили Platform
 import { styles } from './file-manager-screen';
 import { JSX, useState, useEffect } from 'react'; // Добавили useState и useEffect
-import { apiUrl } from "@/api/api";
+import {apiUrl, xAppSecret} from "@/api/api";
 import { AuthManager } from "@/components/LoginScreen/LoginScreen";
 
 interface DocumentCardProps {
@@ -22,7 +22,7 @@ export function DocumentCard({ document, getFileIcon, getFileSize, onInfoPress, 
     const imageUrl = `${apiUrl}/api/files/${encodeURIComponent(`${document.file_name}`)}`;
     const imageHeaders = {
         Authorization: `Bearer ${token}`,
-        ...(process.env.EXPO_PUBLIC_X_APP_SECRET && { 'X-App-Secret': process.env.EXPO_PUBLIC_X_APP_SECRET })
+        ...({ 'X-App-Secret': xAppSecret })
     };
 
     // Состояние для хранения локальной ссылки на картинку (только для веба)

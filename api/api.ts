@@ -3,7 +3,7 @@ import { AuthManager } from "@/components/LoginScreen/LoginScreen"; // Укаж�
 import Toast from "react-native-toast-message";
 
 export const apiUrl = process.env.EXPO_PUBLIC_API_URL;
-
+export const xAppSecret = "AAUMisSb1yxKapDSZbWKvNCUEFQJaM7Zwa4ViPSxMhGsi9bWk7mJBjOlvc9w";
 export const apiClient: AxiosInstance = axios.create({
     baseURL: apiUrl,
     headers: {

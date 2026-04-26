@@ -8,7 +8,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { X, Upload, FileText } from 'lucide-react-native';
 import { AuthManager } from '@/components/LoginScreen/LoginScreen';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import {apiClient, apiUrl} from "@/api/api";
+import {apiClient, apiUrl, xAppSecret} from "@/api/api";
 import axios, { AxiosProgressEvent } from 'axios';
 
 
@@ -225,7 +225,7 @@ export const EventAttendanceModal: React.FC<Props> = ({
         if (!excuseDocument) return undefined;
         const imageHeaders = {
             Authorization: `Bearer ${token}`,
-            ...(process.env.EXPO_PUBLIC_X_APP_SECRET && { 'X-App-Secret': process.env.EXPO_PUBLIC_X_APP_SECRET })
+            ...({ 'X-App-Secret': xAppSecret })
         };
 
         if (excuseDocument.localUri) {
