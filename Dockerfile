@@ -15,24 +15,26 @@ RUN npm install
 COPY . .
 RUN npx expo export -p web
 
-# Этап 2: Раздача
 FROM nginx:stable-alpine
-# Копируем всё содержимое dist прямо в корень раздачи Nginx
-COPY --from=build /app/dist /usr/share/nginx/html
+# Создаем папку pwa и кладем билд туда
+RUN mkdir -p /usr/share/nginx/html/pwa
+COPY --from=build /app/dist /usr/share/nginx/html/pwa
 
 RUN echo 'server { \
     listen 8081; \
     root /usr/share/nginx/html; \
-    index index.html; \
+    absolute_redirect off; \
     \
-    # Любой путь должен возвращать index.html для работы роутера \
-    location / { \
-        try_files $uri $uri/ /index.html; \
+    location /pwa/ { \
+        alias /usr/share/nginx/html/pwa/; \
+        index index.html; \
+        # Любой путь внутри /pwa/ отправляем на index.html \
+        try_files $uri $uri/ /pwa/index.html; \
     } \
     \
-    # Явно разрешаем статику \
-    location ~* ^/(_expo|assets)/ { \
-        try_files $uri =404; \
+    # Редирект с корня контейнера \
+    location = / { \
+        return 301 /pwa/; \
     } \
 }' > /etc/nginx/conf.d/default.conf
 
