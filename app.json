@@ -41,7 +41,10 @@
       "startUrl": "/pwa/",
       "scope": "/pwa/",
       "favicon": "./assets/favicon.png",
-      "shortName": "Кабинет"
+      "shortName": "Кабинет",
+      "meta": {
+        "apple-mobile-web-app-status-bar-style": "black-translucent"
+      }
     },
     "plugins": [
       "@react-native-firebase/app",
