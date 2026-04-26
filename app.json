@@ -42,7 +42,9 @@
       "display": "standalone",
       "orientation": "portrait",
       "bundler": "metro",
-      "startUrl": "/pwa"
+      "build": {
+        "baseUrl": "/pwa/"
+      }
     },
     "plugins": [
       "@react-native-firebase/app",
