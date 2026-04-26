@@ -59,7 +59,7 @@ export const styles = StyleSheet.create({
     formContainer: {
         flex: 1,
         paddingHorizontal: 20,
-        marginTop: -20, // Слегка "наплывает" на верхний блок
+        marginTop: 5,
     },
     formCard: {
         backgroundColor: '#ffffff',
@@ -126,7 +126,7 @@ export const styles = StyleSheet.create({
     },
     supportButtonText: {
         color: "#858585",
-        fontSize: 14,
+        fontSize: 10,
         fontWeight: '500',
     },
 });
