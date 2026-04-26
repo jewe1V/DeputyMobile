@@ -23,7 +23,11 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/deputy-pwa:latest .
+          docker build \
+            --build-arg EXPO_PUBLIC_API_URL=${{ secrets.EXPO_PUBLIC_API_URL }} \
+            --build-arg EXPO_PUBLIC_GEOCODER_API_KEY=${{ secrets.EXPO_PUBLIC_GEOCODER_API_KEY }} \
+            --build-arg EXPO_PUBLIC_YAMAP_API_KEY=${{ secrets.EXPO_PUBLIC_YAMAP_API_KEY }} \
+            -t ${{ secrets.DOCKER_USERNAME }}/deputy-pwa:latest .
           docker push ${{ secrets.DOCKER_USERNAME }}/deputy-pwa:latest
 
       - name: Copy docker-compose to server
