@@ -41,7 +41,9 @@ class AuthManager {
                 this.refreshToken = refreshToken;
                 this.role = role;
                 this.userId = userId;
+                console.log('[AuthManager] Initialized with tokens');
             } else {
+                console.log('[AuthManager] No tokens found');
                 await this.clearAuth();
             }
         } catch (e) {
@@ -67,6 +69,7 @@ class AuthManager {
                 ['userId', userId],
                 ['userRole', this.role || '']
             ]);
+            console.log('[AuthManager] Tokens saved successfully');
         } catch (e) {
             console.error('Error saving auth data:', e);
         }
@@ -87,16 +90,20 @@ class AuthManager {
                 'userData',
                 'userId'
             ]);
+            console.log('[AuthManager] Auth data cleared');
         } catch (e) {
             console.error('Error clearing auth:', e);
         }
         this.notifyListeners();
     }
 
-    static async refreshAuthTokens(): Promise<string | null> {
+    static async refreshAuthTokens(): Promise<string> {
+        console.log('[AuthManager] Starting token refresh...');
+
         if (!this.token || !this.refreshToken) {
+            console.log('[AuthManager] No tokens available for refresh');
             await this.clearAuth();
-            return null;
+            throw new Error('No tokens available');
         }
 
         try {
@@ -114,11 +121,25 @@ class AuthManager {
                 })
             });
 
+            console.log('[AuthManager] Refresh response status:', response.status);
+
+            if (response.status === 401) {
+                console.log('[AuthManager] Refresh token expired');
+                await this.clearAuth();
+                throw new Error('Refresh token expired');
+            }
+
             if (!response.ok) {
-                throw new Error('Refresh failed');
+                throw new Error(`Refresh failed with status: ${response.status}`);
             }
 
             const data = await response.json();
+            console.log('[AuthManager] Refresh successful, new token received');
+
+            // Проверяем структуру ответа
+            if (!data.token || !data.refresh_token) {
+                throw new Error('Invalid refresh response structure');
+            }
 
             // Сохраняем новые токены
             await this.setAuth(
@@ -128,14 +149,14 @@ class AuthManager {
                 data.user.user_roles || []
             );
 
-            // Обновляем userData в сторадже, если это необходимо
+            // Обновляем userData в сторадже
             await AsyncStorage.setItem('userData', JSON.stringify(data));
 
             return data.token;
         } catch (error) {
-            console.error('Token refresh error:', error);
-            await this.clearAuth(); // Разлогиниваем пользователя, если рефреш протух
-            return null;
+            console.error('[AuthManager] Token refresh error:', error);
+            await this.clearAuth();
+            throw error; // Прокидываем ошибку, а не возвращаем null
         }
     }
 
@@ -153,9 +174,22 @@ class AuthManager {
     static isTokenValid(): boolean {
         return this.token !== null;
     }
+
+    static async logout() {
+        await this.clearAuth();
+        router.replace('/login');
+        Toast.show({
+            type: 'info',
+            text1: 'Выход',
+            text2: 'Вы вышли из системы'
+        });
+    }
 }
 
-AuthManager.initialize();
+// Отложенная инициализация
+setTimeout(() => {
+    AuthManager.initialize().catch(console.error);
+}, 0);
 
 interface AuthResponse {
     token: string;
