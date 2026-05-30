@@ -1,2 +1,2 @@
-import CreateEventScreen from "@/components/EventsScreen/CreateEventScreen";
+import {CreateEventScreen} from "@/components/EventsScreen/CreateEventScreen";
 export default CreateEventScreen;

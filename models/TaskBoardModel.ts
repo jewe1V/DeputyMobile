@@ -1,6 +1,6 @@
 import {Profile} from "@/models/ProfileModel";
 
-export interface Attachment {
+interface Attachment {
     id: string;
     file_name: string;
     url: string;

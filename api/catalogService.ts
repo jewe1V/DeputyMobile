@@ -1,12 +1,12 @@
 import {apiClient} from "./api";
 
-export interface CatalogApiResponse {
+interface CatalogApiResponse {
     id: string;
     name: string;
     parent_catalog_id: string | null;
 }
 
-export type CatalogItemType = 'catalog' | 'document';
+type CatalogItemType = 'catalog' | 'document';
 
 export interface CatalogItem {
     id: string;

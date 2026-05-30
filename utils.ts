@@ -51,7 +51,7 @@ export const formatDateForDisplay = (date: Date) => {
         minute: '2-digit'
     });
 };
-export const getDaysUntilDue = (dueDate: string) => {
+const getDaysUntilDue = (dueDate: string) => {
     const today = new Date();
     const due = new Date(dueDate);
     const diffTime = due.getTime() - today.getTime();

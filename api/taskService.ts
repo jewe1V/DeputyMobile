@@ -1,7 +1,7 @@
 import { AxiosError } from 'axios';
 import { apiClient } from './api';
 
-export interface CreateTaskPayload {
+interface CreateTaskPayload {
   title: string;
   description: string;
   expected_end_date: string;
@@ -9,7 +9,7 @@ export interface CreateTaskPayload {
   status: string;
 }
 
-export interface Task {
+interface Task {
   id: string;
   title: string;
   description: string;

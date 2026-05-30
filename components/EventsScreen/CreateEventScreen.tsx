@@ -19,7 +19,7 @@ import { PeoplePickerModal } from "@/components/EventsScreen/PeoplePickerModal";
 type User = { id: string; full_name: string; email: string };
 type Department = { id: string; name: string };
 
-export default function CreateEventScreen() {
+export function CreateEventScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const isEditMode = !!id;
 

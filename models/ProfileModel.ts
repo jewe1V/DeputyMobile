@@ -1,6 +1,6 @@
 import {Event} from "./EventModel";
 
-export type Role = "Admin" | "Deputy" | "Helper";
+type Role = "Admin" | "Deputy" | "Helper";
 
 export interface Profile {
     id: string;

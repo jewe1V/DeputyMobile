@@ -124,7 +124,7 @@ const AttachmentItem: React.FC<AttachmentItemProps> = ({ file, onImagePress }) =
     );
 };
 
-const EventDetailsScreen: React.FC = () => {
+export const EventDetailsScreen: React.FC = () => {
     const { id } = useLocalSearchParams<{ id: string }>();
     const [loading, setLoading] = useState(true);
     const [event, setEvent] = useState<EventData | null>(null);
@@ -552,5 +552,3 @@ const styles = StyleSheet.create({
     previewFooter: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.6)', padding: 20, alignItems: 'center' },
     previewFooterText: { color: 'white', fontSize: 16, fontWeight: '500' },
 });
-
-export default EventDetailsScreen;

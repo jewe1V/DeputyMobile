@@ -1,24 +1,110 @@
-import {apiClient, apiUrl, xAppSecret} from "@/api/api";
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from "expo-router";
 import React, {useEffect, useRef, useState} from 'react';
 import {
     ActivityIndicator,
     Animated, Easing,
     Image,
-    Keyboard,
     KeyboardAvoidingView,
     Platform,
     Text,
     TextInput,
     TouchableOpacity,
-    TouchableWithoutFeedback,
     View
 } from 'react-native';
 import { styles } from './style';
 import {Profile} from "@/models/ProfileModel"
 import Toast from "react-native-toast-message";
 import {LinearGradient} from "expo-linear-gradient";
+import {apiClient, apiUrl, xAppSecret} from "@/api/api";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Адаптер для кроссплатформенного хранения
+class StorageAdapter {
+    private static isWeb = Platform.OS === 'web';
+    private static memoryStorage: Map<string, string> = new Map();
+
+    static async getItem(key: string): Promise<string | null> {
+        if (this.isWeb && typeof window !== 'undefined' && window.localStorage) {
+            return localStorage.getItem(key);
+        }
+
+        try {
+            return await AsyncStorage.getItem(key);
+        } catch (error) {
+            // Fallback на память если AsyncStorage недоступен
+            return this.memoryStorage.get(key) || null;
+        }
+    }
+
+    static async setItem(key: string, value: string): Promise<void> {
+        if (this.isWeb && typeof window !== 'undefined' && window.localStorage) {
+            localStorage.setItem(key, value);
+            return;
+        }
+
+        try {
+            await AsyncStorage.setItem(key, value);
+        } catch (error) {
+            this.memoryStorage.set(key, value);
+        }
+    }
+
+    static async multiSet(keyValuePairs: [string, string][]): Promise<void> {
+        if (this.isWeb && typeof window !== 'undefined' && window.localStorage) {
+            keyValuePairs.forEach(([key, value]) => {
+                localStorage.setItem(key, value);
+            });
+            return;
+        }
+
+        try {
+            await AsyncStorage.multiSet(keyValuePairs);
+        } catch (error) {
+            keyValuePairs.forEach(([key, value]) => {
+                this.memoryStorage.set(key, value);
+            });
+        }
+    }
+
+    static async multiRemove(keys: string[]): Promise<void> {
+        if (this.isWeb && typeof window !== 'undefined' && window.localStorage) {
+            keys.forEach(key => localStorage.removeItem(key));
+            return;
+        }
+
+        try {
+            await AsyncStorage.multiRemove(keys);
+        } catch (error) {
+            keys.forEach(key => this.memoryStorage.delete(key));
+        }
+    }
+
+    static async removeItem(key: string): Promise<void> {
+        if (this.isWeb && typeof window !== 'undefined' && window.localStorage) {
+            localStorage.removeItem(key);
+            return;
+        }
+
+        try {
+            await AsyncStorage.removeItem(key);
+        } catch (error) {
+            this.memoryStorage.delete(key);
+        }
+    }
+
+    static async clear(): Promise<void> {
+        if (this.isWeb && typeof window !== 'undefined' && window.localStorage) {
+            localStorage.clear();
+            return;
+        }
+
+        try {
+            await AsyncStorage.clear();
+        } catch (error) {
+            this.memoryStorage.clear();
+        }
+    }
+}
 
 class AuthManager {
     private static token: string | null = null;
@@ -26,14 +112,25 @@ class AuthManager {
     private static role: string | null = null;
     private static userId: string | null = null;
     private static listeners: ((token: string | null) => void)[] = [];
+    private static initialized = false;
 
     static async initialize() {
+        // Защита от двойной инициализации
+        if (this.initialized) return;
+
+        // Проверка окружения
+        if (!this.isValidEnvironment()) {
+            console.log('AuthManager: Invalid environment for storage');
+            this.initialized = true;
+            return;
+        }
+
         try {
             const [token, refreshToken, role, userId] = await Promise.all([
-                AsyncStorage.getItem('authToken'),
-                AsyncStorage.getItem('refreshToken'),
-                AsyncStorage.getItem('userRole'),
-                AsyncStorage.getItem('userId')
+                StorageAdapter.getItem('authToken'),
+                StorageAdapter.getItem('refreshToken'),
+                StorageAdapter.getItem('userRole'),
+                StorageAdapter.getItem('userId')
             ]);
 
             if (token && refreshToken) {
@@ -46,13 +143,30 @@ class AuthManager {
             }
         } catch (e) {
             console.error('Auth initialization error:', e);
+        } finally {
+            this.initialized = true;
         }
+    }
+
+    private static isValidEnvironment(): boolean {
+        // Для web - проверяем наличие localStorage
+        if (Platform.OS === 'web') {
+            if (typeof window === 'undefined' || !window.localStorage) {
+                console.warn('AuthManager: localStorage not available');
+                return false;
+            }
+            return true;
+        }
+
+        // Для native - всегда true (но AsyncStorage может упать)
+        return true;
     }
 
     static getToken() { return this.token; }
     static getRefreshToken() { return this.refreshToken; }
     static getRole() { return this.role; }
     static getUserId() { return this.userId; }
+    static isInitialized() { return this.initialized; }
 
     static async setAuth(token: string, refreshToken: string, userId: string, roles: any[]) {
         this.token = token;
@@ -61,7 +175,7 @@ class AuthManager {
         this.role = roles.length > 0 ? roles[0].role.name : null;
 
         try {
-            await AsyncStorage.multiSet([
+            await StorageAdapter.multiSet([
                 ['authToken', token],
                 ['refreshToken', refreshToken],
                 ['userId', userId],
@@ -80,7 +194,7 @@ class AuthManager {
         this.role = null;
         this.userId = null;
         try {
-            await AsyncStorage.multiRemove([
+            await StorageAdapter.multiRemove([
                 'authToken',
                 'refreshToken',
                 'userRole',
@@ -120,7 +234,6 @@ class AuthManager {
 
             const data = await response.json();
 
-            // Сохраняем новые токены
             await this.setAuth(
                 data.token,
                 data.refresh_token,
@@ -128,13 +241,12 @@ class AuthManager {
                 data.user.user_roles || []
             );
 
-            // Обновляем userData в сторадже, если это необходимо
-            await AsyncStorage.setItem('userData', JSON.stringify(data));
+            await StorageAdapter.setItem('userData', JSON.stringify(data));
 
             return data.token;
         } catch (error) {
             console.error('Token refresh error:', error);
-            await this.clearAuth(); // Разлогиниваем пользователя, если рефреш протух
+            await this.clearAuth();
             return null;
         }
     }
@@ -155,7 +267,13 @@ class AuthManager {
     }
 }
 
-AuthManager.initialize();
+// Отложенная инициализация для кроссплатформенности
+if (typeof window !== 'undefined' || Platform.OS !== 'web') {
+    // Используем setTimeout для отложенной инициализации
+    setTimeout(() => {
+        AuthManager.initialize().catch(console.error);
+    }, 0);
+}
 
 interface AuthResponse {
     token: string;
@@ -167,6 +285,7 @@ const LoginScreen = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [isAuthReady, setIsAuthReady] = useState(false);
 
     // Состояния фокуса для инпутов
     const [isEmailFocused, setIsEmailFocused] = useState(false);
@@ -177,7 +296,21 @@ const LoginScreen = () => {
     const slideAnim = useRef(new Animated.Value(40)).current;
     const formFadeAnim = useRef(new Animated.Value(0)).current;
 
+    // Инициализация AuthManager при монтировании
     useEffect(() => {
+        const initAuth = async () => {
+            if (!AuthManager.isInitialized()) {
+                await AuthManager.initialize();
+            }
+            setIsAuthReady(true);
+        };
+
+        initAuth();
+    }, []);
+
+    useEffect(() => {
+        if (!isAuthReady) return;
+
         Animated.sequence([
             Animated.timing(fadeAnim, {
                 toValue: 1,
@@ -198,7 +331,7 @@ const LoginScreen = () => {
                 }),
             ])
         ]).start();
-    }, []);
+    }, [isAuthReady]);
 
     const handleLogin = async () => {
         if (!email || !password) {
@@ -209,6 +342,7 @@ const LoginScreen = () => {
             });
             return;
         }
+
         setIsLoading(true);
         try {
             const response = await apiClient.post<AuthResponse>('/api/Auth/login', {
@@ -223,22 +357,30 @@ const LoginScreen = () => {
                 // @ts-ignore
                 data.user.user_roles || []
             );
-            await AsyncStorage.setItem('userData', JSON.stringify(data));
+            await StorageAdapter.setItem('userData', JSON.stringify(data));
             console.log('Успешная авторизация, токены сохранены');
-            router.push('/(screens)/DashboardScreen');
+
+            // Используем router.replace чтобы нельзя было вернуться на логин
+            router.replace('/(screens)/DashboardScreen');
         } catch (error: any) {
             console.error('Ошибка авторизации:', error);
             Toast.show({
                 type: 'error',
                 text1: 'Ошибка',
-                text2: 'Не удалось войти. Проверьте логин и пароль'
+                text2: error.response?.data?.message || 'Не удалось войти. Проверьте логин и пароль'
             });
         } finally {
             setIsLoading(false);
         }
     };
 
-
+    if (!isAuthReady) {
+        return (
+            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+                <ActivityIndicator size="large" color="#095a25" />
+            </View>
+        );
+    }
 
     return (
         <KeyboardAvoidingView
@@ -257,7 +399,7 @@ const LoginScreen = () => {
                     <Image
                         style={styles.emblem}
                         resizeMode="contain"
-                        source={require('@/assets/images/ekb-emblem.png')} // Ваш путь
+                        source={require('@/assets/images/ekb-emblem.png')}
                     />
                 </View>
                 <Text style={styles.subtitle}>Екатеринбургская городская Дума</Text>
@@ -328,5 +470,4 @@ const LoginScreen = () => {
     );
 };
 
-export { AuthManager, LoginScreen };
-
+export { AuthManager, LoginScreen, StorageAdapter };

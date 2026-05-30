@@ -1,6 +1,6 @@
 import {apiClient} from './api';
 
-export interface DocumentApiResponse {
+interface DocumentApiResponse {
     id: string;
     file_name: string;
     file_name_encoded: string;

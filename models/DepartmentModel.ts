@@ -5,6 +5,6 @@ export interface Department {
     name: string;
 }
 
-export interface DepartmentWithUsers extends Department {
+interface DepartmentWithUsers extends Department {
     users?: Profile[];
 }
