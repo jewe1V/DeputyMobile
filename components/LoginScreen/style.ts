@@ -16,25 +16,18 @@ export const styles = StyleSheet.create({
     },
     header: {
         alignItems: 'center',
-        paddingTop: 80,
+        paddingTop: 10,
         paddingBottom: 30,
         paddingHorizontal: 24,
     },
     emblemContainer: {
-        width: 90,
-        height: 90,
-        backgroundColor: '#ffffff',
-        borderRadius: 24,
-        padding: 15,
+        width: 200,
+        height: 200,
+
+        borderRadius: "50%",
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 20,
-        // Тень должна быть темной, чтобы выделяться на фоне градиента
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.15,
-        shadowRadius: 20,
-        elevation: 10,
     },
     emblem: {
         width: '100%',
@@ -52,7 +45,7 @@ export const styles = StyleSheet.create({
     title: {
         fontSize: 26,
         fontWeight: '800',
-        color: '#ffffff', // Теперь четко видно на зеленом градиенте
+        color: '#03230e', // Теперь четко видно на зеленом градиенте
         textAlign: 'center',
         lineHeight: 32,
     },
@@ -62,7 +55,7 @@ export const styles = StyleSheet.create({
         marginTop: 5,
     },
     formCard: {
-        backgroundColor: '#ffffff',
+        backgroundColor: '#fdfdfd',
         borderRadius: 24,
         padding: 24,
         shadowColor: '#000',

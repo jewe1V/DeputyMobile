@@ -387,10 +387,7 @@ const LoginScreen = () => {
             style={styles.container}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-            <LinearGradient
-                colors={['#095a25', '#489a4d']}
-                start={{ x: 0, y: 1 }}
-                end={{ x: 1, y: 0 }}
+            <View
                 style={styles.backgroundAccent}
             />
 
@@ -399,10 +396,10 @@ const LoginScreen = () => {
                     <Image
                         style={styles.emblem}
                         resizeMode="contain"
-                        source={require('@/assets/images/ekb-emblem.png')}
+                        source={require('@/assets/images/duma-emblem.png')}
                     />
                 </View>
-                <Text style={styles.subtitle}>Екатеринбургская городская Дума</Text>
+                {/*<Text style={styles.subtitle}>Екатеринбургская городская Дума</Text>*/}
                 <Text style={styles.title}>Цифровой кабинет{'\n'}депутата</Text>
             </Animated.View>
 
