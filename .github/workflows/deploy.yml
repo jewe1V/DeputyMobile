@@ -35,8 +35,9 @@ jobs:
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ env.SERVER_IP }}
-          username: root
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          username: ddcroot
+          password: ${{ secrets.SSH_PASSWORD }}
+          #key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "docker-compose.frontend-pwa.yml"
           target: "/home/DeputyApp"
           strip_components: 0
