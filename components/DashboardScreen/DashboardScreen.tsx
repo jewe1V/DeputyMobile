@@ -166,7 +166,7 @@ export function Dashboard() {
                             {error || 'Не удалось загрузить данные'}
                         </Text>
                         <TouchableOpacity
-                            onPress={onRefresh}
+                            onPress={() => router.push("/login")}
                             style={{
                                 backgroundColor: '#2A6E3F',
                                 paddingHorizontal: 20,
@@ -179,7 +179,7 @@ export function Dashboard() {
                         >
                             <RefreshCw size={18} color="white" />
                             <Text style={{ color: 'white', marginLeft: 8, fontSize: 14, fontWeight: '500' }}>
-                                Повторить попытку
+                                Войти
                             </Text>
                         </TouchableOpacity>
                     </View>
