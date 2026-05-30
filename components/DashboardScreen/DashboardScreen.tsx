@@ -150,34 +150,32 @@ export function Dashboard() {
                 <HeaderSkeleton insetsTop={insets.top}/>
                 <View style={[styles.content, { flex: 1, justifyContent: 'center', alignItems: 'center', minHeight: 300 }]}>
                     <View style={{
-                        backgroundColor: '#FEF2F2',
                         padding: 20,
                         borderRadius: 12,
                         alignItems: 'center',
-                        borderWidth: 1,
-                        borderColor: '#FEE2E2',
-                        marginHorizontal: 20
+                        marginHorizontal: 20,
+                        width: "100%"
                     }}>
                         <AlertCircle size={48} color="#DC2626" />
-                        <Text style={{ fontSize: 18, fontWeight: '600', color: '#991B1B', marginTop: 10, textAlign: 'center' }}>
+                        <Text style={{ fontSize: 18, fontWeight: '600', marginTop: 10, textAlign: 'center' }}>
                             Ошибка загрузки
                         </Text>
-                        <Text style={{ fontSize: 14, color: '#B91C1C', marginTop: 5, textAlign: 'center' }}>
+                        <Text style={{ fontSize: 14, marginTop: 5, textAlign: 'center' }}>
                             {error || 'Не удалось загрузить данные'}
                         </Text>
                         <TouchableOpacity
                             onPress={() => router.push("/login")}
                             style={{
                                 backgroundColor: '#2A6E3F',
-                                paddingHorizontal: 20,
+                                paddingHorizontal: 40,
                                 paddingVertical: 10,
                                 borderRadius: 8,
                                 marginTop: 15,
                                 flexDirection: 'row',
-                                alignItems: 'center'
+                                alignItems: 'center',
+                                justifyContent: "center",
                             }}
                         >
-                            <RefreshCw size={18} color="white" />
                             <Text style={{ color: 'white', marginLeft: 8, fontSize: 14, fontWeight: '500' }}>
                                 Войти
                             </Text>

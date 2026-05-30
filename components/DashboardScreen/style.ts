@@ -3,7 +3,7 @@ import {Platform, StyleSheet} from 'react-native';
 export const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F5F5F5',
+        backgroundColor: '#ffffff',
     },
     header: {
         borderBottomLeftRadius: 24,
@@ -143,7 +143,7 @@ export const styles = StyleSheet.create({
         color: '#6b7280',
     },
     warningBanner: {
-        backgroundColor: '#FFF3E0',
+        backgroundColor: '#ffffff',
         borderRadius: 20,
         marginBottom: 24,
         shadowColor: '#000',
