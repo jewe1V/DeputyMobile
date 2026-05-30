@@ -39,7 +39,7 @@ jobs:
           password: ${{ secrets.SSH_PASSWORD }}
           #key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "docker-compose.frontend-pwa.yml"
-          target: "/home/DeputyApp"
+          target: "/home/ddcroot/DeputyApp"
           strip_components: 0
 
       - name: Deploy to server
