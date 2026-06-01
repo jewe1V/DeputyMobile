@@ -83,7 +83,7 @@ class TaskService {
 
   async deleteTask(id: string): Promise<void> {
     try {
-      await apiClient.delete(`/api/task/delete/${id}`);
+      await apiClient.post(`/api/task/delete/${id}`);
     } catch (error) {
       console.error('Ошибка при удалении задач:', error);
       throw error;
