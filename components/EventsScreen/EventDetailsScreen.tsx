@@ -19,6 +19,7 @@ import Toast from "react-native-toast-message";
 import { EventMap } from "@/components/ui/EventMap/EventMap";
 import {showLocation} from "react-native-map-link";
 import {apiClient, apiUrl, xAppSecret} from '@/api/api';
+import {ImagePreviewModal} from "@/components/EventsScreen/ImagePreviewModal";
 
 
 interface Attachment {
@@ -56,24 +57,16 @@ interface EventData {
 
 interface AttachmentItemProps {
     file: Attachment;
-    onImagePress: (url: string) => void;
+    onImagePress: (file: Attachment) => void;
 }
 
 const AttachmentItem: React.FC<AttachmentItemProps> = ({ file, onImagePress }) => {
     const [downloadProgress, setDownloadProgress] = useState(0);
     const [isDownloading, setIsDownloading] = useState(false);
-    const token = AuthManager.getToken();
     const { handlers } = useFileManagerPresenter();
     const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(file.url);
-    const isAdmin = AuthManager.getRole() === "Admin";
-    const userId = AuthManager.getUserId();
-    const imageHeaders = {
-        Authorization: `Bearer ${token}`,
-        ...({ 'X-App-Secret': xAppSecret })
-    };
 
     const handleDownload = React.useCallback(() => {
-        // @ts-ignore
         handlers.handleDownloadDocument(file);
     }, [handlers, file]);
 
@@ -82,17 +75,14 @@ const AttachmentItem: React.FC<AttachmentItemProps> = ({ file, onImagePress }) =
             {isImage ? (
                 <TouchableOpacity
                     style={styles.imagePreviewContainer}
-                    onPress={handleDownload}
+                    onPress={() => onImagePress(file)}
                 >
-                    <Image
-                        source={{
-                            uri: `${apiUrl}/api/files/${encodeURIComponent(file.file_name)}`,
-                            headers: imageHeaders
-                        }}
-                        style={styles.imagePreview}
-                    />
+                    {/* Простой превью без сложной логики загрузки */}
+                    <ImagePreviewThumbnail file={file} />
                     <View style={styles.imagePreviewOverlay}>
-                        <Text style={styles.imagePreviewName} numberOfLines={1}>{file.file_name}</Text>
+                        <Text style={styles.imagePreviewName} numberOfLines={1}>
+                            {file.file_name}
+                        </Text>
                     </View>
                 </TouchableOpacity>
             ) : (
@@ -108,7 +98,9 @@ const AttachmentItem: React.FC<AttachmentItemProps> = ({ file, onImagePress }) =
                         {file.file_name}
                     </Text>
                     {isDownloading ? (
-                        <Text style={styles.progressText}>{Math.round(downloadProgress * 100)}%</Text>
+                        <Text style={styles.progressText}>
+                            {Math.round(downloadProgress * 100)}%
+                        </Text>
                     ) : (
                         <Download size={20} color="#6b7280" />
                     )}
@@ -124,6 +116,50 @@ const AttachmentItem: React.FC<AttachmentItemProps> = ({ file, onImagePress }) =
     );
 };
 
+const ImagePreviewThumbnail: React.FC<{ file: Attachment }> = ({ file }) => {
+    const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+    const token = AuthManager.getToken();
+    const imageUrl = `${apiUrl}/api/files/${encodeURIComponent(file.file_name)}`;
+    const imageHeaders = {
+        Authorization: `Bearer ${token}`,
+        'X-App-Secret': xAppSecret
+    };
+
+    useEffect(() => {
+        if (Platform.OS === 'web') {
+            let isMounted = true;
+            const fetchThumbnail = async () => {
+                try {
+                    const response = await fetch(imageUrl, { headers: imageHeaders });
+                    if (!response.ok) throw new Error('Failed to fetch');
+                    const blob = await response.blob();
+                    const objectUrl = URL.createObjectURL(blob);
+                    if (isMounted) setThumbnailUrl(objectUrl);
+                } catch (error) {
+                    console.error('Error loading thumbnail:', error);
+                }
+            };
+            fetchThumbnail();
+            return () => {
+                isMounted = false;
+                if (thumbnailUrl) URL.revokeObjectURL(thumbnailUrl);
+            };
+        }
+    }, [file.file_name]);
+
+    const source = Platform.OS === 'web'
+        ? { uri: thumbnailUrl || undefined }
+        : { uri: imageUrl, headers: imageHeaders };
+
+    return (
+        <Image
+            source={source}
+            style={{ width: "100%", height: "100%", borderRadius: 8 }}
+            resizeMode="cover"
+        />
+    );
+};
+
 export const EventDetailsScreen: React.FC = () => {
     const { id } = useLocalSearchParams<{ id: string }>();
     const [loading, setLoading] = useState(true);
@@ -136,18 +172,25 @@ export const EventDetailsScreen: React.FC = () => {
     const router = useRouter();
     const [excuseModalVisible, setExcuseModalVisible] = useState(false);
     const [selectedExcuseAttendee, setSelectedExcuseAttendee] = useState<Attendee | null>(null);
-    const [viewerVisible, setViewerVisible] = useState(false);
-    const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
-    const [selectedImageName, setSelectedImageName] = useState<string | null>(null);
+    const [selectedAttachment, setSelectedAttachment] = useState<Attachment | null>(null);
+    const [previewVisible, setPreviewVisible] = useState(false);
+    const [previewFileName, setPreviewFileName] = useState<string | null>(null);
+
+    const handleImagePress = (file: Attachment) => {
+        setSelectedAttachment(file);
+        setPreviewFileName(file.file_name);
+        setPreviewVisible(true);
+    };
+
+    const handleDownloadFromPreview = () => {
+        if (selectedAttachment) {
+            handlers.handleDownloadDocument(selectedAttachment);
+        }
+    };
 
     const userRole = AuthManager.getRole();
     const userId = AuthManager.getUserId();
 
-    const handleImagePress = (url: string, name: string) => {
-        setSelectedImageUrl(url);
-        setSelectedImageName(name);
-        setViewerVisible(true);
-    };
 
     const handleBack = () => {
         router.replace('/EventsScreen');
@@ -395,7 +438,7 @@ export const EventDetailsScreen: React.FC = () => {
                                 <AttachmentItem
                                     key={file.id}
                                     file={file}
-                                    onImagePress={() => handleImagePress(`${apiUrl}/api/files/${encodeURIComponent(file.file_name)}`, file.file_name)}
+                                    onImagePress={handleImagePress}
                                 />
                             ))}
                         </View>
@@ -480,6 +523,17 @@ export const EventDetailsScreen: React.FC = () => {
                 attendee={selectedExcuseAttendee}
                 onDownloadDocument={handlers.handleDownloadDocument}
             />
+
+            <ImagePreviewModal
+                visible={previewVisible}
+                onClose={() => {
+                    setPreviewVisible(false);
+                    setPreviewFileName(null);
+                    setSelectedAttachment(null);
+                }}
+                fileName={previewFileName}
+                onDownload={handleDownloadFromPreview}
+            />
         </>
     );
 };
@@ -543,8 +597,32 @@ const styles = StyleSheet.create({
     progressText: { fontSize: 12, fontWeight: '600', color: '#0f6319' },
     progressBarBackground: { height: 4, backgroundColor: '#e5e7eb', borderRadius: 2, marginTop: 4, overflow: 'hidden' },
     progressBarFill: { height: '100%', backgroundColor: '#0f6319', borderRadius: 2 },
-    imageViewerOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' },
-    imageViewerCloseButton: { position: 'absolute', top: 50, right: 20, zIndex: 10, padding: 8 },
+    imageViewerOverlay: { flex: 1, backgroundColor: 'black', justifyContent: 'center', alignItems: 'center' },
+    imageViewerCloseButton: { position: 'absolute', top: 50, right: 20, zIndex: 10, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 20, padding: 8 },
+    imageViewerImage: { width: '100%', height: '80%' },
+    imageViewerFooter: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        padding: 20,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+    },
+    imageViewerFileName: { color: 'white', fontSize: 16, fontWeight: '500', flex: 1 },
+    downloadButtonInViewer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#0f6319',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 8,
+        marginLeft: 12,
+        gap: 8
+    },
+    downloadButtonText: { color: 'white', fontSize: 14, fontWeight: '600' },
     fullScreenImage: { width: '100%', height: '80%' },
     fullScreenOverlay: { flex: 1, backgroundColor: 'black', justifyContent: 'center', alignItems: 'center' },
     closePreviewButton: { position: 'absolute', right: 20, zIndex: 10, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 20, padding: 5 },
