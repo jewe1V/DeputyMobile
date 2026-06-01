@@ -1,17 +1,34 @@
 import axios, { AxiosInstance } from "axios";
-import { AuthManager } from "@/components/LoginScreen/LoginScreen"; // Укажите правильный путь
+import { AuthManager } from "@/components/LoginScreen/LoginScreen";
 import Toast from "react-native-toast-message";
-import {router} from "expo-router";
+import { router } from "expo-router";
 
 export const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 export const xAppSecret = "AAUMisSb1yxKapDSZbWKvNCUEFQJaM7Zwa4ViPSxMhGsi9bWk7mJBjOlvc9w";
+
 export const apiClient: AxiosInstance = axios.create({
-    baseURL: apiUrl,
+    baseURL: "https://ddc.egd.ru",
     headers: {
-        'X-App-Secret': "AAUMisSb1yxKapDSZbWKvNCUEFQJaM7Zwa4ViPSxMhGsi9bWk7mJBjOlvc9w",
+        'X-App-Secret': xAppSecret,
         'Content-Type': 'application/json',
     },
 });
+
+apiClient.interceptors.request.use(
+    async (config) => {
+        const token = AuthManager.getToken();
+
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+
+        return config;
+    },
+    (error) => {
+        console.error('Request interceptor error:', error);
+        return Promise.reject(error);
+    }
+);
 
 let isRefreshing = false;
 let failedQueue: Array<{ resolve: Function; reject: Function }> = [];
@@ -49,21 +66,23 @@ apiClient.interceptors.response.use(
 
             try {
                 const newToken = await AuthManager.refreshAuthTokens();
-                processQueue(null, newToken);
-                originalRequest.headers.Authorization = `Bearer ${newToken}`;
-                return apiClient(originalRequest);
+
+                if (newToken) {
+                    processQueue(null, newToken);
+                    originalRequest.headers.Authorization = `Bearer ${newToken}`;
+                    return apiClient(originalRequest);
+                } else {
+                    throw new Error('No new token received');
+                }
             } catch (refreshError) {
                 processQueue(refreshError, null);
                 await AuthManager.clearAuth();
 
-                // Перенаправляем на логин
                 Toast.show({
                     type: 'error',
                     text1: 'Сессия истекла',
                     text2: 'Пожалуйста, войдите снова'
                 });
-
-                router.replace('/login');
                 return Promise.reject(refreshError);
             } finally {
                 isRefreshing = false;
