@@ -185,7 +185,7 @@ export function TaskBoard() {
 
     // Динамически формируем список статусов для селекта
     const statusItems = [
-        { label: 'Все задачи', value: 'all' },
+        { label: 'Все', value: 'all' },
         ...statuses.map(s => ({ label: s.name, value: s.name }))
     ];
 
