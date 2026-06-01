@@ -147,22 +147,20 @@ export function TaskDetail() {
         }
     };
 
-    const handleRemoveUser = (targetUserId: string, targetUserName: string) => {
+    const handleRemoveUser = (targetUserId: string, targetUserName: string, taskId: string) => {
         const confirmMessage = `Удалить ${targetUserName} из задачи?`;
 
         if (Platform.OS === 'web') {
-            // Для веба используем confirm
             if (window.confirm(confirmMessage)) {
-                performRemoveUser(targetUserId);
+                performRemoveUser(targetUserId, taskId);
             }
         } else {
-            // Для нативных платформ используем Alert
             Alert.alert('Удаление исполнителя', confirmMessage, [
                 { text: 'Отмена', style: 'cancel' },
                 {
                     text: 'Удалить',
                     style: 'destructive',
-                    onPress: () => performRemoveUser(targetUserId)
+                    onPress: () => performRemoveUser(targetUserId, taskId)
                 }
             ]);
         }
@@ -186,13 +184,14 @@ export function TaskDetail() {
         }
     };
 
-// Вынесенная логика удаления пользователя
-    const performRemoveUser = async (targetUserId: string) => {
+    const performRemoveUser = async (targetUserId: string, taskId: string) => {
         setRemovingUserId(targetUserId);
         try {
-            await apiClient.delete(`/api/task/remove-user-task/${task?.task_id}`, {
+            await apiClient({
+                method: 'POST',
+                url: `/api/task/remove-user-task/${taskId}`,
                 params: { userId: targetUserId },
-                headers: { 'accept': '*/*' }
+                headers: { 'accept': 'application/json' }
             });
 
             setTask(prev => prev ? {
@@ -554,7 +553,7 @@ export function TaskDetail() {
                                 {(userRole === "Admin" || userId === task.author_id) && task.users?.length > 1 && (
                                     <TouchableOpacity
                                         style={styles.removeUserBtn}
-                                        onPress={() => handleRemoveUser(user.id, user.full_name || user.email)}
+                                        onPress={() => handleRemoveUser(user.id, user.full_name || user.email, task.task_id)}
                                         disabled={removingUserId === user.id}
                                     >
                                         {removingUserId === user.id ? (
