@@ -19,6 +19,7 @@ import Toast from 'react-native-toast-message';
 import {router, useLocalSearchParams} from "expo-router";
 import { taskService } from '@/api/taskService';
 import {formatDateForDisplay} from "@/utils";
+import {ArrowLeft} from "lucide-react-native";
 
 const PRIORITY_MAP = [
     { id: 1, label: 'Низкий' },
@@ -145,9 +146,9 @@ export function TaskForm() {
                 end={{ x: 1, y: 1 }}
                 style={[styles.header, { paddingTop: insets.top + 20 }]}
             >
-                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
                     <View pointerEvents="none">
-                        <Ionicons name="arrow-back" size={24} color="#fff" />
+                        <ArrowLeft size={24} color="white" />
                     </View>
                 </TouchableOpacity>
                 {/* Меняем заголовок в зависимости от режима */}
@@ -314,19 +315,8 @@ const styles = StyleSheet.create({
     container: {
         flexGrow: 1,
     },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderBottomLeftRadius: 24,
-        borderBottomRightRadius: 24,
-        paddingBottom: 20,
-        paddingHorizontal: 20,
-        paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    },
-    backButton: {
-        marginRight: 10,
-        padding: 4,
-    },
+    header: { flexDirection: 'row', alignItems: 'center', borderBottomLeftRadius: 24, borderBottomRightRadius: 24, paddingBottom: 25, paddingHorizontal: 20 },
+    backButton: { marginRight: 15, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255, 255, 255, 0.2)', justifyContent: 'center', alignItems: 'center' },
     headerTitle: {
         fontSize: 20,
         fontWeight: "700",

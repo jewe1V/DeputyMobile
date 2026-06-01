@@ -15,14 +15,14 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import {router, useLocalSearchParams, useRouter} from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import { Profile } from "@/models/ProfileModel";
 import { AuthManager } from "@/components/LoginScreen/LoginScreen";
 import { SelectionPopup } from "@/components/UsersScreen/SelectionPopup";
 import Toast from "react-native-toast-message";
-import { Building2, X } from "lucide-react-native";
+import {ArrowLeft, Building2, X} from "lucide-react-native";
 import { apiClient } from '@/api/api';
 
 const CreateUserScreen = () => {
@@ -256,8 +256,10 @@ const CreateUserScreen = () => {
                     end={{ x: 1, y: 1 }}
                     style={[styles.header, { paddingTop: insets.top + 20 }]}
                 >
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                        <Ionicons name="arrow-back" size={24} color="#fff" />
+                    <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+                        <View pointerEvents="none">
+                            <ArrowLeft size={24} color="white" />
+                        </View>
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>
                         {isEditMode ? 'Редактирование профиля' : 'Регистрация'}
@@ -490,15 +492,8 @@ const CreateUserScreen = () => {
 
 const styles = StyleSheet.create({
     container: { flexGrow: 1 },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderBottomLeftRadius: 24,
-        borderBottomRightRadius: 24,
-        paddingBottom: 20,
-        paddingHorizontal: 20,
-    },
-    backButton: { marginRight: 10, padding: 4 },
+    header: { flexDirection: 'row', alignItems: 'center', borderBottomLeftRadius: 24, borderBottomRightRadius: 24, paddingBottom: 25, paddingHorizontal: 20 },
+    backButton: { marginRight: 15, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255, 255, 255, 0.2)', justifyContent: 'center', alignItems: 'center' },
     headerTitle: { fontSize: 20, fontWeight: "700", color: "#fff" },
     card: { borderRadius: 16, padding: 20, marginBottom: 20 },
     input: {

@@ -12,8 +12,6 @@ interface CalendarProps {
     onMonthChange?: (year: number, month: number) => void;
 }
 
-
-
 export const Calendar: React.FC<CalendarProps> = ({ selectedDate, onSelectDate, events, onMonthChange }) => {
     const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
     const [currentYear, setCurrentYear] = useState(new Date().getFullYear());

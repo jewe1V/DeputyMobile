@@ -217,7 +217,7 @@ export function Dashboard() {
                     colors={['#2A6E3F', '#349339']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
-                    style={[styles.header, { paddingTop: 15 }]} // Убрали insets.top отсюда
+                    style={[styles.header, { paddingTop: 15 }]}
                 >
                     <View style={styles.headerContent}>
                         <View style={styles.userInfoRow}>

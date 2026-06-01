@@ -12,6 +12,7 @@ import {
     ScrollView
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useLocalSearchParams } from 'expo-router';
 import { Calendar } from '@/components/EventsScreen/Calendar';
 import { EventCard } from '@/components/EventsScreen/EventCard';
 import { Event } from '@/models/EventModel';
@@ -26,6 +27,9 @@ import { formatDate, getLocalDateKey, getTodayLocalKey } from "@/utils";
 import { Filters } from '../ui/Shared/Filters';
 
 const EventsScreen: React.FC = () => {
+    const params = useLocalSearchParams<{ isMine?: string }>();
+    const isMineMode = params.isMine === 'true';
+
     const now = new Date();
     const [viewDate, setViewDate] = useState({ year: now.getFullYear(), month: now.getMonth() });
     const [selectedDate, setSelectedDate] = useState<string | undefined>();
@@ -35,8 +39,11 @@ const EventsScreen: React.FC = () => {
     const [isDayModalVisible, setIsDayModalVisible] = useState(false);
     const [selectedDayEvents, setSelectedDayEvents] = useState<Event[]>([]);
 
+    // Если isMineMode = true, то принудительно устанавливаем режим 'list' и фильтр 'mine'
     const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
-    const [eventsFilter, setEventsFilter] = useState<'all' | 'mine' | 'past'>('all');
+    const [eventsFilter, setEventsFilter] = useState<'all' | 'mine' | 'past'>(
+        isMineMode ? 'mine' : 'all'
+    );
     const [isReady, setIsReady] = useState(false);
 
     const insets = useSafeAreaInsets();

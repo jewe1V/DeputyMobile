@@ -247,7 +247,7 @@ export function ProfileScreen() {
                     <View style={[styles.card, { padding: 0, overflow: 'hidden' }]}>
                         <TouchableOpacity
                             style={styles.actionItem}
-                            onPress={() => navigation.navigate('EventsScreen' as never)}
+                            onPress={() => router.push({pathname: '/EventsScreen', params: {isMine: "true"}})}
                         >
                             <View style={[styles.actionIcon, { backgroundColor: '#f5f3ff' }]}>
                                 <Calendar size={20} color="#7c3aed" />
@@ -270,7 +270,7 @@ export function ProfileScreen() {
 
                         <TouchableOpacity
                             style={styles.actionItem}
-                            onPress={() => navigation.navigate('TaskBoardScreen' as never)}
+                            onPress={() => router.push({pathname: '/TaskBoardScreen', params: {isMine: "true"}})}
                         >
                             <View style={[styles.actionIcon, { backgroundColor: '#f0fdf4' }]}>
                                 <ListTodo size={20} color="#16a34a" />
