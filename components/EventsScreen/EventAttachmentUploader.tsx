@@ -1,39 +1,39 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import {
-    View,
-    Text,
-    StyleSheet,
-    TouchableOpacity,
-    Modal,
-    ScrollView,
-    ActivityIndicator,
-    Alert,
-    TextInput,
-    Animated,
-    PanResponder,
-    Dimensions, Image,
-    KeyboardAvoidingView,
-    Platform
-} from 'react-native';
+import { apiClient, apiUrl, xAppSecret } from '@/api/api';
+import { CatalogItem, catalogService } from '@/api/catalogService';
+import { AuthManager } from '@/components/LoginScreen/LoginScreen';
+import DateTimePickerModal from "@/components/ui/Shared/DateTimePickerModal";
+import { SkeletonItem } from "@/components/ui/Shared/SkeletonLoader";
+import axios from 'axios';
 import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from "expo-image-picker";
 import {
-    X,
-    Upload,
-    Folder,
     AlertCircle,
     ChevronDown,
+    FileText,
+    Folder,
     Home,
-    FileText
+    Upload,
+    X
 } from 'lucide-react-native';
-import { catalogService, CatalogItem } from '@/api/catalogService';
-import { AuthManager } from '@/components/LoginScreen/LoginScreen';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+    ActivityIndicator,
+    Alert,
+    Animated,
+    Dimensions, Image,
+    KeyboardAvoidingView,
+    Modal,
+    PanResponder,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import DateTimePickerModal from "@/components/ui/Shared/DateTimePickerModal";
-import {SkeletonItem} from "@/components/ui/Shared/SkeletonLoader";
-import * as ImagePicker from "expo-image-picker";
 import Toast from "react-native-toast-message";
-import axios from 'axios';
-import {apiClient, apiUrl, xAppSecret} from '@/api/api';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -214,68 +214,31 @@ export const EventAttachmentUploader: React.FC<Props> = ({
         });
     };
 
-    const uploadFileToServer = async (fileInfo: { uri: string; name: string; mimeType?: string }) => {
+    const uploadFileToServer = async (fileInfo: { uri: string; name: string; mimeType?: string; file?: File }) => {
+        // Просто сохраняем файл локально, без загрузки на сервер
         try {
-            setUploading(true);
-            setUploadProgress(0);
             setError(null);
 
-            const formData = new FormData();
-            formData.append('file', {
-                uri: fileInfo.uri,
-                name: fileInfo.name,
-                type: fileInfo.mimeType || 'application/octet-stream',
-            } as any);
-
-            // Создаем cancel token для возможности отмены
-            const source = axios.CancelToken.source();
-
-            // Сохраняем cancel функцию для отмены
-            const cancelUpload = () => {
-                source.cancel('Upload cancelled');
-            };
-
-            // Если нужна отмена через xhrRef
-            if (xhrRef) {
-                xhrRef.current = { cancel: cancelUpload };
-            }
-
-            const response = await apiClient.post('/api/Documents/upload/document', formData, {
-                headers: {
-                    'Accept': 'text/plain',
-                    'Content-Type': 'multipart/form-data',
-                },
-                onUploadProgress: (progressEvent) => {
-                    if (progressEvent.total) {
-                        setUploadProgress(progressEvent.loaded / progressEvent.total);
-                    }
-                },
-                cancelToken: source.token
-            });
-
-            // response.data уже содержит распарсенные данные
-            const document = response.data || {};
+            // На вебе не сохраняем неправильный mimeType из браузера
+            // Будем использовать тип из оригинального File объекта при отправке
+            const mimeType = (fileInfo.file as any)?.type || fileInfo.mimeType;
 
             setSelectedFile({
-                ...document,
-                localUri: fileInfo.uri,
+                uri: fileInfo.uri,
+                name: fileInfo.name,
+                mimeType: mimeType,
+                file: fileInfo.file,
                 assets: [{
                     uri: fileInfo.uri,
                     name: fileInfo.name,
-                    mimeType: fileInfo.mimeType
+                    mimeType: mimeType
                 }]
-            });
+            } as any);
 
         } catch (e: any) {
-            if (e.message !== 'Upload cancelled' && !axios.isCancel(e)) {
-                Alert.alert('Ошибка загрузки', e.message);
-            }
-        } finally {
-            setUploading(false);
-            setUploadProgress(0);
-            if (xhrRef) {
-                xhrRef.current = null;
-            }
+            console.error('Ошибка:', e);
+            setError(e?.message || 'Ошибка при выборе файла');
+            Alert.alert('Ошибка', e?.message || 'Не удалось выбрать файл');
         }
     };
 
@@ -289,7 +252,54 @@ export const EventAttachmentUploader: React.FC<Props> = ({
         setError(null);
     };
 
+    const pickFileFromWeb = async () => {
+        return new Promise<void>((resolve) => {
+            const input = document.createElement('input') as HTMLInputElement;
+            input.type = 'file';
+            input.accept = '*/*';
+            input.style.display = 'none';
+
+            input.onchange = async (event) => {
+                const files = (event.target as HTMLInputElement).files;
+                if (!files || files.length === 0) {
+                    resolve();
+                    return;
+                }
+
+                const file = files[0];
+
+                if (file.size > MAX_FILE_SIZE_BYTES) {
+                    alert('Файл слишком большой. Максимум 50 МБ');
+                    resolve();
+                    return;
+                }
+
+                try {
+                    await uploadFileToServer({
+                        uri: URL.createObjectURL(file),
+                        name: file.name,
+                        mimeType: file.type || 'application/octet-stream',
+                        file: file
+                    });
+                } catch (error: any) {
+                    console.error('Ошибка при загрузке файла:', error);
+                    Alert.alert('Ошибка загрузки', error?.message || 'Не удалось загрузить файл');
+                } finally {
+                    resolve();
+                }
+            };
+
+            document.body.appendChild(input);
+            input.click();
+            document.body.removeChild(input);
+        });
+    };
+
     const pickFromFiles = async () => {
+        if (Platform.OS === 'web') {
+            return pickFileFromWeb();
+        }
+
         const result = await DocumentPicker.getDocumentAsync({ type: '*/*', copyToCacheDirectory: true });
         if (result.canceled || !result.assets?.length) return;
         const file = result.assets[0];
@@ -301,6 +311,10 @@ export const EventAttachmentUploader: React.FC<Props> = ({
     };
 
     const pickFromGallery = async () => {
+        if (Platform.OS === 'web') {
+            return pickFileFromWeb();
+        }
+
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.All,
             quality: 0.8,
@@ -316,6 +330,11 @@ export const EventAttachmentUploader: React.FC<Props> = ({
     };
 
     const showUploadOptions = () => {
+        if (Platform.OS === 'web') {
+            pickFileFromWeb();
+            return;
+        }
+
         Alert.alert('Загрузить файл', 'Выберите источник', [
             { text: 'Отмена', style: 'cancel' },
             { text: 'Галерея', onPress: pickFromGallery },
@@ -324,7 +343,7 @@ export const EventAttachmentUploader: React.FC<Props> = ({
     };
 
     const uploadFile = async () => {
-        if (!selectedFile || !selectedFile.assets?.[0]) {
+        if (!selectedFile) {
             Alert.alert('Ошибка', 'Выберите файл для загрузки');
             return;
         }
@@ -337,42 +356,104 @@ export const EventAttachmentUploader: React.FC<Props> = ({
             setUploading(true);
             setError(null);
 
-            const file = selectedFile.assets[0];
             const formData = new FormData();
 
-            formData.append('File', {
-                uri: file.uri,
-                type: file.mimeType || 'application/octet-stream',
-                name: file.name || 'file'
-            } as any);
+            // ВАЖНОЕ ОТЛИЧИЕ ДЛЯ ВЕБА - используем XMLHttpRequest
+            if (Platform.OS === 'web' && (selectedFile as any).file) {
+                const token = AuthManager.getToken();
+                const xhr = new XMLHttpRequest();
+                xhrRef.current = xhr;
 
-            formData.append('CatalogId', selectedCatalog.id);
-            if (status) formData.append('DocumentStatus', status);
-            if (description) formData.append('description', description);
-            if (startDate) formData.append('StartDate', startDate.toISOString());
-            if (endDate) formData.append('EndDate', endDate.toISOString());
+                // На вебе НЕ используем сохраненный mimeType, передаем оригинальный File объект
+                // Браузер сам установит правильный MIME type в Content-Type
+                const file = (selectedFile as any).file as File;
+                formData.append('File', file);
+                formData.append('CatalogId', selectedCatalog.id);
+                if (status) formData.append('DocumentStatus', status);
+                if (description) formData.append('description', description);
+                if (startDate) formData.append('StartDate', startDate.toISOString());
+                if (endDate) formData.append('EndDate', endDate.toISOString());
 
-            await apiClient.post(`/api/Events/${eventId}/attachments`, formData, {
-                headers: { 'Accept': '*/*' }
-            });
+                xhr.upload.addEventListener('progress', (event) => {
+                    if (event.lengthComputable) {
+                        const progress = event.loaded / event.total;
+                        setUploadProgress(progress);
+                    }
+                });
 
-            Toast.show({
-                type: 'success',
-                text1: 'Успех',
-                text2: 'Файл успешно загружен',
-                position: 'top',
-                visibilityTime: 3000,
-                topOffset: 50,
-            });
-            handleClose();
-            resetForm();
-        } catch (error) {
+                xhr.addEventListener('load', () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        Toast.show({
+                            type: 'success',
+                            text1: 'Успех',
+                            text2: 'Файл успешно загружен',
+                            position: 'top',
+                            visibilityTime: 3000,
+                            topOffset: 50,
+                        });
+                        handleClose();
+                        resetForm();
+                    } else {
+                        throw new Error(`Upload failed with status ${xhr.status}: ${xhr.responseText}`);
+                    }
+                });
+
+                xhr.addEventListener('error', () => {
+                    throw new Error('Network error during upload');
+                });
+
+                xhr.open('POST', `${apiUrl}/api/Events/${eventId}/attachments`);
+                xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+                xhr.setRequestHeader('X-App-Secret', xAppSecret);
+                xhr.send(formData);
+            } else {
+                // В React Native используется axios
+                formData.append('File', {
+                    uri: selectedFile.uri || selectedFile.assets?.[0]?.uri,
+                    name: selectedFile.name || selectedFile.assets?.[0]?.name || 'file',
+                    type: selectedFile.mimeType || selectedFile.assets?.[0]?.mimeType || 'application/octet-stream',
+                } as any);
+
+                formData.append('CatalogId', selectedCatalog.id);
+                if (status) formData.append('DocumentStatus', status);
+                if (description) formData.append('description', description);
+                if (startDate) formData.append('StartDate', startDate.toISOString());
+                if (endDate) formData.append('EndDate', endDate.toISOString());
+
+                await apiClient.post(`/api/Events/${eventId}/attachments`, formData, {
+                    headers: {
+                        'Accept': 'text/plain',
+                    },
+                    onUploadProgress: (progressEvent) => {
+                        if (progressEvent.total) {
+                            setUploadProgress(progressEvent.loaded / progressEvent.total);
+                        }
+                    }
+                });
+
+                Toast.show({
+                    type: 'success',
+                    text1: 'Успех',
+                    text2: 'Файл успешно загружен',
+                    position: 'top',
+                    visibilityTime: 3000,
+                    topOffset: 50,
+                });
+                handleClose();
+                resetForm();
+            }
+        } catch (error: any) {
             console.error('Ошибка при загрузке файла:', error);
-            setError('Не удалось загрузить файл. Попробуйте позже.');
+            setError(error?.message || 'Не удалось загрузить файл. Попробуйте позже.');
+            Alert.alert('Ошибка', error?.message || 'Не удалось загрузить файл');
         } finally {
-    setUploading(false);
-}
-};
+            setUploading(false);
+            setUploadProgress(0);
+            if (xhrRef.current) {
+                xhrRef.current = null;
+            }
+        }
+    };
 
     const imageHeaders = {
         Authorization: `Bearer ${token}`,

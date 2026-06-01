@@ -24,6 +24,9 @@ apiClient.interceptors.request.use(
             console.log(`⚠️ No token for ${config.method?.toUpperCase()} ${config.url}`);
         }
 
+        // Гарантируем, что X-App-Secret всегда присутствует
+        config.headers['X-App-Secret'] = xAppSecret;
+
         return config;
     },
     (error) => {

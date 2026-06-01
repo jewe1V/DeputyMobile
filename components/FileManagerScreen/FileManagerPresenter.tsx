@@ -694,13 +694,18 @@ export const useFileManagerPresenter = () => {
                 : `${doc.file_name}${extension}`;
             const downloadUrl = `${apiUrl}/api/files/${encodeURIComponent(doc.file_name)}`;
 
+            const headers = {
+                'Authorization': `Bearer ${token}`,
+                'X-App-Secret': xAppSecret
+            };
+
             // --- ЛОГИКА ДЛЯ ВЕБА ---
             if (Platform.OS === 'web') {
                 Toast.show({ type: 'info', text1: 'Загрузка...' });
 
-                // Скачиваем файл как Blob, чтобы можно было передать Authorization
+                // Скачиваем файл как Blob, чтобы можно было передать Authorization и X-App-Secret
                 const response = await fetch(downloadUrl, {
-                    headers: { 'Authorization': `Bearer ${token}` }
+                    headers: headers
                 });
 
                 if (!response.ok) throw new Error('Download failed');
@@ -736,7 +741,7 @@ export const useFileManagerPresenter = () => {
             const downloadResult = await FileSystem.downloadAsync(
                 downloadUrl,
                 tempUri,
-                { headers: { 'Authorization': `Bearer ${token}` } }
+                { headers: headers }
             );
 
             if (downloadResult.status !== 200) throw new Error('Download failed');

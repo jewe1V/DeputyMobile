@@ -1,4 +1,4 @@
-import {apiClient} from './api';
+import {apiClient, xAppSecret} from './api';
 
 interface DocumentApiResponse {
     id: string;
@@ -101,7 +101,10 @@ class DocumentService {
             }
 
             const response = await apiClient.post('/api/Documents/upload', formData, {
-                headers: { 'Accept': 'application/json' }
+                headers: { 
+                    'Accept': 'application/json',
+                    'X-App-Secret': xAppSecret
+                }
             });
 
             const data: DocumentApiResponse = response.data;

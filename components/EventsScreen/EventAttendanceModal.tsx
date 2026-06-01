@@ -102,58 +102,27 @@ export const EventAttendanceModal: React.FC<Props> = ({
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const uploadFileToServer = async (fileInfo: { uri: string; name: string; mimeType?: string }) => {
+    const uploadFileToServer = async (fileInfo: { uri: string; name: string; mimeType?: string; file?: File }) => {
         try {
-            setUploading(true);
-            setUploadProgress(0);
             setError(null);
 
-            const formData = new FormData();
-            formData.append('file', {
+            // На вебе не сохраняем неправильный mimeType из браузера
+            // Будем использовать тип из оригинального File объекта при отправке
+            const mimeType = (fileInfo.file as any)?.type || fileInfo.mimeType;
+
+            // Просто сохраняем файл локально, без загрузки на сервер
+            setExcuseDocument({
                 uri: fileInfo.uri,
                 name: fileInfo.name,
-                type: fileInfo.mimeType || 'application/octet-stream',
+                mimeType: mimeType,
+                file: fileInfo.file,
+                localUri: fileInfo.uri
             } as any);
 
-            // Создаем cancel token для возможности отмены
-            const source = axios.CancelToken.source();
-
-            // Сохраняем функцию отмены в ref
-            if (xhrRef) {
-                xhrRef.current = { cancel: () => source.cancel('Upload cancelled') };
-            }
-
-            const response = await apiClient.post('/api/Documents/upload/document', formData, {
-                headers: {
-                    'Accept': 'text/plain',
-                },
-                onUploadProgress: (progressEvent: AxiosProgressEvent) => {
-                    if (progressEvent.total) {
-                        setUploadProgress(progressEvent.loaded / progressEvent.total);
-                    }
-                },
-                cancelToken: source.token
-            });
-
-            // response.data уже содержит распарсенные данные
-            const document = response.data || {};
-
-            setExcuseDocument({
-                ...document,
-                localUri: fileInfo.uri
-            });
-
         } catch (e: any) {
-            if (!axios.isCancel(e) && e.message !== 'Upload cancelled') {
-                Alert.alert('Ошибка загрузки', e.message);
-                setError(e.message);
-            }
-        } finally {
-            setUploading(false);
-            setUploadProgress(0);
-            if (xhrRef) {
-                xhrRef.current = null;
-            }
+            console.error('Ошибка:', e);
+            setError(e?.message || 'Ошибка при выборе файла');
+            Alert.alert('Ошибка', e?.message || 'Не удалось выбрать файл');
         }
     };
 
@@ -206,18 +175,66 @@ export const EventAttendanceModal: React.FC<Props> = ({
         try {
             setSubmitting(true);
             const body: any = { status: selectedStatus };
+            
             if (selectedStatus === 'No') {
                 if (excuseNote) body.excuse_note = excuseNote;
-                if (excuseDocument) body.excuse_document_id = excuseDocument.id;
+                
+                // Если есть файл и он не был загружен на сервер - загружаем его
+                if (excuseDocument && !(excuseDocument as any).id && (excuseDocument as any).file) {
+                    const formData = new FormData();
+                    const token = AuthManager.getToken();
+
+                    // Используем XMLHttpRequest для надежной передачи
+                    const uploadPromise = new Promise<string>((resolve, reject) => {
+                        const xhr = new XMLHttpRequest();
+
+                        xhr.upload.addEventListener('progress', (event) => {
+                            if (event.lengthComputable) {
+                                setUploadProgress(event.loaded / event.total);
+                            }
+                        });
+
+                        xhr.addEventListener('load', () => {
+                            if (xhr.status >= 200 && xhr.status < 300) {
+                                try {
+                                    const response = JSON.parse(xhr.response);
+                                    resolve(response.id || response.file_name_encoded);
+                                } catch (e) {
+                                    resolve(xhr.response);
+                                }
+                            } else {
+                                reject(new Error(`Upload failed with status ${xhr.status}`));
+                            }
+                        });
+
+                        xhr.addEventListener('error', () => reject(new Error('Network error')));
+
+                        formData.append('file', (excuseDocument as any).file);
+                        
+                        xhr.open('POST', `${apiUrl}/api/Documents/upload/document`);
+                        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+                        xhr.setRequestHeader('X-App-Secret', xAppSecret);
+                        xhr.send(formData);
+                    });
+
+                    const documentId = await uploadPromise;
+                    body.excuse_document_id = documentId;
+                    setUploadProgress(0);
+                } else if (excuseDocument && (excuseDocument as any).id) {
+                    body.excuse_document_id = (excuseDocument as any).id;
+                }
             }
 
             await apiClient.post(`/api/Events/${eventId}/rsvp`, body);
 
             closeAnim(() => { onSuccess?.(); onClose(); });
-        } catch (e) {
-            setError('Ошибка сети');
+        } catch (e: any) {
+            console.error('Ошибка:', e);
+            setError(e?.message || 'Ошибка сети');
+            Alert.alert('Ошибка', e?.message || 'Не удалось отправить ответ');
         } finally {
             setSubmitting(false);
+            setUploadProgress(0);
         }
     };
 
