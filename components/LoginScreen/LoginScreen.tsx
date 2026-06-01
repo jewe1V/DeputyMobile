@@ -17,6 +17,7 @@ import Toast from "react-native-toast-message";
 import {LinearGradient} from "expo-linear-gradient";
 import {apiClient, apiUrl, xAppSecret} from "@/api/api";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from "axios";
 
 // Адаптер для кроссплатформенного хранения
 class StorageAdapter {
@@ -345,10 +346,18 @@ const LoginScreen = () => {
 
         setIsLoading(true);
         try {
-            const response = await apiClient.post<AuthResponse>('/api/Auth/login', {
-                email: email,
-                password: password
-            });
+            const response = await axios.post<AuthResponse>(
+                'https://ddc.egd.ru/api/Auth/login',
+                {
+                    email: email,
+                    password: password
+                },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                }
+            );
             const data = response.data;
             await AuthManager.setAuth(
                 data.token,

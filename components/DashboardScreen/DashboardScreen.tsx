@@ -221,7 +221,7 @@ export function Dashboard() {
                 >
                     <View style={styles.headerContent}>
                         <View style={styles.userInfoRow}>
-                            <TouchableOpacity style={styles.userProfileButton} onPress={() => router.push("/ProfileScreen")}>
+                            <TouchableOpacity style={styles.userProfileButton} onPress={() => router.push({ pathname: '/(screens)/ProfileScreen', params: { id: null }})}>
                                 <View style={styles.avatarContainer}>
                                     <View style={styles.avatar}>
                                         <Text style={styles.avatarText}>
