@@ -19,7 +19,7 @@ import {
     Text,
     TouchableOpacity,
     View,
-    RefreshControl, InteractionManager
+    RefreshControl
 } from 'react-native';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { styles } from './task-board-style';
@@ -46,7 +46,6 @@ export function TaskBoard() {
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const insets = useSafeAreaInsets();
-    const [isReady, setIsReady] = useState(false);
 
     // Функция для определения начального режима при заходе на экран
     const getInitialTaskMode = useCallback((): TaskMode => {
@@ -147,13 +146,6 @@ export function TaskBoard() {
         loadTasks(true);
     }, [loadTasks]);
 
-    useEffect(() => {
-        const task = InteractionManager.runAfterInteractions(() => {
-            setIsReady(true);
-        });
-
-        return () => task.cancel();
-    }, []);
 
     // Фильтрация
     let filteredTasks = filterStatus === 'all'
@@ -188,10 +180,6 @@ export function TaskBoard() {
         { label: 'Все', value: 'all' },
         ...statuses.map(s => ({ label: s.name, value: s.name }))
     ];
-
-    if (!isReady) {
-        return <View style={{flex: 1, backgroundColor: 'white'}} />;
-    }
 
     return (
         <View style={{ flex: 1, backgroundColor: '#fff' }}>

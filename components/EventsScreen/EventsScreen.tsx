@@ -8,7 +8,6 @@ import {
     RefreshControl,
     TouchableOpacity,
     Platform,
-    InteractionManager,
     ScrollView
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -44,7 +43,6 @@ const EventsScreen: React.FC = () => {
     const [eventsFilter, setEventsFilter] = useState<'all' | 'mine' | 'past'>(
         isMineMode ? 'mine' : 'all'
     );
-    const [isReady, setIsReady] = useState(false);
 
     const insets = useSafeAreaInsets();
 
@@ -96,10 +94,8 @@ const EventsScreen: React.FC = () => {
 
     useFocusEffect(
         useCallback(() => {
-            if (isReady) {
-                loadEvents(viewDate.year, viewDate.month, false, eventsFilter === 'mine');
-            }
-        }, [isReady, viewDate.year, viewDate.month, eventsFilter, loadEvents])
+            loadEvents(viewDate.year, viewDate.month, false, eventsFilter === 'mine');
+        }, [viewDate.year, viewDate.month, eventsFilter, loadEvents])
     );
 
     // Обработка смены режима отображения
@@ -120,13 +116,7 @@ const EventsScreen: React.FC = () => {
     }, [eventsFilter, viewDate.month, viewDate.year, loadEvents]);
 
     useEffect(() => {
-        const task = InteractionManager.runAfterInteractions(() => {
-            setIsReady(true);
-        });
-
         loadEvents(viewDate.year, viewDate.month, false, eventsFilter === 'mine');
-
-        return () => task.cancel();
     }, [eventsFilter]);
 
     const onRefresh = useCallback(async () => {
@@ -198,9 +188,6 @@ const EventsScreen: React.FC = () => {
         return `Запланировано в ${currMonth}: ${filteredEvents.length}`;
     }, [viewMode, filteredEvents.length, currMonth]);
 
-    if (!isReady) {
-        return (<View style={{ flex: 1, backgroundColor: '#f9f9f9' }}></View>);
-    }
 
     return (
         <View style={{ flex: 1, backgroundColor: '#ffffff' }}>
