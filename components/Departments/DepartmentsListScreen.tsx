@@ -273,33 +273,30 @@ const styles = StyleSheet.create({
     departmentCard: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#fff',
         padding: 12,
         borderRadius: 16,
         marginBottom: 12,
         borderWidth: 1,
-        borderColor: '#f1f5f9',
     },
     departmentIcon: {
         width: 40,
         height: 40,
         borderRadius: 25,
-        backgroundColor: '#ebfdeb',
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 12,
     },
     departmentInfo: { flex: 1 },
-    departmentName: { fontSize: 16, fontWeight: '600', color: '#1e293b', marginBottom: 4 },
-    departmentId: { fontSize: 12, color: '#64748b' },
+    departmentName: { fontSize: 16, fontWeight: '600', marginBottom: 4 },
+    departmentId: { fontSize: 12 },
     deleteButton: {
         padding: 8,
         borderRadius: 8,
     },
     center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     emptyState: { alignItems: 'center', marginTop: 60 },
-    emptyTitle: { fontSize: 16, fontWeight: '600', color: '#4b5563', marginTop: 12 },
-    emptySubtitle: { fontSize: 14, color: '#9ca3af', marginTop: 4 },
+    emptyTitle: { fontSize: 16, fontWeight: '600', marginTop: 12 },
+    emptySubtitle: { fontSize: 14, marginTop: 4 },
 
     // Modal styles
     modalOverlay: {

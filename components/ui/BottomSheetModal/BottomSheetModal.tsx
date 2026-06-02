@@ -66,30 +66,28 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
                                                                   }) => {
     const { colors, isDark } = useTheme();
     const insets = useSafeAreaInsets();
-    const panY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
-
-    // Позиция, в которую sheet «приезжает»
-    const startY = SCREEN_HEIGHT * (1 - heightFraction);
+    const sheetHeight = SCREEN_HEIGHT * heightFraction;
+    const panY = useRef(new Animated.Value(sheetHeight)).current;
 
     const open = useCallback(() => {
         Animated.timing(panY, {
-            toValue: startY,
+            toValue: 0,
             duration: 300,
-            useNativeDriver: false,
+            useNativeDriver: true,
         }).start();
-    }, [panY, startY]);
+    }, [panY]);
 
     const close = useCallback(
         (callback?: () => void) => {
             Animated.timing(panY, {
-                toValue: SCREEN_HEIGHT,
+                toValue: sheetHeight,
                 duration: 250,
-                useNativeDriver: false,
+                useNativeDriver: true,
             }).start(() => {
                 callback?.();
             });
         },
-        [panY],
+        [panY, sheetHeight],
     );
 
     const handleClose = useCallback(() => {
@@ -102,7 +100,7 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
             onMoveShouldSetPanResponder: (_, gs) => Math.abs(gs.dy) > 5,
             onPanResponderMove: (_, gs) => {
                 if (gs.dy > 0) {
-                    panY.setValue(startY + gs.dy);
+                    panY.setValue(gs.dy);
                 }
             },
             onPanResponderRelease: (_, gs) => {
@@ -110,9 +108,9 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
                     close(onClose);
                 } else {
                     Animated.timing(panY, {
-                        toValue: startY,
+                        toValue: 0,
                         duration: 200,
-                        useNativeDriver: false,
+                        useNativeDriver: true,
                     }).start();
                 }
             },
@@ -126,9 +124,9 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
         if (visible) {
             open();
         } else {
-            panY.setValue(SCREEN_HEIGHT);
+            panY.setValue(sheetHeight);
         }
-    }, [visible, open, panY]);
+    }, [visible, open, panY, sheetHeight]);
 
     const renderDefaultHeader = () => (
         <View style={styles.headerContainer}>
@@ -232,9 +230,9 @@ const styles = StyleSheet.create({
     },
     sheet: {
         position: 'absolute',
+        bottom: 0,
         left: 0,
         right: 0,
-        height: SCREEN_HEIGHT,
         backgroundColor: '#ffffff',
         borderTopLeftRadius: 28,
         borderTopRightRadius: 28,

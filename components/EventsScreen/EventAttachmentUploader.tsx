@@ -4,6 +4,7 @@ import { AuthManager } from '@/components/LoginScreen/LoginScreen';
 import DateTimePickerModal from "@/components/ui/Shared/DateTimePickerModal";
 import { SkeletonItem } from "@/components/ui/Shared/SkeletonLoader";
 import { BottomSheetModal } from '@/components/ui/BottomSheetModal/BottomSheetModal';
+import { useTheme } from '@/context/ThemeContext';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from "expo-image-picker";
 import {
@@ -69,6 +70,7 @@ export const EventAttachmentUploader: React.FC<Props> = ({
                                                              onClose,
                                                              onSuccess
                                                          }) => {
+    const { colors, isDark } = useTheme();
     const insets = useSafeAreaInsets();
     const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
 
@@ -410,13 +412,13 @@ export const EventAttachmentUploader: React.FC<Props> = ({
         if (currentCatalog && (!currentCatalog.children || currentCatalog.children.length === 0)) {
             return (
                 <View style={styles.stateContainer}>
-                    <Folder size={40} color="#cbd5e1" />
-                    <Text style={styles.emptyText}>Папка пуста</Text>
+                    <Folder size={40} color={colors.subtext} />
+                    <Text style={[styles.emptyText, { color: colors.subtext }]}>Папка пуста</Text>
                     <TouchableOpacity
-                        style={styles.selectButton}
+                        style={[styles.selectButton, { borderColor: colors.primary }]}
                         onPress={() => selectCatalog(currentCatalog)}
                     >
-                        <Text style={styles.selectButtonText}>Выбрать в качестве каталога</Text>
+                        <Text style={[styles.selectButtonText, { color: colors.primary }]}>Выбрать в качестве каталога</Text>
                     </TouchableOpacity>
                 </View>
             );
@@ -425,27 +427,27 @@ export const EventAttachmentUploader: React.FC<Props> = ({
         if (items.length === 0) {
             return (
                 <View style={styles.stateContainer}>
-                    <Folder size={40} color="#cbd5e1" />
-                    <Text style={styles.emptyText}>Нет доступных каталогов</Text>
+                    <Folder size={40} color={colors.subtext} />
+                    <Text style={[styles.emptyText, { color: colors.subtext }]}>Нет доступных каталогов</Text>
                 </View>
             );
         }
 
         return items.map(item => (
-            <View key={item.id} style={styles.catalogRowContainer}>
+            <View key={item.id} style={[styles.catalogRowContainer, { borderBottomColor: colors.border }]}>
                 <TouchableOpacity
                     style={styles.catalogSelectArea}
                     onPress={() => setCurrentPath([...currentPath, item])}
                 >
-                    <Folder size={20} color="#2A6E3F" />
-                    <Text style={styles.catalogItemText} numberOfLines={1}>{item.name}</Text>
+                    <Folder size={20} color={colors.primary} />
+                    <Text style={[styles.catalogItemText, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={styles.catalogNavButton}
                     onPress={() => selectCatalog(item)}
                 >
-                    <View style={styles.verticalDivider} />
-                    <Text>Выбрать</Text>
+                    <View style={[styles.verticalDivider, { backgroundColor: colors.border }]} />
+                    <Text style={{ color: colors.primary }}>Выбрать</Text>
                 </TouchableOpacity>
             </View>
         ));
@@ -454,25 +456,25 @@ export const EventAttachmentUploader: React.FC<Props> = ({
     // Кастомный header для каталог-пикера с breadcrumbs
     const renderCatalogPickerHeader = () => (
         <View>
-            <Text style={styles.title}>Выбор папки</Text>
+            <Text style={[styles.title, { color: colors.text }]}>Выбор папки</Text>
             {currentPath.length > 0 && (
                 <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
-                    style={styles.breadcrumbContainer}
+                    style={[styles.breadcrumbContainer, { borderBottomColor: colors.border }]}
                 >
                     <View style={styles.breadcrumbItem}>
                         <TouchableOpacity onPress={() => setCurrentPath([])}>
                             <View pointerEvents="none">
-                                <Home color="#2A6E3F" size={18} />
+                                <Home color={colors.primary} size={18} />
                             </View>
                         </TouchableOpacity>
                     </View>
                     {currentPath.map((item, index) => (
                         <View key={item.id} style={styles.breadcrumbItem}>
-                            <Text style={styles.breadcrumbSeparator}> / </Text>
+                            <Text style={[styles.breadcrumbSeparator, { color: colors.subtext }]}> / </Text>
                             <TouchableOpacity onPress={() => setCurrentPath(currentPath.slice(0, index + 1))}>
-                                <Text style={styles.breadcrumbText}>{item.name}</Text>
+                                <Text style={[styles.breadcrumbText, { color: colors.primary }]}>{item.name}</Text>
                             </TouchableOpacity>
                         </View>
                     ))}
@@ -495,27 +497,27 @@ export const EventAttachmentUploader: React.FC<Props> = ({
             >
                 {/* Каталог */}
                 <View style={styles.field}>
-                    <Text style={styles.label}>
+                    <Text style={[styles.label, { color: colors.subtext }]}>
                         Каталог назначения <Text style={styles.requiredStar}>*</Text>
                     </Text>
                     <TouchableOpacity
-                        style={styles.selector}
+                        style={[styles.selector, { backgroundColor: isDark ? colors.background : '#f8fafc', borderColor: colors.border }]}
                         onPress={() => setShowCatalogPicker(true)}
                     >
-                        <Text style={[styles.selectorText, !selectedCatalog && styles.placeholderText]}>
+                        <Text style={[styles.selectorText, { color: colors.text }, !selectedCatalog && styles.placeholderText]}>
                             {selectedCatalog ? selectedCatalog.name : 'Выберите каталог'}
                         </Text>
-                        <Folder size={18} color="#94a3b8" />
+                        <Folder size={18} color={colors.subtext} />
                     </TouchableOpacity>
                 </View>
 
                 {/* Файл */}
                 <View style={styles.field}>
-                    <Text style={styles.label}>
+                    <Text style={[styles.label, { color: colors.subtext }]}>
                         Файл <Text style={styles.requiredStar}>*</Text>
                     </Text>
                     {selectedFile && selectedFile.assets?.[0] ? (
-                        <View style={styles.documentPreviewCard}>
+                        <View style={[styles.documentPreviewCard, { backgroundColor: isDark ? colors.background : '#f8fafc', borderColor: colors.border }]}>
                             <TouchableOpacity
                                 style={styles.previewContent}
                                 activeOpacity={0.7}
@@ -535,45 +537,45 @@ export const EventAttachmentUploader: React.FC<Props> = ({
                                         return (
                                             <Image
                                                 source={{ uri: imageUri, headers: imageHeaders }}
-                                                style={styles.thumbnail}
+                                                style={[styles.thumbnail, { backgroundColor: colors.border }]}
                                             />
                                         );
                                     }
                                     return (
-                                        <View style={styles.fileIconContainer}>
-                                            <FileText size={24} color="#2A6E3F" />
+                                        <View style={[styles.fileIconContainer, { backgroundColor: colors.border }]}>
+                                            <FileText size={24} color={colors.primary} />
                                         </View>
                                     );
                                 })()}
                                 <View style={styles.fileInfo}>
-                                    <Text style={styles.documentName} numberOfLines={1}>
+                                    <Text style={[styles.documentName, { color: colors.text }]} numberOfLines={1}>
                                         {selectedFile.assets?.[0]?.name || selectedFile.file_name || 'Файл'}
                                     </Text>
-                                    <Text style={styles.fileStatus}>
+                                    <Text style={[styles.fileStatus, { color: colors.subtext }]}>
                                         {selectedFile.size ? `${(selectedFile.size / 1024 / 1024).toFixed(2)} МБ` : ''}
                                     </Text>
                                 </View>
                             </TouchableOpacity>
 
                             <TouchableOpacity
-                                style={styles.removeButton}
+                                style={[styles.removeButton, { borderLeftColor: colors.border }]}
                                 onPress={() => setSelectedFile(null)}
                             >
                                 <View pointerEvents="none">
-                                    <X size={18} color="#000" />
+                                    <X size={18} color={colors.text} />
                                 </View>
                             </TouchableOpacity>
                         </View>
                     ) : (
                         <TouchableOpacity
-                            style={styles.addDocumentButton}
+                            style={[styles.addDocumentButton, { backgroundColor: isDark ? colors.background : '#f8fafc', borderColor: colors.border }]}
                             onPress={showUploadOptions}
                             disabled={uploading}
                         >
                             {uploading ? (
                                 <View style={styles.uploadProgressContainer}>
-                                    <ActivityIndicator color="#2A6E3F" style={{ marginRight: 10 }} />
-                                    <Text style={styles.addDocumentText}>
+                                    <ActivityIndicator color={colors.primary} style={{ marginRight: 10 }} />
+                                    <Text style={[styles.addDocumentText, { color: colors.primary }]}>
                                         Загрузка: {Math.round(uploadProgress * 50)}%
                                     </Text>
                                     <TouchableOpacity
@@ -582,16 +584,16 @@ export const EventAttachmentUploader: React.FC<Props> = ({
                                         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                                     >
                                         <View pointerEvents="none">
-                                            <X size={20} color="#2A6E3F" />
+                                            <X size={20} color={colors.primary} />
                                         </View>
                                     </TouchableOpacity>
                                 </View>
                             ) : (
                                 <>
-                                    <Text style={[styles.selectorText, styles.placeholderText]} numberOfLines={1}>
+                                    <Text style={[styles.selectorText, { color: colors.text }, styles.placeholderText]} numberOfLines={1}>
                                         Выберите файл
                                     </Text>
-                                    <Upload size={18} color="#94a3b8" />
+                                    <Upload size={18} color={colors.subtext} />
                                 </>
                             )}
                         </TouchableOpacity>
@@ -600,13 +602,13 @@ export const EventAttachmentUploader: React.FC<Props> = ({
 
                 {/* Описание */}
                 <View style={styles.field}>
-                    <Text style={styles.label}>Описание</Text>
+                    <Text style={[styles.label, { color: colors.subtext }]}>Описание</Text>
                     <TextInput
-                        style={styles.textArea}
+                        style={[styles.textArea, { backgroundColor: isDark ? colors.background : '#f8fafc', borderColor: colors.border, color: colors.text }]}
                         value={description}
                         onChangeText={setDescription}
                         placeholder="Введите краткое описание документа..."
-                        placeholderTextColor="#9ca3af"
+                        placeholderTextColor={colors.subtext}
                         multiline
                         numberOfLines={4}
                         textAlignVertical="top"
@@ -624,31 +626,32 @@ export const EventAttachmentUploader: React.FC<Props> = ({
 
                 {/* Статус */}
                 <View style={[styles.field, isStatusSelectOpen && styles.fieldOnTop]}>
-                    <Text style={styles.label}>Статус обработки</Text>
+                    <Text style={[styles.label, { color: colors.subtext }]}>Статус обработки</Text>
 
                     <View style={[styles.selectWrapper, isStatusSelectOpen && styles.selectWrapperOpen]}>
                         <TouchableOpacity
-                            style={[styles.selector, isStatusSelectOpen && styles.selectorActive]}
+                            style={[styles.selector, { backgroundColor: isDark ? colors.background : '#f8fafc', borderColor: colors.border }, isStatusSelectOpen && styles.selectorActive, isStatusSelectOpen && { borderColor: colors.primary }]}
                             onPress={() => setIsStatusSelectOpen(prev => !prev)}
                             activeOpacity={0.85}
                         >
-                            <Text style={[styles.selectorText, !status && styles.placeholderText]}>
+                            <Text style={[styles.selectorText, { color: colors.text }, !status && styles.placeholderText]}>
                                 {status ? FILE_STATUSES[status] : 'Выберите статус'}
                             </Text>
                             <View pointerEvents="none">
-                                <ChevronDown size={18} color="#94a3b8" />
+                                <ChevronDown size={18} color={colors.subtext} />
                             </View>
                         </TouchableOpacity>
 
                         {isStatusSelectOpen && (
-                            <View style={styles.selectDropdown}>
+                            <View style={[styles.selectDropdown, { backgroundColor: colors.card, borderColor: colors.border }]}>
                                 {Object.entries(FILE_STATUSES).map(([key, value], index, arr) => (
                                     <TouchableOpacity
                                         key={key}
                                         style={[
                                             styles.selectItem,
+                                            { backgroundColor: colors.card, borderBottomColor: colors.border },
                                             index === arr.length - 1 && styles.selectItemLast,
-                                            status === key && styles.selectItemSelected
+                                            status === key && [styles.selectItemSelected, { backgroundColor: isDark ? colors.primary + '20' : '#f0fdf4' }]
                                         ]}
                                         onPress={() => {
                                             setStatus(key as FileStatus);
@@ -658,7 +661,8 @@ export const EventAttachmentUploader: React.FC<Props> = ({
                                         <Text
                                             style={[
                                                 styles.selectItemText,
-                                                status === key && styles.selectItemTextSelected
+                                                { color: colors.text },
+                                                status === key && [styles.selectItemTextSelected, { color: colors.primary }]
                                             ]}
                                         >
                                             {value}
@@ -673,18 +677,18 @@ export const EventAttachmentUploader: React.FC<Props> = ({
                 {/* Даты */}
                 <View style={styles.row}>
                     <View style={[styles.field, { flex: 1, marginRight: 8 }]}>
-                        <Text style={styles.label}>Дата начала</Text>
-                        <TouchableOpacity style={styles.selector} onPress={() => setStartPickerVisible(true)}>
-                            <Text style={[styles.selectorText, !startDate && styles.placeholderText]}>
+                        <Text style={[styles.label, { color: colors.subtext }]}>Дата начала</Text>
+                        <TouchableOpacity style={[styles.selector, { backgroundColor: isDark ? colors.background : '#f8fafc', borderColor: colors.border }]} onPress={() => setStartPickerVisible(true)}>
+                            <Text style={[styles.selectorText, { color: colors.text }, !startDate && styles.placeholderText]}>
                                 {startDate ? formatDate(startDate) : 'Не задана'}
                             </Text>
                         </TouchableOpacity>
                     </View>
 
                     <View style={[styles.field, { flex: 1, marginLeft: 8 }]}>
-                        <Text style={styles.label}>Дата окончания</Text>
-                        <TouchableOpacity style={styles.selector} onPress={() => setEndPickerVisible(true)}>
-                            <Text style={[styles.selectorText, !endDate && styles.placeholderText]}>
+                        <Text style={[styles.label, { color: colors.subtext }]}>Дата окончания</Text>
+                        <TouchableOpacity style={[styles.selector, { backgroundColor: isDark ? colors.background : '#f8fafc', borderColor: colors.border }]} onPress={() => setEndPickerVisible(true)}>
+                            <Text style={[styles.selectorText, { color: colors.text }, !endDate && styles.placeholderText]}>
                                 {endDate ? formatDate(endDate) : 'Не задана'}
                             </Text>
                         </TouchableOpacity>
@@ -693,9 +697,9 @@ export const EventAttachmentUploader: React.FC<Props> = ({
 
                 {/* Ошибка */}
                 {error && (
-                    <View style={styles.formError}>
+                    <View style={[styles.formError, { backgroundColor: isDark ? '#450a0a' : '#fef2f2', borderColor: isDark ? '#991b1b' : '#fecaca' }]}>
                         <AlertCircle size={18} color="#ef4444" />
-                        <Text style={styles.formErrorText}>{error}</Text>
+                        <Text style={[styles.formErrorText, { color: isDark ? '#fca5a5' : '#b91c1c' }]}>{error}</Text>
                     </View>
                 )}
 
@@ -703,7 +707,8 @@ export const EventAttachmentUploader: React.FC<Props> = ({
                 <TouchableOpacity
                     style={[
                         styles.uploadButton,
-                        (!selectedFile || !selectedCatalog || uploading) && styles.uploadButtonDisabled
+                        { backgroundColor: colors.primary },
+                        (!selectedFile || !selectedCatalog || uploading) && [styles.uploadButtonDisabled, { backgroundColor: colors.border }]
                     ]}
                     onPress={uploadFile}
                     disabled={!selectedFile || !selectedCatalog || uploading}
@@ -837,9 +842,7 @@ const styles = StyleSheet.create({
         top: 60,
         left: 0,
         right: 0,
-        backgroundColor: '#ffffff',
         borderWidth: 1,
-        borderColor: '#e2e8f0',
         borderRadius: 12,
         marginTop: 6,
         shadowColor: '#000',
@@ -854,9 +857,7 @@ const styles = StyleSheet.create({
     selectItem: {
         paddingHorizontal: 16,
         paddingVertical: 14,
-        backgroundColor: '#ffffff',
         borderBottomWidth: 1,
-        borderBottomColor: '#f1f5f9',
     },
 
     selectItemLast: {
@@ -864,23 +865,19 @@ const styles = StyleSheet.create({
     },
 
     selectItemSelected: {
-        backgroundColor: '#f0fdf4',
     },
 
     selectItemText: {
         fontSize: 15,
-        color: '#334155',
     },
 
     selectItemTextSelected: {
-        color: '#2A6E3F',
         fontWeight: '600',
     },
     // Контент скролла
     label: {
         fontSize: 13,
         fontWeight: '600',
-        color: '#475569',
         marginBottom: 6,
         marginLeft: 4,
         textTransform: 'uppercase',
@@ -889,7 +886,6 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 18,
         fontWeight: '700',
-        color: '#0b2340',
         marginBottom: 10,
         textAlign: 'center',
     },
@@ -899,18 +895,13 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: 16,
         paddingVertical: 14,
-        backgroundColor: '#f8fafc',
         borderWidth: 1,
-        borderColor: '#e2e8f0',
         borderRadius: 12,
     },
     selectorActive: {
-        borderColor: '#2A6E3F',
-        backgroundColor: '#f0fdf4',
     },
     selectorText: {
         fontSize: 15,
-        color: '#0f172a',
         flex: 1,
         marginRight: 8,
     },
@@ -918,14 +909,11 @@ const styles = StyleSheet.create({
         color: '#94a3b8',
     },
     textArea: {
-        backgroundColor: '#f8fafc',
         borderWidth: 1,
-        borderColor: '#e2e8f0',
         borderRadius: 12,
         paddingHorizontal: 16,
         paddingVertical: 14,
         fontSize: 15,
-        color: '#0f172a',
         minHeight: 100,
     },
     uploadButton: {
@@ -934,17 +922,14 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         paddingVertical: 16,
         borderRadius: 14,
-        backgroundColor: '#2A6E3F',
         marginTop: 8,
         gap: 8,
-        shadowColor: '#2A6E3F',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
         shadowRadius: 8,
         elevation: 4,
     },
     uploadButtonDisabled: {
-        backgroundColor: '#cbd5e1',
         shadowOpacity: 0,
         elevation: 0,
     },
@@ -958,7 +943,6 @@ const styles = StyleSheet.create({
     breadcrumbContainer: {
         paddingVertical: 12,
         borderBottomWidth: 1,
-        borderBottomColor: '#f1f5f9',
         maxHeight: 50,
     },
     breadcrumbItem: {
@@ -967,12 +951,10 @@ const styles = StyleSheet.create({
     },
     breadcrumbSeparator: {
         fontSize: 15,
-        color: '#94a3b8',
         marginHorizontal: 4,
     },
     breadcrumbText: {
         fontSize: 15,
-        color: '#2A6E3F',
         fontWeight: '500',
     },
 
@@ -986,14 +968,12 @@ const styles = StyleSheet.create({
     emptyText: {
         marginTop: 12,
         fontSize: 15,
-        color: '#64748b',
         textAlign: 'center',
     },
     catalogRowContainer: {
         flexDirection: 'row',
         alignItems: 'stretch',
         borderBottomWidth: 1,
-        borderBottomColor: '#f1f5f9',
         minHeight: 56,
     },
     catalogSelectArea: {
@@ -1013,12 +993,10 @@ const styles = StyleSheet.create({
     verticalDivider: {
         width: 1,
         height: '60%',
-        backgroundColor: '#f1f5f9',
         marginRight: 12,
     },
     catalogItemText: {
         fontSize: 15,
-        color: '#0f172a',
         fontWeight: '500',
         flex: 1,
     },
@@ -1029,7 +1007,6 @@ const styles = StyleSheet.create({
     },
     selectButton: {
         marginTop: 20,
-        borderColor: '#2A6E3F',
         borderWidth: 1,
         paddingHorizontal: 12,
         paddingVertical: 4,
@@ -1037,7 +1014,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     selectButtonText: {
-        color: '#2A6E3F',
         fontSize: 16,
         fontWeight: '500',
     },
@@ -1046,17 +1022,14 @@ const styles = StyleSheet.create({
     formError: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#fef2f2',
         padding: 14,
         borderRadius: 12,
         marginBottom: 16,
         borderWidth: 1,
-        borderColor: '#fecaca',
         gap: 10,
     },
     formErrorText: {
         fontSize: 14,
-        color: '#b91c1c',
         flex: 1,
     },
 
@@ -1067,24 +1040,19 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: 16,
         paddingVertical: 14,
-        backgroundColor: '#f8fafc',
         borderWidth: 1,
-        borderColor: '#e2e8f0',
         borderRadius: 12,
         borderStyle: 'dashed',
     },
     addDocumentText: {
         fontSize: 15,
-        color: '#2A6E3F',
         fontWeight: '500',
     },
     documentPreviewCard: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#f8fafc',
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: '#e2e8f0',
         overflow: 'hidden',
     },
     previewContent: {
@@ -1098,13 +1066,11 @@ const styles = StyleSheet.create({
         width: 48,
         height: 48,
         borderRadius: 8,
-        backgroundColor: '#f1f5f9',
     },
     fileIconContainer: {
         width: 48,
         height: 48,
         borderRadius: 8,
-        backgroundColor: '#f1f5f9',
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -1114,17 +1080,14 @@ const styles = StyleSheet.create({
     documentName: {
         fontSize: 14,
         fontWeight: '500',
-        color: '#0f172a',
         marginBottom: 4,
     },
     fileStatus: {
         fontSize: 12,
-        color: '#64748b',
     },
     removeButton: {
         padding: 12,
         borderLeftWidth: 1,
-        borderLeftColor: '#e2e8f0',
     },
     uploadProgressContainer: {
         flexDirection: 'row',

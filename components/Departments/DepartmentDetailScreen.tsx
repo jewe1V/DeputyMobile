@@ -22,8 +22,10 @@ import { AddUserPopup } from "./AddUserPopup";
 import {ArrowLeft, Plus} from "lucide-react-native";
 import {declOfNum} from "@/utils";
 import { apiClient } from '@/api/api';
+import { useTheme } from '@/context/ThemeContext';
 
 const DepartmentDetailScreen = () => {
+    const { colors, isDark } = useTheme();
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const { id, name } = useLocalSearchParams<{ id: string; name: string }>();
@@ -125,10 +127,10 @@ const DepartmentDetailScreen = () => {
     };
 
     return (
-        <View style={{ flex: 1, backgroundColor: '#fff' }}>
+        <View style={{ flex: 1, backgroundColor: colors.background }}>
             <StatusBar barStyle="light-content" translucent />
             <LinearGradient
-                colors={['#2A6E3F', '#349339']}
+                colors={[colors.primary, colors.secondary]}
                 style={[styles.header, { paddingTop: insets.top + 15 }]}
             >
                 <View style={styles.headerTopRow}>
@@ -162,7 +164,7 @@ const DepartmentDetailScreen = () => {
 
             {loading ? (
                 <View style={styles.center}>
-                    <ActivityIndicator size="large" color="#2A6E3F" />
+                    <ActivityIndicator size="large" color={colors.primary} />
                 </View>
             ) : (
                 <FlatList
@@ -171,13 +173,13 @@ const DepartmentDetailScreen = () => {
                     renderItem={renderUserItem}
                     contentContainerStyle={styles.listContainer}
                     refreshControl={
-                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2A6E3F']} />
+                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />
                     }
                     ListEmptyComponent={
                         <View style={styles.emptyState}>
-                            <Ionicons name="people-outline" size={48} color="#9CA3AF" />
-                            <Text style={styles.emptyTitle}>Нет сотрудников</Text>
-                            <Text style={styles.emptySubtitle}>Добавьте пользователей в отдел</Text>
+                            <Ionicons name="people-outline" size={48} color={colors.subtext} />
+                            <Text style={[styles.emptyTitle, { color: colors.text }]}>Нет сотрудников</Text>
+                            <Text style={[styles.emptySubtitle, { color: colors.subtext }]}>Добавьте пользователей в отдел</Text>
                         </View>
                     }
                 />
@@ -215,22 +217,18 @@ const styles = StyleSheet.create({
     userCard: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#fff',
         padding: 12,
         borderRadius: 12,
         marginBottom: 12,
         borderWidth: 1,
-        borderColor: '#f1f5f9',
     },
     availableUserCard: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#fff',
         padding: 12,
         borderRadius: 12,
         marginBottom: 12,
         borderWidth: 1,
-        borderColor: '#e2e8f0',
     },
     avatar: {
         width: 50,
@@ -240,15 +238,15 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginRight: 12,
     },
-    avatarText: { fontWeight: '700', color: '#166534', fontSize: 18 },
+    avatarText: { fontWeight: '700', fontSize: 18 },
     userInfo: { flex: 1 },
-    userName: { fontSize: 16, fontWeight: '600', color: '#1e293b', marginBottom: 4 },
-    userEmail: { fontSize: 13, color: '#64748b', marginBottom: 2 },
-    userJob: { fontSize: 12, color: '#94a3b8' },
+    userName: { fontSize: 16, fontWeight: '600', marginBottom: 4 },
+    userEmail: { fontSize: 13, marginBottom: 2 },
+    userJob: { fontSize: 12 },
     center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     emptyState: { alignItems: 'center', marginTop: 60 },
-    emptyTitle: { fontSize: 16, fontWeight: '600', color: '#4b5563', marginTop: 12 },
-    emptySubtitle: { fontSize: 14, color: '#9ca3af', marginTop: 4 },
+    emptyTitle: { fontSize: 16, fontWeight: '600', marginTop: 12 },
+    emptySubtitle: { fontSize: 14, marginTop: 4 },
 
     // Modal styles
     modalOverlay: {

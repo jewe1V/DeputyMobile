@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, {useRef, useEffect, useState, useCallback} from 'react';
 import {
     View,
     Text,
@@ -36,20 +36,20 @@ export const CreateDepartmentPopup: React.FC<CreateDepartmentPopupProps> = ({
     const [name, setName] = useState('');
 
     const SHEET_HEIGHT = SCREEN_HEIGHT * 0.75;
-    const START_Y = SCREEN_HEIGHT - SHEET_HEIGHT;
+    const panY = useRef(new Animated.Value(SHEET_HEIGHT)).current;
 
-    const panY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
-
-    const resetPositionAnim = Animated.timing(panY, {
-        toValue: START_Y,
-        duration: 300,
-        useNativeDriver: false,
-    });
+    const open = useCallback(() => {
+        Animated.timing(panY, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+        }).start();
+    }, [panY]);
 
     const closeAnim = (callback?: () => void) => Animated.timing(panY, {
-        toValue: SCREEN_HEIGHT,
+        toValue: SHEET_HEIGHT,
         duration: 250,
-        useNativeDriver: false,
+        useNativeDriver: true,
     }).start(callback);
 
     const handleClose = () => {
@@ -71,14 +71,19 @@ export const CreateDepartmentPopup: React.FC<CreateDepartmentPopupProps> = ({
             onStartShouldSetPanResponder: () => true,
             onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dy) > 5,
             onPanResponderMove: (_, gestureState) => {
-                if (gestureState.dy < 0) return; // Не даем тянуть вверх выше лимита
-                panY.setValue(START_Y + gestureState.dy);
+                if (gestureState.dy > 0) {
+                    panY.setValue(gestureState.dy);
+                }
             },
             onPanResponderRelease: (_, gestureState) => {
                 if (gestureState.dy > 100) {
                     handleClose();
                 } else {
-                    resetPositionAnim.start();
+                    Animated.timing(panY, {
+                        toValue: 0,
+                        duration: 200,
+                        useNativeDriver: true,
+                    }).start();
                 }
             },
         })
@@ -86,9 +91,11 @@ export const CreateDepartmentPopup: React.FC<CreateDepartmentPopupProps> = ({
 
     useEffect(() => {
         if (visible) {
-            resetPositionAnim.start();
+            open();
+        } else {
+            panY.setValue(SHEET_HEIGHT);
         }
-    }, [visible]);
+    }, [visible, open, panY, SHEET_HEIGHT]);
 
     return (
         <Modal visible={visible} transparent animationType="none" onRequestClose={handleClose}>
@@ -157,9 +164,9 @@ const styles = StyleSheet.create({
     },
     sheet: {
         position: 'absolute',
+        bottom: 0,
         left: 0,
         right: 0,
-        backgroundColor: '#fff',
         borderTopLeftRadius: 32,
         borderTopRightRadius: 32,
         paddingHorizontal: 24,
@@ -177,14 +184,12 @@ const styles = StyleSheet.create({
     dragIndicator: {
         width: 38,
         height: 5,
-        backgroundColor: '#E5E7EB',
         borderRadius: 3,
         marginBottom: 16,
     },
     title: {
         fontSize: 20,
         fontWeight: '700',
-        color: '#1e293b',
     },
     content: {
         flex: 1,
@@ -192,22 +197,17 @@ const styles = StyleSheet.create({
     label: {
         fontSize: 14,
         fontWeight: '600',
-        color: '#64748b',
         marginBottom: 8,
         marginLeft: 4,
     },
     input: {
-        backgroundColor: '#f8fafc',
         borderWidth: 1,
-        borderColor: '#e2e8f0',
         borderRadius: 10,
         padding: 10,
         fontSize: 16,
-        color: '#1e293b',
         marginBottom: 24,
     },
     submitButton: {
-        backgroundColor: '#2A6E3F',
         borderRadius: 16,
         padding: 12,
         flexDirection: 'row',

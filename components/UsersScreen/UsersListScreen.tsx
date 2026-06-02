@@ -181,12 +181,10 @@ export const styles = StyleSheet.create({
     userCard: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#fff',
         padding: 8,
         borderRadius: 16,
         marginBottom: 12,
         borderWidth: 1,
-        borderColor: '#f1f5f9',
     },
     avatar: {
         width: 44,
@@ -196,16 +194,16 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
         marginRight: 12,
     },
-    avatarText: { fontWeight: '700', color: '#166534', fontSize: 16 },
+    avatarText: { fontWeight: '700', fontSize: 16 },
     userInfo: { flex: 1 },
-    userName: { fontSize: 15, fontWeight: '600', color: '#1e293b' },
-    jobText: { fontSize: 13, color: '#64748b', marginTop: 1 },
+    userName: { fontSize: 15, fontWeight: '600' },
+    jobText: { fontSize: 13, marginTop: 1 },
     roleBadge: { paddingHorizontal: 4, borderRadius: 4, marginLeft: 8 },
     roleBadgeText: { fontSize: 11, fontWeight: '700' },
     center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     emptyState: { alignItems: 'center', marginTop: 60 },
-    emptyTitle: { fontSize: 16, fontWeight: '600', color: '#4b5563', marginTop: 12 },
-    emptySubtitle: { fontSize: 14, color: '#9ca3af', marginTop: 4 },
+    emptyTitle: { fontSize: 16, fontWeight: '600', marginTop: 12 },
+    emptySubtitle: { fontSize: 14, marginTop: 4 },
 });
 
 export default UsersListScreen;

@@ -99,19 +99,16 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 12,
         borderBottomWidth: 1,
-        borderBottomColor: '#f1f5f9',
     },
     avatar: {
         width: 44,
         height: 44,
         borderRadius: 22,
-        backgroundColor: '#ebfdeb',
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 12,
     },
     avatarText: {
-        color: '#2A6E3F',
         fontWeight: '700',
         fontSize: 16,
     },
@@ -121,11 +118,9 @@ const styles = StyleSheet.create({
     userName: {
         fontSize: 15,
         fontWeight: '600',
-        color: '#1e293b',
     },
     userEmail: {
         fontSize: 13,
-        color: '#64748b',
     },
     emptyState: {
         flex: 1,
@@ -136,13 +131,11 @@ const styles = StyleSheet.create({
     },
     emptyText: {
         marginTop: 12,
-        color: '#64748b',
         fontSize: 14,
         textAlign: 'center',
     },
     loadingOverlay: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(255,255,255,0.7)',
         justifyContent: 'center',
         alignItems: 'center',
     },
