@@ -65,15 +65,8 @@ function TabButton({ route, isFocused, descriptors, navigation, color, Icon, lab
 export function CustomBottomTabBar({ state, descriptors, navigation, insets, role }) {
     const { colors, isDark } = useTheme();
 
-    const bottomPadding = Platform.select({
-        web: 8,  // Минимальный фиксированный отступ на вебе
-        ios: insets.bottom > 0 ? insets.bottom : 8,
-        android: 8,
-        default: 8,
-    });
-
     return (
-        <View style={[styles.tabBarContainer, { paddingBottom: bottomPadding }]}>
+        <View style={[styles.tabBarContainer, { paddingBottom: insets.bottom > 0 ? insets.bottom : 20 }]}>
             <BlurView
                 intensity={isDark ? 50 : 30}
                 tint={isDark ? "dark" : "light"}

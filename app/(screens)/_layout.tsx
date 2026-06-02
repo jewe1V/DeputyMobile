@@ -15,10 +15,7 @@ export default function AppLayout() {
             )}
             screenOptions={{
                 headerShown: false,
-                // Критично: отключаем автоматический учёт safe area
-                // react-navigation больше НЕ резервирует место под таббар
             }}
-            // Говорим react-navigation: "мы сами управляем отступами"
             safeAreaInsets={{ bottom: 0, top: 0 }}
         >
             <Tabs.Screen name="DashboardScreen" />
