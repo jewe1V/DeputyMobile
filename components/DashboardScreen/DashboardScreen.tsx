@@ -140,6 +140,7 @@ export function Dashboard() {
     }
     if (error || !data) {
         return (
+            <View style={{ flex: 1, paddingBottom: insets.bottom + 15, backgroundColor: colors.background }}>
             <ScrollView
                 showsVerticalScrollIndicator={false}
                 refreshControl={
@@ -161,10 +162,10 @@ export function Dashboard() {
                         width: "100%"
                     }}>
                         <AlertCircle size={48} color="#DC2626" />
-                        <Text style={{ fontSize: 18, fontWeight: '600', marginTop: 10, textAlign: 'center' }}>
+                        <Text style={{ fontSize: 18, fontWeight: '600', marginTop: 10, textAlign: 'center', color: colors.text }}>
                             Ошибка загрузки
                         </Text>
-                        <Text style={{ fontSize: 14, marginTop: 5, textAlign: 'center' }}>
+                        <Text style={{ fontSize: 14, marginTop: 5, textAlign: 'center', color: colors.text }}>
                             {error || 'Не удалось загрузить данные'}
                         </Text>
                         <TouchableOpacity
@@ -187,6 +188,7 @@ export function Dashboard() {
                     </View>
                 </View>
             </ScrollView>
+            </View>
         );
     }
 
