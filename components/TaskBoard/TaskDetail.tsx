@@ -270,17 +270,32 @@ export function TaskDetail() {
     };
 
     const handleDelete = () => {
-        Alert.alert('Удаление', 'Вы уверены?', [
-            { text: 'Отмена', style: 'cancel' },
-            {
-                text: 'Удалить',
-                style: 'destructive',
-                onPress: async () => {
-                    await taskService.deleteTask(id as string);
-                    router.push("/(screens)/TaskBoardScreen");
-                }
-            },
-        ]);
+        const confirmMessage = 'Вы уверены, что хотите удалить задачу?';
+
+        if (Platform.OS === 'web') {
+            if (window.confirm(confirmMessage)) {
+                performDelete();
+            }
+        } else {
+            Alert.alert('Удаление', confirmMessage, [
+                { text: 'Отмена', style: 'cancel' },
+                {
+                    text: 'Удалить',
+                    style: 'destructive',
+                    onPress: () => performDelete()
+                },
+            ]);
+        }
+    };
+
+    const performDelete = async () => {
+        try {
+            await taskService.deleteTask(id as string);
+            Toast.show({ type: 'success', text1: 'Успешно', text2: 'Задача удалена' });
+            router.push("/(screens)/TaskBoardScreen");
+        } catch (error) {
+            Toast.show({ type: 'error', text1: 'Ошибка', text2: 'Не удалось удалить задачу' });
+        }
     };
 
     const renderSkeleton = () => (

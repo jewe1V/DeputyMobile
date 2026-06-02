@@ -119,8 +119,12 @@ export function TaskForm() {
                 Toast.show({ type: 'success', text1: 'Задача создана' });
                 router.push({ pathname: '/(screens)/TaskBoardScreen/TaskDetailScreen', params: { id: taskId } });
             }
-        } catch (error) {
-            Toast.show({ type: 'error', text1: 'Ошибка при сохранении' });
+        } catch (error: any) {
+            if (error.response?.data?.errors) {
+                Toast.show({ type: 'error', text1: error.response?.data?.errors.Title });
+            } else {
+                Toast.show({ type: 'error', text1: error.message || 'Произошла ошибка' });
+            }
         } finally {
             setIsSubmitting(false);
         }

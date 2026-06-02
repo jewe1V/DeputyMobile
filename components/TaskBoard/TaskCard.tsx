@@ -1,12 +1,20 @@
 import React from "react";
 import { Text, TouchableOpacity, View, StyleSheet } from "react-native";
-import {Calendar, CircleDotDashed, Layers, Users} from "lucide-react-native";
+import { Calendar, CircleDotDashed, Layers, Users } from "lucide-react-native";
 import { Task } from "@/models/TaskBoardModel";
 
 interface TaskCardProps {
     task: Task;
     onPress: () => void;
 }
+
+const priorityConfig = {
+    1: { label: 'Низкий' },
+    2: { label: 'Средний' },
+    3: { label: 'Высокий' },
+    4: { label: 'Срочный' },
+    5: { label: 'Критический' }
+};
 
 export function TaskCard({ task, onPress }: TaskCardProps) {
     const expectedEndDate = new Date(task.expected_end_date);
@@ -15,6 +23,8 @@ export function TaskCard({ task, onPress }: TaskCardProps) {
     const formatDate = (date: Date) => {
         return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
     };
+
+    const priorityLabel = priorityConfig[task.priority as keyof typeof priorityConfig]?.label || 'medium';
 
     return (
         <TouchableOpacity
@@ -27,7 +37,6 @@ export function TaskCard({ task, onPress }: TaskCardProps) {
                     <Text style={styles.title} numberOfLines={1}>
                         {task.title}
                     </Text>
-                    {/* ОБНОВЛЕНО: Используем styles.deadlineBlockOverdue вместо inline массива стилей для чистоты */}
                     <View style={[styles.deadlineBlock, isOverdue && styles.deadlineBlockOverdue]}>
                         <Calendar size={12} color={isOverdue ? "#B91C1C" : "#6B7280"} />
                         <Text style={[styles.deadlineText, isOverdue && styles.deadlineTextOverdue]}>
@@ -36,12 +45,11 @@ export function TaskCard({ task, onPress }: TaskCardProps) {
                     </View>
                 </View>
 
-                {/* Описание — максимально сжато */}
                 <Text style={styles.description} numberOfLines={1}>
                     {task.description || "Нет описания задачи"}
                 </Text>
 
-                {/* Инфо-панель: Приоритет и Исполнители */}
+                {/* Инфо-панель: теги переносятся, assignees всегда справа */}
                 <View style={styles.infoPanel}>
                     <View style={styles.tagGroup}>
                         <View style={styles.statusTag}>
@@ -52,8 +60,8 @@ export function TaskCard({ task, onPress }: TaskCardProps) {
                         </View>
                         <View style={styles.priorityTag}>
                             <Layers size={12} color="#2A6E3F" />
-                            <Text style={styles.priorityLabel}>
-                                {priorityConfig[task.priority as keyof typeof priorityConfig]?.label || 'medium'}
+                            <Text style={styles.priorityLabel} numberOfLines={1}>
+                                {priorityLabel}
                             </Text>
                         </View>
 
@@ -63,6 +71,7 @@ export function TaskCard({ task, onPress }: TaskCardProps) {
                             </View>
                         )}
                     </View>
+
                     <View style={styles.assignees}>
                         {task.users && task.users.length > 0 ? (
                             <View style={styles.userBadge}>
@@ -78,14 +87,6 @@ export function TaskCard({ task, onPress }: TaskCardProps) {
         </TouchableOpacity>
     );
 }
-
-const priorityConfig = {
-    1: { label: 'Низкий' },
-    2: { label: 'Средний' },
-    3: { label: 'Высокий' },
-    4: { label: 'Срочный' },
-    5: { label: 'Критический' }
-};
 
 const styles = StyleSheet.create({
     card: {
@@ -141,17 +142,22 @@ const styles = StyleSheet.create({
     infoPanel: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center',
+        alignItems: 'flex-start',
+        flexWrap: 'nowrap', // запрещаем перенос всей панели
     },
     tagGroup: {
         flexDirection: 'row',
+        flexWrap: 'wrap', // теги переносятся внутри этой группы
         gap: 6,
+        rowGap: 6,
+        flex: 1, // занимает всё доступное пространство
+        marginRight: 8, // отступ от assignees
     },
     priorityTag: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 4,
-        backgroundColor: '#F0FDF4', // Очень легкий зеленый фон
+        backgroundColor: '#F0FDF4',
         paddingHorizontal: 8,
         paddingVertical: 2,
         borderRadius: 6,
@@ -163,6 +169,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: '#2A6E3F',
         textTransform: 'lowercase',
+        flexShrink: 1, // обрезаем длинный текст
     },
     statusTag: {
         flexDirection: 'row',
@@ -197,6 +204,7 @@ const styles = StyleSheet.create({
     assignees: {
         flexDirection: 'row',
         alignItems: 'center',
+        flexShrink: 0, // НЕ сжимается, всегда справа
     },
     userBadge: {
         flexDirection: 'row',
