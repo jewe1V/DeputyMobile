@@ -173,4 +173,43 @@ export const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
     },
+    commentsHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 16,
+        backgroundColor: '#ffffff',
+    },
+    commentsHeaderLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    commentsCountBadge: {
+        backgroundColor: '#f1f5f9',
+        borderRadius: 12,
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+    },
+    commentsCountText: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#64748b',
+    },
+    commentsListContent: {
+        paddingHorizontal: 16,
+        paddingBottom: 16,
+    },
+    emptyCommentsContainer: {
+        paddingVertical: 40,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    emptyCommentsText: {
+        fontSize: 14,
+        color: '#94a3b8',
+        textAlign: 'center',
+        fontStyle: 'italic',
+    },
+
 });

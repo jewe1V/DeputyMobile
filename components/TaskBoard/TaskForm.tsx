@@ -21,6 +21,7 @@ import { taskService } from '@/api/taskService';
 import {formatDateForDisplay} from "@/utils";
 import {ArrowLeft} from "lucide-react-native";
 
+
 const PRIORITY_MAP = [
     { id: 1, label: 'Низкий' },
     { id: 2, label: 'Средний' },

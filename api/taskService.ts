@@ -1,7 +1,7 @@
 import { AxiosError } from 'axios';
 import { apiClient } from './api';
 
-interface CreateTaskPayload {
+export interface CreateTaskPayload {
   title: string;
   description: string;
   expected_end_date: string;
@@ -9,7 +9,23 @@ interface CreateTaskPayload {
   status: string;
 }
 
-interface Task {
+export interface CommentAuthor {
+  id: string;
+  email: string;
+  job_title: string;
+  [key: string]: any;
+}
+
+export interface Comment {
+  id: string;
+  task_id: string;
+  author_id: string;
+  author: CommentAuthor | null;
+  text: string;
+  date: string;
+}
+
+export interface Task {
   id: string;
   title: string;
   description: string;
@@ -17,7 +33,12 @@ interface Task {
   expectedEndDate: string;
   priority: number;
   status: string;
+  comments?: Comment[];
   [key: string]: any;
+}
+
+export interface CreateCommentPayload {
+  text: string;
 }
 
 class TaskService {
@@ -112,6 +133,29 @@ class TaskService {
             : JSON.stringify(axiosError.response.data);
         throw new Error(errorText || 'Ошибка при обновлении задачи');
       }
+      throw error;
+    }
+  }
+
+  async addComment(taskId: string, text: string): Promise<Comment> {
+    try {
+      const payload: CreateCommentPayload = { text };
+      const response = await apiClient.post<Comment>(
+          `/api/task/${taskId}/comment`,
+          payload
+      );
+      return response.data;
+    } catch (error) {
+      console.error('[TaskService] Ошибка при добавлении комментария:', error);
+      throw error;
+    }
+  }
+
+  async deleteComment(commentId: string): Promise<void> {
+    try {
+      await apiClient.delete(`/api/task/comment/${commentId}`);
+    } catch (error) {
+      console.error('[TaskService] Ошибка при удалении комментария:', error);
       throw error;
     }
   }

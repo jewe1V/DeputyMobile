@@ -34,6 +34,8 @@ import { styles } from './task-detail-style';
 import { AuthManager } from "@/components/LoginScreen/LoginScreen";
 import {SkeletonItem} from "@/components/ui/Shared/SkeletonLoader";
 import { apiClient } from '@/api/api';
+import { TaskCommentComponent } from './TaskComment';
+import { CommentInput } from './CommentInput';
 
 interface TaskStatusServer {
     name: string;
@@ -45,6 +47,37 @@ interface ApiUser {
     email: string;
     full_name: string;
     job_title: string;
+}
+
+export interface CommentAuthor {
+    id: string;
+    email: string;
+    full_name: string;
+    job_title: string;
+}
+
+export interface TaskComment {
+    id: string;
+    task_id: string;
+    author_id: string;
+    author: CommentAuthor | null;
+    text: string;
+    date: string;
+}
+
+export interface Task {
+    task_id: string;
+    title: string;
+    description: string;
+    created_at: string;
+    expected_end_date: string;
+    priority: number;
+    status: string;
+    author_id: string;
+    author_name: string;
+    users?: any[];
+    comments?: TaskComment[];
+    [key: string]: any;
 }
 
 export function TaskDetail() {
@@ -64,7 +97,9 @@ export function TaskDetail() {
     const [addingUserId, setAddingUserId] = useState<string | null>(null);
     const [removingUserId, setRemovingUserId] = useState<string | null>(null);
     const [isCompleting, setIsCompleting] = useState(false);
-
+    const [comments, setComments] = useState<TaskComment[]>([]);
+    const [sendingComment, setSendingComment] = useState(false);
+    const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
     const userRole = AuthManager.getRole();
     const userId = AuthManager.getUserId();
 
@@ -74,6 +109,8 @@ export function TaskDetail() {
             .then(taskData => {
                 // @ts-ignore
                 setTask(taskData);
+                // @ts-ignore
+                setComments(taskData.comments || []);
                 setLoading(false);
             })
             .catch(error => {
@@ -106,6 +143,62 @@ export function TaskDetail() {
             Toast.show({ type: 'error', text1: 'Ошибка', text2: 'Не удалось загрузить список пользователей' });
         } finally {
             setIsUsersLoading(false);
+        }
+    };
+
+    // Добавьте после других функций
+
+    const handleAddComment = async (text: string) => {
+        if (!task) return;
+
+        setSendingComment(true);
+        try {
+            const response = await apiClient.post<TaskComment>(
+                `/api/task/${task.task_id}/comment`,
+                { text }
+            );
+
+            const newComment = response.data;
+            setComments(prev => [newComment, ...prev]);
+
+            Toast.show({
+                type: 'success',
+                text1: 'Успешно',
+                text2: 'Комментарий добавлен'
+            });
+        } catch (error: any) {
+            console.error('Ошибка добавления комментария:', error);
+            Toast.show({
+                type: 'error',
+                text1: 'Ошибка',
+                text2: error.response?.data?.message || 'Не удалось добавить комментарий'
+            });
+        } finally {
+            setSendingComment(false);
+        }
+    };
+
+    const handleDeleteComment = async (commentId: string) => {
+        setDeletingCommentId(commentId);
+        try {
+            await apiClient.delete(`/api/task/comment/${commentId}`);
+
+            setComments(prev => prev.filter(c => c.id !== commentId));
+
+            Toast.show({
+                type: 'success',
+                text1: 'Успешно',
+                text2: 'Комментарий удален'
+            });
+        } catch (error: any) {
+            console.error('Ошибка удаления комментария:', error);
+            Toast.show({
+                type: 'error',
+                text1: 'Ошибка',
+                text2: error.response?.data?.message || 'Не удалось удалить комментарий'
+            });
+        } finally {
+            setDeletingCommentId(null);
         }
     };
 
@@ -580,6 +673,35 @@ export function TaskDetail() {
                                 )}
                             </TouchableOpacity>
                         ))}
+                    </View>
+
+                    {/* Комментарии */}
+                    <View style={[styles.card, { padding: 0, overflow: 'hidden' }]}>
+                        <View style={styles.commentsHeader}>
+                            <View style={styles.commentsHeaderLeft}>
+                                <Text style={styles.cardTitle}>Комментарии</Text>
+                                <View style={styles.commentsCountBadge}>
+                                    <Text style={styles.commentsCountText}>{comments.length}</Text>
+                                </View>
+                            </View>
+                        </View>
+
+                        <CommentInput onSend={handleAddComment} isLoading={sendingComment} />
+
+                        <FlatList
+                            style={Platform.OS === 'web' ? { maxHeight: 400, overflowY: 'auto' as const } : undefined}
+                            data={comments}
+                            keyExtractor={(item) => item.id}
+                            renderItem={({ item }) => (
+                                <TaskCommentComponent
+                                    comment={item}
+                                    onDelete={handleDeleteComment}
+                                    isDeleting={deletingCommentId === item.id}
+                                />
+                            )}
+                            contentContainerStyle={styles.commentsListContent}
+                            showsVerticalScrollIndicator={false}
+                        />
                     </View>
 
                     {(userRole === "Admin" || userId === task.author_id) && (
