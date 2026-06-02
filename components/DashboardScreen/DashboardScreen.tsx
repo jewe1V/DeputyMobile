@@ -44,8 +44,11 @@ interface DashboardData {
     };
 }
 
+import { useTheme } from '@/context/ThemeContext';
+
 export function Dashboard() {
     const insets = useSafeAreaInsets();
+    const { colors, isDark } = useTheme();
 
     const [data, setData] = useState<DashboardData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -121,12 +124,13 @@ export function Dashboard() {
         return (
             <ScrollView
                 showsVerticalScrollIndicator={false}
+                style={{ backgroundColor: colors.background }}
                 refreshControl={
                     <RefreshControl
                         refreshing={refreshing}
                         onRefresh={onRefresh}
-                        colors={['#2A6E3F']}
-                        tintColor="#2A6E3F"
+                        colors={[colors.primary]}
+                        tintColor={colors.primary}
                     />
                 }
             >
@@ -190,9 +194,9 @@ export function Dashboard() {
     const displayTasks : Task[] = data.urgent_tasks || [];
 
     return (
-        <View style={{ flex: 1, paddingBottom: insets.bottom + 15 }}>
+        <View style={{ flex: 1, paddingBottom: insets.bottom + 15, backgroundColor: colors.background }}>
             <LinearGradient
-                colors={['#2A6E3F', '#349339']}
+                colors={[colors.primary, colors.secondary]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={{height: insets.top}}
@@ -205,16 +209,16 @@ export function Dashboard() {
                     <RefreshControl
                         refreshing={refreshing}
                         onRefresh={onRefresh}
-                        colors={['#2A6E3F']}
-                        tintColor="#2A6E3F"
+                        colors={[colors.primary]}
+                        tintColor={colors.primary}
                         title="Обновление..."
-                        titleColor="#666"
+                        titleColor={colors.subtext}
                     />
                 }
             >
                 {/* 2. Теперь хедер находится внутри ScrollView и скроллится */}
                 <LinearGradient
-                    colors={['#2A6E3F', '#349339']}
+                    colors={[colors.primary, colors.secondary]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={[styles.header, { paddingTop: 15 }]}
@@ -223,8 +227,8 @@ export function Dashboard() {
                         <View style={styles.userInfoRow}>
                             <TouchableOpacity style={styles.userProfileButton} onPress={() => router.push({ pathname: '/(screens)/ProfileScreen', params: { id: null }})}>
                                 <View style={styles.avatarContainer}>
-                                    <View style={styles.avatar}>
-                                        <Text style={styles.avatarText}>
+                                    <View style={[styles.avatar, { backgroundColor: colors.card }]}>
+                                        <Text style={[styles.avatarText, { color: colors.primary }]}>
                                             {getInitials(data.user_name)}
                                         </Text>
                                     </View>
@@ -274,7 +278,7 @@ export function Dashboard() {
                             style={styles.section}
                         >
                             <View style={styles.sectionHeader}>
-                                <Text style={styles.sectionTitle}>Мои задачи</Text>
+                                <Text style={[styles.sectionTitle, { color: colors.text }]}>Мои задачи</Text>
                             </View>
 
                             <View style={styles.cardsContainer}>
@@ -298,7 +302,7 @@ export function Dashboard() {
                             style={styles.section}
                         >
                             <View style={styles.sectionHeader}>
-                                <Text style={styles.sectionTitle}>Предстоящие мероприятия</Text>
+                                <Text style={[styles.sectionTitle, { color: colors.text }]}>Предстоящие мероприятия</Text>
                             </View>
 
                             <View style={styles.cardsContainer}>
@@ -309,7 +313,7 @@ export function Dashboard() {
                                     return (
                                         <View key={event.id}>
                                             {showDate && (
-                                                <Text style={styles.eventDate}>{formatDateToDay(event.start_at)}</Text>
+                                                <Text style={[styles.eventDate, { color: colors.subtext }]}>{formatDateToDay(event.start_at)}</Text>
                                             )}
                                             <EventCard
                                                 event={event}
@@ -331,10 +335,10 @@ export function Dashboard() {
                             entering={FadeInDown.delay(700).duration(600)}
                             style={[styles.section]}
                         >
-                            <View style={styles.emptyContainer}>
-                                <CheckCircle2 size={48} color="#3bb625" />
-                                <Text style={styles.emptyMainTitle}>Нет активных задач</Text>
-                                <Text style={styles.emptyMainSubtitle}>
+                            <View style={[styles.emptyContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                                <CheckCircle2 size={48} color={isDark ? "#4ade80" : "#3bb625"} />
+                                <Text style={[styles.emptyMainTitle, { color: colors.text }]}>Нет активных задач</Text>
+                                <Text style={[styles.emptyMainSubtitle, { color: colors.subtext }]}>
                                     Идеальный момент, чтобы просто побыть в покое и насладиться тишиной
                                 </Text>
                             </View>

@@ -20,6 +20,7 @@ import { EventMap } from "@/components/ui/EventMap/EventMap";
 import {showLocation} from "react-native-map-link";
 import {apiClient, apiUrl, xAppSecret} from '@/api/api';
 import {ImagePreviewModal} from "@/components/EventsScreen/ImagePreviewModal";
+import { useTheme } from '@/context/ThemeContext';
 
 
 interface Attachment {
@@ -61,6 +62,7 @@ interface AttachmentItemProps {
 }
 
 const AttachmentItem: React.FC<AttachmentItemProps> = ({ file, onImagePress }) => {
+    const { colors, isDark } = useTheme();
     const [downloadProgress, setDownloadProgress] = useState(0);
     const [isDownloading, setIsDownloading] = useState(false);
     const { handlers } = useFileManagerPresenter();
@@ -74,7 +76,7 @@ const AttachmentItem: React.FC<AttachmentItemProps> = ({ file, onImagePress }) =
         <View style={styles.attachmentContainer}>
             {isImage ? (
                 <TouchableOpacity
-                    style={styles.imagePreviewContainer}
+                    style={[styles.imagePreviewContainer, { backgroundColor: isDark ? colors.iconBox : '#f1f5f9' }]}
                     onPress={() => onImagePress(file)}
                 >
                     <ImagePreviewThumbnail file={file} />
@@ -86,29 +88,29 @@ const AttachmentItem: React.FC<AttachmentItemProps> = ({ file, onImagePress }) =
                 </TouchableOpacity>
             ) : (
                 <TouchableOpacity
-                    style={[styles.fileRow, isDownloading && styles.fileRowDownloading]}
+                    style={[styles.fileRow, { backgroundColor: isDark ? colors.iconBox : '#f8fafc' }, isDownloading && styles.fileRowDownloading]}
                     onPress={handleDownload}
                     disabled={isDownloading}
                 >
-                    <View style={styles.fileIconContainer}>
-                        <FileText size={20} color="#0f6319" />
+                    <View style={[styles.fileIconContainer, { backgroundColor: isDark ? colors.primary + '20' : '#eef2ff' }]}>
+                        <FileText size={20} color={isDark ? colors.roleText : "#0f6319"} />
                     </View>
-                    <Text style={styles.fileName} numberOfLines={1} ellipsizeMode="middle">
+                    <Text style={[styles.fileName, { color: colors.text }]} numberOfLines={1} ellipsizeMode="middle">
                         {file.file_name}
                     </Text>
                     {isDownloading ? (
-                        <Text style={styles.progressText}>
+                        <Text style={[styles.progressText, { color: colors.primary }]}>
                             {Math.round(downloadProgress * 100)}%
                         </Text>
                     ) : (
-                        <Download size={20} color="#6b7280" />
+                        <Download size={20} color={colors.subtext} />
                     )}
                 </TouchableOpacity>
             )}
 
             {isDownloading && (
-                <View style={styles.progressBarBackground}>
-                    <View style={[styles.progressBarFill, { width: `${downloadProgress * 100}%` }]} />
+                <View style={[styles.progressBarBackground, { backgroundColor: colors.border }]}>
+                    <View style={[styles.progressBarFill, { backgroundColor: colors.primary, width: `${downloadProgress * 100}%` }]} />
                 </View>
             )}
         </View>
@@ -160,6 +162,7 @@ const ImagePreviewThumbnail: React.FC<{ file: Attachment }> = ({ file }) => {
 };
 
 export const EventDetailsScreen: React.FC = () => {
+    const { colors, isDark } = useTheme();
     const { id } = useLocalSearchParams<{ id: string }>();
     const [loading, setLoading] = useState(true);
     const [event, setEvent] = useState<EventData | null>(null);
@@ -459,19 +462,19 @@ export const EventDetailsScreen: React.FC = () => {
 
     if (loading) {
         return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#0f6319" />
-                <Text style={styles.loadingText}>Загрузка события...</Text>
+            <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+                <ActivityIndicator size="large" color={colors.primary} />
+                <Text style={[styles.loadingText, { color: colors.subtext }]}>Загрузка события...</Text>
             </View>
         );
     }
 
     if (!event) {
         return (
-            <View style={styles.errorContainer}>
-                <Ionicons name="alert-circle-outline" size={64} color="#dc2626" />
-                <Text style={styles.errorText}>Событие не найдено</Text>
-                <TouchableOpacity style={styles.errorButton} onPress={handleBack}>
+            <View style={[styles.errorContainer, { backgroundColor: colors.background }]}>
+                <Ionicons name="alert-circle-outline" size={64} color={isDark ? "#f87171" : "#dc2626"} />
+                <Text style={[styles.errorText, { color: colors.text }]}>Событие не найдено</Text>
+                <TouchableOpacity style={[styles.errorButton, { backgroundColor: colors.primary }]} onPress={handleBack}>
                     <Text style={styles.errorButtonText}>Вернуться назад</Text>
                 </TouchableOpacity>
             </View>
@@ -481,13 +484,13 @@ export const EventDetailsScreen: React.FC = () => {
     return (
         <>
             <ScrollView
-                style={[styles.container, { backgroundColor: '#f8fafc' }]}
+                style={[styles.container, { backgroundColor: colors.background }]}
                 contentContainerStyle={{ paddingBottom: insets.bottom + 50 }}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
                 showsVerticalScrollIndicator={false}
             >
                 <LinearGradient
-                    colors={['#2A6E3F', '#349339']}
+                    colors={[colors.primary, colors.secondary]}
                     style={[styles.header, { paddingTop: insets.top + 15 }]}
                 >
                     <View style={styles.headerTopRow}>
@@ -528,24 +531,24 @@ export const EventDetailsScreen: React.FC = () => {
                 </LinearGradient>
 
                 <View style={styles.content}>
-                    <View style={styles.card}>
+                    <View style={[styles.card, { backgroundColor: colors.card, shadowOpacity: isDark ? 0 : 0.05 }]}>
                         <View style={styles.timeRow}>
                             <View style={styles.timeContent}>
-                                <Text style={styles.label}>Начало</Text>
-                                <Text style={styles.value}>{startDate.day}, {startDate.time}</Text>
+                                <Text style={[styles.label, { color: colors.subtext }]}>Начало</Text>
+                                <Text style={[styles.value, { color: colors.text }]}>{startDate.day}, {startDate.time}</Text>
                             </View>
-                            <View style={styles.timeDividerVertical} />
+                            <View style={[styles.timeDividerVertical, { backgroundColor: colors.divider }]} />
                             <View style={styles.timeContent}>
-                                <Text style={styles.label}>Окончание</Text>
-                                <Text style={styles.value}>{endDate.day}, {endDate.time}</Text>
+                                <Text style={[styles.label, { color: colors.subtext }]}>Окончание</Text>
+                                <Text style={[styles.value, { color: colors.text }]}>{endDate.day}, {endDate.time}</Text>
                             </View>
                         </View>
                     </View>
 
                     {location.coordinates && (
-                        <View style={styles.card}>
-                            <Text style={styles.sectionTitle}>Место проведения</Text>
-                            <Text style={styles.addressText}>{location.address}</Text>
+                        <View style={[styles.card, { backgroundColor: colors.card, shadowOpacity: isDark ? 0 : 0.05 }]}>
+                            <Text style={[styles.sectionTitle, { color: colors.text }]}>Место проведения</Text>
+                            <Text style={[styles.addressText, { color: colors.subtext }]}>{location.address}</Text>
                             <TouchableOpacity onPress={openMaps} activeOpacity={0.9}>
                                 <View style={styles.mapContainer}>
                                     <EventMap coordinates={location.coordinates} />
@@ -555,15 +558,15 @@ export const EventDetailsScreen: React.FC = () => {
                     )}
 
                     {event.description && (
-                        <View style={styles.card}>
-                            <Text style={styles.sectionTitle}>О событии</Text>
-                            <Text style={styles.description}>{event.description}</Text>
+                        <View style={[styles.card, { backgroundColor: colors.card, shadowOpacity: isDark ? 0 : 0.05 }]}>
+                            <Text style={[styles.sectionTitle, { color: colors.text }]}>О событии</Text>
+                            <Text style={[styles.description, { color: colors.subtext }]}>{event.description}</Text>
                         </View>
                     )}
 
                     {event.attachments && event.attachments.length > 0 && (
-                        <View style={styles.card}>
-                            <Text style={styles.sectionTitle}>Материалы</Text>
+                        <View style={[styles.card, { backgroundColor: colors.card, shadowOpacity: isDark ? 0 : 0.05 }]}>
+                            <Text style={[styles.sectionTitle, { color: colors.text }]}>Материалы</Text>
                             {event.attachments.map((file) => (
                                 <AttachmentItem
                                     key={file.id}
@@ -575,12 +578,12 @@ export const EventDetailsScreen: React.FC = () => {
                     )}
 
                     {event.attendees && event.attendees.length > 0 && (
-                        <View style={styles.card}>
-                            <Text style={styles.sectionTitle}>Участники ({event.attendees.filter(attendee => attendee.status === 'Yes').length})</Text>
+                        <View style={[styles.card, { backgroundColor: colors.card, shadowOpacity: isDark ? 0 : 0.05 }]}>
+                            <Text style={[styles.sectionTitle, { color: colors.text }]}>Участники ({event.attendees.filter(attendee => attendee.status === 'Yes').length})</Text>
                             {event.attendees.map((attendee) => (
                                 <TouchableOpacity
                                     key={attendee.user_id}
-                                    style={styles.attendeeRow}
+                                    style={[styles.attendeeRow, { borderBottomColor: colors.divider }]}
                                     onPress={() => {
                                         if (attendee.status === 'No') {
                                             setSelectedExcuseAttendee(attendee);
@@ -590,14 +593,14 @@ export const EventDetailsScreen: React.FC = () => {
                                         }
                                     }}
                                 >
-                                    <View style={styles.avatar}>
-                                        <Text style={styles.avatarText}>{getInitials(attendee.user_full_name)}</Text>
+                                    <View style={[styles.avatar, { backgroundColor: isDark ? colors.iconBox : '#e2e8f0' }]}>
+                                        <Text style={[styles.avatarText, { color: colors.text }]}>{getInitials(attendee.user_full_name)}</Text>
                                     </View>
                                     <View style={styles.attendeeInfo}>
-                                        <Text style={styles.attendeeName}>{attendee.user_full_name}</Text>
+                                        <Text style={[styles.attendeeName, { color: colors.text }]}>{attendee.user_full_name}</Text>
                                         <View style={styles.statusBadge}>
                                             {getStatusIcon(attendee.status)}
-                                            <Text style={styles.statusText}>
+                                            <Text style={[styles.statusText, { color: colors.subtext }]}>
                                                 {attendee.status === 'Yes' ? 'Подтвердил' : attendee.status === 'No' ? 'Отклонил' : 'Под вопросом'}
                                             </Text>
                                         </View>
@@ -607,10 +610,10 @@ export const EventDetailsScreen: React.FC = () => {
                         </View>
                     )}
 
-                    <View style={styles.metaCard}>
+                    <View style={[styles.metaCard, { backgroundColor: isDark ? colors.iconBox : '#f9fafb', borderColor: colors.border }]}>
                         <View style={styles.metaRow}>
-                            <Ionicons name="lock-open-outline" size={18} color="#6b7280" />
-                            <Text style={styles.metaLabel}>
+                            <Ionicons name="lock-open-outline" size={18} color={colors.subtext} />
+                            <Text style={[styles.metaLabel, { color: colors.subtext }]}>
                                 {event.is_public ? 'Публичное событие' : 'Приватное событие'}
                             </Text>
                         </View>
@@ -618,15 +621,15 @@ export const EventDetailsScreen: React.FC = () => {
 
                     <View style={styles.actionGroup}>
                         { (userRole === "Admin" || userId === event.author_id ) &&
-                            <TouchableOpacity style={styles.secondaryButton} onPress={() => setShowUploader(true)}>
-                                <FileText size={20} color="#0f6319" />
-                                <Text style={styles.secondaryButtonText}>Прикрепить файл</Text>
+                            <TouchableOpacity style={[styles.secondaryButton, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => setShowUploader(true)}>
+                                <FileText size={20} color={isDark ? colors.roleText : "#0f6319"} />
+                                <Text style={[styles.secondaryButtonText, { color: isDark ? colors.roleText : "#0f6319" }]}>Прикрепить файл</Text>
                             </TouchableOpacity>
                         }
 
-                        <TouchableOpacity style={styles.secondaryButton} onPress={() => setShowAttendanceModal(true)}>
-                            <CheckCircle2 size={20} color="#0f6319" />
-                            <Text style={styles.secondaryButtonText}>Отметить участие</Text>
+                        <TouchableOpacity style={[styles.secondaryButton, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => setShowAttendanceModal(true)}>
+                            <CheckCircle2 size={20} color={isDark ? colors.roleText : "#0f6319"} />
+                            <Text style={[styles.secondaryButtonText, { color: isDark ? colors.roleText : "#0f6319" }]}>Отметить участие</Text>
                         </TouchableOpacity>
                     </View>
 

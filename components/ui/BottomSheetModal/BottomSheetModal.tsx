@@ -13,6 +13,7 @@ import {
     Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '@/context/ThemeContext';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -63,6 +64,7 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
                                                                       sheetStyle,
                                                                       contentContainerStyle,
                                                                   }) => {
+    const { colors, isDark } = useTheme();
     const insets = useSafeAreaInsets();
     const panY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
 
@@ -130,7 +132,7 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
 
     const renderDefaultHeader = () => (
         <View style={styles.headerContainer}>
-            {title ? <Text style={styles.title}>{title}</Text> : null}
+            {title ? <Text style={[styles.title, { color: colors.text }]}>{title}</Text> : null}
         </View>
     );
 
@@ -138,7 +140,7 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
         <>
             {/* Drag-зона */}
             <View {...panResponder.panHandlers} style={styles.dragArea}>
-                <View style={styles.dragIndicator} />
+                <View style={[styles.dragIndicator, { backgroundColor: colors.border }]} />
                 {renderHeader ? renderHeader() : renderDefaultHeader()}
             </View>
 
@@ -170,7 +172,7 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
 
             {/* Футер */}
             {renderFooter && (
-                <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
+                <View style={[styles.footer, { paddingBottom: insets.bottom + 12, backgroundColor: colors.card, borderTopColor: colors.border }]}>
                     {renderFooter()}
                 </View>
             )}
@@ -198,6 +200,7 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
                         {
                             transform: [{ translateY: panY }],
                             height: SCREEN_HEIGHT * heightFraction,
+                            backgroundColor: colors.card,
                         },
                         sheetStyle,
                     ]}

@@ -14,6 +14,7 @@ import {
     Platform
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '@/context/ThemeContext';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -30,6 +31,7 @@ export const CreateDepartmentPopup: React.FC<CreateDepartmentPopupProps> = ({
                                                                                 onCreate,
                                                                                 loading
                                                                             }) => {
+    const { colors, isDark } = useTheme();
     const insets = useSafeAreaInsets();
     const [name, setName] = useState('');
 
@@ -107,27 +109,28 @@ export const CreateDepartmentPopup: React.FC<CreateDepartmentPopupProps> = ({
                             {
                                 transform: [{ translateY: panY }],
                                 paddingBottom: insets.bottom + 20,
-                                height: SHEET_HEIGHT
+                                height: SHEET_HEIGHT,
+                                backgroundColor: colors.card
                             }
                         ]}
                     >
                         <View {...panResponder.panHandlers} style={styles.dragArea}>
-                            <View style={styles.dragIndicator} />
-                            <Text style={styles.title}>Новый отдел</Text>
+                            <View style={[styles.dragIndicator, { backgroundColor: colors.border }]} />
+                            <Text style={[styles.title, { color: colors.text }]}>Новый отдел</Text>
                         </View>
 
                         <View style={styles.content}>
                             <TextInput
-                                style={styles.input}
+                                style={[styles.input, { backgroundColor: isDark ? colors.background : '#f8fafc', borderColor: colors.border, color: colors.text }]}
                                 placeholder="Название подразделения"
                                 value={name}
                                 onChangeText={setName}
                                 autoFocus
-                                placeholderTextColor="#94a3b8"
+                                placeholderTextColor={colors.subtext}
                             />
 
                             <TouchableOpacity
-                                style={[styles.submitButton, !name.trim() && styles.disabledButton]}
+                                style={[styles.submitButton, { backgroundColor: colors.primary }, !name.trim() && styles.disabledButton]}
                                 onPress={handleCreate}
                                 disabled={loading || !name.trim()}
                             >

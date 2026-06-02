@@ -10,6 +10,7 @@ import { AuthManager } from '@/components/LoginScreen/LoginScreen';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { apiClient, apiUrl, xAppSecret } from "@/api/api";
 import { BottomSheetModal } from '@/components/ui/BottomSheetModal/BottomSheetModal';
+import { useTheme } from '@/context/ThemeContext';
 
 interface Props {
     eventId: string;
@@ -40,6 +41,7 @@ export const EventAttendanceModal: React.FC<Props> = ({
                                                           onSuccess,
                                                           currentStatus = 'Unknown'
                                                       }) => {
+    const { colors, isDark } = useTheme();
     const insets = useSafeAreaInsets();
     const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
     const token = AuthManager.getToken();
@@ -324,13 +326,15 @@ export const EventAttendanceModal: React.FC<Props> = ({
                         <TouchableOpacity
                             style={[
                                 styles.statusButton,
-                                selectedStatus === 'Yes' && styles.statusButtonActive,
+                                { backgroundColor: isDark ? colors.card : '#F9FAFB', borderColor: colors.border },
+                                selectedStatus === 'Yes' && [styles.statusButtonActive, { backgroundColor: colors.primary, borderColor: colors.primary }],
                             ]}
                             onPress={() => setSelectedStatus('Yes')}
                         >
                             <Text
                                 style={[
                                     styles.statusButtonText,
+                                    { color: colors.text },
                                     selectedStatus === 'Yes' && styles.statusButtonTextActive,
                                 ]}
                             >
@@ -343,13 +347,15 @@ export const EventAttendanceModal: React.FC<Props> = ({
                         <TouchableOpacity
                             style={[
                                 styles.statusButton,
-                                selectedStatus === 'No' && styles.statusButtonActive,
+                                { backgroundColor: isDark ? colors.card : '#F9FAFB', borderColor: colors.border },
+                                selectedStatus === 'No' && [styles.statusButtonActive, { backgroundColor: colors.primary, borderColor: colors.primary }],
                             ]}
                             onPress={() => setSelectedStatus('No')}
                         >
                             <Text
                                 style={[
                                     styles.statusButtonText,
+                                    { color: colors.text },
                                     selectedStatus === 'No' && styles.statusButtonTextActive,
                                 ]}
                             >
@@ -363,20 +369,20 @@ export const EventAttendanceModal: React.FC<Props> = ({
                 {selectedStatus === 'No' && (
                     <View style={styles.excuseContainer}>
                         <TextInput
-                            style={styles.textArea}
+                            style={[styles.textArea, { backgroundColor: isDark ? colors.card : '#F9FAFB', borderColor: colors.border, color: colors.text }]}
                             value={excuseNote}
                             onChangeText={setExcuseNote}
                             placeholder="Укажите причину отсутствия"
-                            placeholderTextColor="#9ca3af"
+                            placeholderTextColor={colors.subtext}
                             multiline
                             numberOfLines={4}
                             textAlignVertical="top"
                         />
 
-                        <Text style={styles.label}>Приложить документ</Text>
+                        <Text style={[styles.label, { color: colors.subtext }]}>Приложить документ</Text>
 
                         {excuseDocument ? (
-                            <View style={styles.documentPreviewCard}>
+                            <View style={[styles.documentPreviewCard, { backgroundColor: isDark ? colors.iconBox : '#F3F4F6' }]}>
                                 <TouchableOpacity
                                     style={styles.previewContent}
                                     activeOpacity={0.7}
@@ -392,15 +398,15 @@ export const EventAttendanceModal: React.FC<Props> = ({
                                             style={styles.thumbnail}
                                         />
                                     ) : (
-                                        <View style={styles.fileIconContainer}>
-                                            <FileText size={24} color="#2A6E3F" />
+                                        <View style={[styles.fileIconContainer, { backgroundColor: isDark ? colors.primary + '20' : '#D1FAE5' }]}>
+                                            <FileText size={24} color={isDark ? colors.roleText : "#2A6E3F"} />
                                         </View>
                                     )}
                                     <View style={styles.fileInfo}>
-                                        <Text style={styles.documentName} numberOfLines={1}>
+                                        <Text style={[styles.documentName, { color: colors.text }]} numberOfLines={1}>
                                             {excuseDocument.file_name}
                                         </Text>
-                                        <Text style={styles.fileStatus}>
+                                        <Text style={[styles.fileStatus, { color: colors.subtext }]}>
                                             {excuseDocument.size ? `${(excuseDocument.size / 1024 / 1024).toFixed(2)} МБ` : ''}
                                         </Text>
                                     </View>
@@ -411,20 +417,20 @@ export const EventAttendanceModal: React.FC<Props> = ({
                                     onPress={() => setExcuseDocument(null)}
                                 >
                                     <View pointerEvents="none">
-                                        <X size={18} color="#000" />
+                                        <X size={18} color={colors.text} />
                                     </View>
                                 </TouchableOpacity>
                             </View>
                         ) : (
                             <TouchableOpacity
-                                style={styles.addDocumentButton}
+                                style={[styles.addDocumentButton, { borderColor: colors.primary }]}
                                 onPress={showUploadOptions}
                                 disabled={uploading}
                             >
                                 {uploading ? (
                                     <View style={styles.uploadProgressContainer}>
-                                        <ActivityIndicator color="#2A6E3F" style={{ marginRight: 10 }} />
-                                        <Text style={styles.addDocumentText}>
+                                        <ActivityIndicator color={colors.primary} style={{ marginRight: 10 }} />
+                                        <Text style={[styles.addDocumentText, { color: colors.primary }]}>
                                             Загрузка: {Math.round(uploadProgress * 100)}%
                                         </Text>
                                         <TouchableOpacity
@@ -433,14 +439,14 @@ export const EventAttendanceModal: React.FC<Props> = ({
                                             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                                         >
                                             <View pointerEvents="none">
-                                                <X size={20} color="#2A6E3F" />
+                                                <X size={20} color={colors.primary} />
                                             </View>
                                         </TouchableOpacity>
                                     </View>
                                 ) : (
                                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                                        <Upload size={20} color="#2A6E3F" />
-                                        <Text style={styles.addDocumentText}>Загрузить документ</Text>
+                                        <Upload size={20} color={colors.primary} />
+                                        <Text style={[styles.addDocumentText, { color: colors.primary }]}>Загрузить документ</Text>
                                     </View>
                                 )}
                             </TouchableOpacity>
@@ -450,8 +456,8 @@ export const EventAttendanceModal: React.FC<Props> = ({
 
                 {/* Ошибка */}
                 {error && (
-                    <View style={styles.errorContainer}>
-                        <Text style={styles.errorLabel}>{error}</Text>
+                    <View style={[styles.errorContainer, { backgroundColor: isDark ? '#450a0a' : '#FEF2F2', borderColor: isDark ? '#991b1b' : '#FEE2E2' }]}>
+                        <Text style={[styles.errorLabel, { color: isDark ? '#fecaca' : '#ef4444' }]}>{error}</Text>
                     </View>
                 )}
 
@@ -459,6 +465,7 @@ export const EventAttendanceModal: React.FC<Props> = ({
                 <TouchableOpacity
                     style={[
                         styles.submitButton,
+                        { backgroundColor: colors.primary },
                         (selectedStatus === 'Unknown' || submitting || uploading) && styles.submitButtonDisabled,
                     ]}
                     onPress={submitAttendance}

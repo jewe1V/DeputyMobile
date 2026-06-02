@@ -7,9 +7,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { apiUrl, xAppSecret } from '@/api/api';
 import { AuthManager } from '@/components/LoginScreen/LoginScreen';
 import {ImagePreviewModal} from "@/components/EventsScreen/ImagePreviewModal";
+import { useTheme } from '@/context/ThemeContext';
 
 // Компонент для загрузки изображения с авторизацией на вебе
 const AuthImage: React.FC<{ fileName: string; style: any; onPress?: () => void }> = ({ fileName, style, onPress }) => {
+    const { colors, isDark } = useTheme();
     const [imageUrl, setImageUrl] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -54,7 +56,7 @@ const AuthImage: React.FC<{ fileName: string; style: any; onPress?: () => void }
 
     const ImageComponent = (
         <View style={style}>
-            {loading && <View style={[style, { backgroundColor: '#e5e7eb' }]} />}
+            {loading && <View style={[style, { backgroundColor: isDark ? colors.iconBox : '#e5e7eb' }]} />}
             {imageUrl && (
                 <Image
                     source={{ uri: imageUrl }}
@@ -111,6 +113,7 @@ export const AttendeeExcuseModal: React.FC<Props> = ({
                                                          attendee,
                                                          onDownloadDocument,
                                                      }) => {
+    const { colors, isDark } = useTheme();
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const [isFullscreenPreview, setIsFullscreenPreview] = useState(false);
@@ -155,23 +158,23 @@ export const AttendeeExcuseModal: React.FC<Props> = ({
                 scrollEnabled={true}
             >
                 {/* Блок профиля */}
-                <TouchableOpacity style={styles.profileLinkCard} onPress={navigateToProfile}>
-                    <View style={styles.profileAvatar}>
-                        <Text style={styles.profileAvatarText}>
+                <TouchableOpacity style={[styles.profileLinkCard, { backgroundColor: isDark ? colors.iconBox : '#f8fafc', borderColor: colors.border }]} onPress={navigateToProfile}>
+                    <View style={[styles.profileAvatar, { backgroundColor: isDark ? colors.background : '#e2e8f0' }]}>
+                        <Text style={[styles.profileAvatarText, { color: colors.text }]}>
                             {getInitials(attendee.user_full_name)}
                         </Text>
                     </View>
                     <View style={styles.profileInfo}>
-                        <Text style={styles.profileName}>{attendee.user_full_name}</Text>
-                        <Text style={styles.profileSubtitle}>Перейти в профиль</Text>
+                        <Text style={[styles.profileName, { color: colors.text }]}>{attendee.user_full_name}</Text>
+                        <Text style={[styles.profileSubtitle, { color: colors.subtext }]}>Перейти в профиль</Text>
                     </View>
-                    <User size={20} color="#6b7280" />
+                    <User size={20} color={colors.subtext} />
                 </TouchableOpacity>
 
                 {/* Комментарий */}
-                <Text style={styles.fieldLabel}>Комментарий:</Text>
-                <View style={styles.noteContainer}>
-                    <Text style={styles.noteText}>
+                <Text style={[styles.fieldLabel, { color: colors.subtext }]}>Комментарий:</Text>
+                <View style={[styles.noteContainer, { backgroundColor: isDark ? colors.iconBox : '#F9FAFB', borderColor: colors.border }]}>
+                    <Text style={[styles.noteText, { color: colors.text }]}>
                         {attendee.excuse_note?.trim()
                             ? attendee.excuse_note
                             : 'Причина не указана'}
@@ -181,9 +184,9 @@ export const AttendeeExcuseModal: React.FC<Props> = ({
                 {/* Документ */}
                 {attendee.excuse_document_id && (
                     <View style={styles.documentSection}>
-                        <Text style={styles.fieldLabel}>Прикрепленный документ:</Text>
+                        <Text style={[styles.fieldLabel, { color: colors.subtext }]}>Прикрепленный документ:</Text>
                         <TouchableOpacity
-                            style={styles.documentPreviewCard}
+                            style={[styles.documentPreviewCard, { backgroundColor: isDark ? colors.iconBox : '#F3F4F6' }]}
                             onPress={handleDocumentPress}
                         >
                             <View style={styles.previewContent}>
@@ -194,20 +197,20 @@ export const AttendeeExcuseModal: React.FC<Props> = ({
                                         onPress={handleImagePress}
                                     />
                                 ) : (
-                                    <View style={styles.fileIconContainer}>
-                                        <FileText size={24} color="#2A6E3F" />
+                                    <View style={[styles.fileIconContainer, { backgroundColor: isDark ? colors.primary + '20' : '#D1FAE5' }]}>
+                                        <FileText size={24} color={isDark ? colors.roleText : "#2A6E3F"} />
                                     </View>
                                 )}
                                 <View style={styles.fileInfo}>
-                                    <Text style={styles.documentName} numberOfLines={1}>
+                                    <Text style={[styles.documentName, { color: colors.text }]} numberOfLines={1}>
                                         {isImage ? 'Просмотреть изображение' : 'Открыть документ'}
                                     </Text>
-                                    <Text style={styles.fileStatus}>
+                                    <Text style={[styles.fileStatus, { color: colors.subtext }]}>
                                         {attendee.excuse_document_name}
                                     </Text>
                                 </View>
                             </View>
-                            {!isImage && <Download size={20} color="#6b7280" />}
+                            {!isImage && <Download size={20} color={colors.subtext} />}
                         </TouchableOpacity>
                     </View>
                 )}

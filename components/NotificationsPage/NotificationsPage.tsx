@@ -22,6 +22,7 @@ import {NotificationSkeletonItem} from "@/components/NotificationsPage/Notificat
 import {SkeletonItem} from "@/components/ui/Shared/SkeletonLoader";
 import { Filters } from '../ui/Shared/Filters';
 import {apiClient} from "@/api/api";
+import { useTheme } from '@/context/ThemeContext';
 
 const notificationConfig: Record<NotificationType, { icon: any; iconColor: string }> = {
     Task: {
@@ -41,6 +42,7 @@ const filterOptions = [
 ];
 
 export function Notifications() {
+    const { colors, isDark } = useTheme();
     const navigation = useNavigation();
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [filterType, setFilterType] = useState<NotificationType | 'all'>('all');
@@ -126,13 +128,14 @@ export function Notifications() {
                 onPress={() => handleNotificationClick(item)}
                 style={[
                     styles.notificationItem,
+                    { backgroundColor: colors.card, borderBottomColor: colors.divider }
                 ]}
             >
                 <View style={styles.row}>
 
                     {/* Иконка */}
-                    <View style={styles.iconWrapper}>
-                        <Icon size={20} color="#268356" />
+                    <View style={[styles.iconWrapper, { backgroundColor: isDark ? colors.primary + '20' : '#ebfdeb' }]}>
+                        <Icon size={20} color={isDark ? colors.roleText : "#268356"} />
                     </View>
 
                     {/* Контент */}
@@ -140,17 +143,17 @@ export function Notifications() {
 
                         {/* Верхняя строка */}
                         <View style={styles.topRow}>
-                            <Text style={styles.title} numberOfLines={2}>
+                            <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>
                                 {item.title}
                             </Text>
 
-                            <Text style={styles.time}>
+                            <Text style={[styles.time, { color: colors.subtext }]}>
                                 {formatTime(item.notify_date)}
                             </Text>
                         </View>
 
                         {/* Описание */}
-                        <Text style={styles.description} numberOfLines={2}>
+                        <Text style={[styles.description, { color: colors.subtext }]} numberOfLines={2}>
                             {typeof item.description === 'string' &&
                             item.description.startsWith('{')
                                 ? 'Новое уведомление'
@@ -159,19 +162,19 @@ export function Notifications() {
                     </View>
 
                     {/* Стрелка */}
-                    <ChevronRight size={18} color="#9CA3AF" />
+                    <ChevronRight size={18} color={colors.subtext} />
                 </View>
             </TouchableOpacity>
         );
     };
 
     const renderEmptyList = () => (
-        <View style={styles.emptyContainer}>
-            <View style={styles.emptyIcon}>
-                <Bell size={32} color="#9CA3AF" />
+        <View style={[styles.emptyContainer, { backgroundColor: colors.card, marginHorizontal: 20, borderRadius: 20, paddingVertical: 40 }]}>
+            <View style={[styles.emptyIcon, { backgroundColor: isDark ? colors.iconBox : '#F3F4F6' }]}>
+                <Bell size={32} color={colors.subtext} />
             </View>
-            <Text style={styles.emptyTitle}>Нет уведомлений</Text>
-            <Text style={styles.emptySubtitle}>
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>Нет уведомлений</Text>
+            <Text style={[styles.emptySubtitle, { color: colors.subtext }]}>
                 {filterType === 'all'
                     ? 'У вас пока нет уведомлений'
                     : 'Нет уведомлений этого типа'}
@@ -181,8 +184,8 @@ export function Notifications() {
 
     const renderError = () => (
         <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{error}</Text>
-            <TouchableOpacity style={styles.retryButton} onPress={fetchNotifications}>
+            <Text style={[styles.errorText, { color: isDark ? '#f87171' : '#ef4444' }]}>{error}</Text>
+            <TouchableOpacity style={[styles.retryButton, { backgroundColor: colors.primary }]} onPress={fetchNotifications}>
                 <Text style={styles.retryButtonText}>Повторить</Text>
             </TouchableOpacity>
         </View>
@@ -200,9 +203,9 @@ export function Notifications() {
 
     if (loading) {
         return (
-            <View style={[styles.container, {paddingBottom: insets.bottom + 15}]}>
+            <View style={[styles.container, {paddingBottom: insets.bottom + 15, backgroundColor: colors.background}]}>
                 <LinearGradient
-                    colors={['#2A6E3F', '#349339']}
+                    colors={[colors.primary, colors.secondary]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={[styles.header, {paddingTop: insets.top + 15}]}
@@ -219,14 +222,12 @@ export function Notifications() {
                     </View>
                 </LinearGradient>
 
-                <LinearGradient colors={['#ebfdeb', '#fff']} style={styles.filtersSection}>
-                    <View style={styles.filtersGrid}>
-                        <View style={styles.filterGroup}>
-                            <SkeletonItem width={60} height={12} borderRadius={4} />
-                            <SkeletonItem width={'100%'} height={40} borderRadius={8} />
-                        </View>
-                    </View>
-                </LinearGradient>
+                <Filters
+                    title1={'Фильтр'}
+                    selectComponent1={
+                        <View style={{ height: 40, backgroundColor: isDark ? colors.card : '#F3F4F6', borderRadius: 8 }} />
+                    }
+                />
 
                 <NotificationsSkeleton />
             </View>
@@ -234,9 +235,9 @@ export function Notifications() {
     }
 
     return (
-        <View style={[styles.container]}>
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
             <LinearGradient
-                colors={['#2A6E3F', '#349339']}
+                colors={[colors.primary, colors.secondary]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={[styles.header, {paddingTop: insets.top + 15}]}

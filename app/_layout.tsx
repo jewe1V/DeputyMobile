@@ -2,10 +2,11 @@ import { Stack } from "expo-router"
 import Toast from "react-native-toast-message";
 import {toastConfig} from "@/components/Toast/toastConfig";
 import React from "react";
+import { ThemeProvider } from "@/context/ThemeContext";
 
 const StackLayout = () => {
     return (
-        <>
+        <ThemeProvider>
             <Stack>
                 <Stack.Screen
                     name="(screens)"
@@ -21,7 +22,7 @@ const StackLayout = () => {
                 />
             </Stack>
             <Toast config={toastConfig} />
-        </>
+        </ThemeProvider>
     );
 }
 

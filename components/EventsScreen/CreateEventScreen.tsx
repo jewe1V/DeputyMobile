@@ -15,11 +15,13 @@ import LocationPickerModal from "./LocationPickerModal";
 import Toast from "react-native-toast-message";
 import { ArrowLeft } from "lucide-react-native";
 import { PeoplePickerModal } from "@/components/EventsScreen/PeoplePickerModal";
+import { useTheme } from '@/context/ThemeContext';
 
 type User = { id: string; full_name: string; email: string };
 type Department = { id: string; name: string };
 
 export function CreateEventScreen() {
+    const { colors, isDark } = useTheme();
     const { id } = useLocalSearchParams<{ id: string }>();
     const isEditMode = !!id;
 
@@ -326,19 +328,19 @@ export function CreateEventScreen() {
     // Если данные еще грузятся, показываем лоадер вместо формы
     if (isDataLoading) {
         return (
-            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-                <ActivityIndicator size="large" color="#0f6319" />
+            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }]}>
+                <ActivityIndicator size="large" color={colors.primary} />
             </View>
         );
     }
 
     return (
         <KeyboardAvoidingView
-            style={{ flex: 1, backgroundColor: '#fff' }}
+            style={{ flex: 1, backgroundColor: colors.background }}
             behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
             <LinearGradient
-                colors={['#2A6E3F', '#349339']}
+                colors={[colors.primary, colors.secondary]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={[styles.header, { paddingTop: insets.top + 20 }]}
@@ -359,77 +361,78 @@ export function CreateEventScreen() {
 
                 <View style={styles.card}>
                     {!isAdmin && (
-                        <View style={styles.warningAlert}>
-                            <Ionicons name="information-circle-outline" size={24} color="#b45309" style={{ marginTop: 2 }}/>
-                            <Text style={styles.warningText}>
+                        <View style={[styles.warningAlert, { backgroundColor: isDark ? '#451a03' : '#fef3c7', borderColor: isDark ? '#92400e' : '#fde047' }]}>
+                            <Ionicons name="information-circle-outline" size={24} color={isDark ? '#fbbf24' : '#b45309'} style={{ marginTop: 2 }}/>
+                            <Text style={[styles.warningText, { color: isDark ? '#fbbf24' : '#b45309' }]}>
                                 Вы можете создавать только приватные мероприятия. Обязательно выберите пользователей или отделы для рассылки приглашений.
                             </Text>
                         </View>
                     )}
 
                     <TextInput
-                        style={styles.input}
+                        style={[styles.input, { backgroundColor: isDark ? colors.card : '#f7f7f7', borderColor: colors.border, color: colors.text }]}
                         value={title}
                         onChangeText={setTitle}
                         placeholder="Название *"
-                        placeholderTextColor="#999"
+                        placeholderTextColor={colors.subtext}
                     />
 
                     <TextInput
-                        style={[styles.input, styles.textArea]}
+                        style={[styles.input, styles.textArea, { backgroundColor: isDark ? colors.card : '#f7f7f7', borderColor: colors.border, color: colors.text }]}
                         multiline
                         numberOfLines={8}
                         value={description}
                         onChangeText={setDescription}
                         placeholder="Описание *"
-                        placeholderTextColor="#999"
+                        placeholderTextColor={colors.subtext}
                         textAlignVertical="top"
                     />
 
-                    <TouchableOpacity style={styles.unifiedInput} onPress={() => setMapModalVisible(true)}>
-                        <Text style={location ? styles.inputText : styles.placeholderText}>
+                    <TouchableOpacity style={[styles.unifiedInput, { backgroundColor: isDark ? colors.card : '#f7f7f7', borderColor: colors.border }]} onPress={() => setMapModalVisible(true)}>
+                        <Text style={[location ? styles.inputText : styles.placeholderText, location && { color: colors.text }]}>
                             {location ? location : "Выберите адрес на карте *"}
                         </Text>
-                        <Ionicons name="map-outline" size={22} color="#6b7280" />
+                        <Ionicons name="map-outline" size={22} color={colors.subtext} />
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.unifiedInput} onPress={() => setStartPickerVisible(true)}>
-                        <Text style={startAt ? styles.inputText : styles.placeholderText}>
+                    <TouchableOpacity style={[styles.unifiedInput, { backgroundColor: isDark ? colors.card : '#f7f7f7', borderColor: colors.border }]} onPress={() => setStartPickerVisible(true)}>
+                        <Text style={[startAt ? styles.inputText : styles.placeholderText, startAt && { color: colors.text }]}>
                             {startAt ? formatDateForDisplay(startAt) : "Выберите дату и время начала *"}
                         </Text>
-                        <Ionicons name="calendar-outline" size={20} color="#6b7280" />
+                        <Ionicons name="calendar-outline" size={20} color={colors.subtext} />
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.unifiedInput} onPress={() => setEndPickerVisible(true)}>
-                        <Text style={endAt ? styles.inputText : styles.placeholderText}>
+                    <TouchableOpacity style={[styles.unifiedInput, { backgroundColor: isDark ? colors.card : '#f7f7f7', borderColor: colors.border }]} onPress={() => setEndPickerVisible(true)}>
+                        <Text style={[endAt ? styles.inputText : styles.placeholderText, endAt && { color: colors.text }]}>
                             {endAt ? formatDateForDisplay(endAt) : "Выберите дату и время окончания *"}
                         </Text>
-                        <Ionicons name="calendar-outline" size={20} color="#6b7280" />
+                        <Ionicons name="calendar-outline" size={20} color={colors.subtext} />
                     </TouchableOpacity>
 
                     <View style={styles.selectWrapper}>
                         <TouchableOpacity
-                            style={styles.selectTrigger}
+                            style={[styles.selectTrigger, { backgroundColor: isDark ? colors.card : '#f7f7f7', borderColor: colors.border }]}
                             onPress={() => setIsTypeSelectOpen(!isTypeSelectOpen)}
                         >
-                            <Text style={!eventType ? styles.placeholderText : styles.selectValue}>
+                            <Text style={[!eventType ? styles.placeholderText : styles.selectValue, eventType && { color: colors.text }]}>
                                 {selectedType?.label || 'Тип *'}
                             </Text>
                             <Ionicons
                                 name={isTypeSelectOpen ? "chevron-up" : "chevron-down"}
                                 size={20}
-                                color="#6b7280"
+                                color={colors.subtext}
                             />
                         </TouchableOpacity>
 
                         {isTypeSelectOpen && (
-                            <View style={styles.selectDropdown}>
+                            <View style={[styles.selectDropdown, { backgroundColor: colors.card, borderColor: colors.border }]}>
                                 {eventTypes.map((item) => (
                                     <TouchableOpacity
                                         key={item.value}
                                         style={[
                                             styles.selectItem,
-                                            eventType === item.value && styles.selectItemSelected
+                                            { borderBottomColor: colors.divider },
+                                            eventType === item.value && [styles.selectItemSelected, { backgroundColor: isDark ? colors.primary + '20' : '#f0f7f0' }]
                                         ]}
                                         onPress={() => {
                                             setEventType(item.value);
@@ -438,12 +441,13 @@ export function CreateEventScreen() {
                                     >
                                         <Text style={[
                                             styles.selectItemText,
-                                            eventType === item.value && styles.selectItemTextSelected
+                                            { color: colors.text },
+                                            eventType === item.value && [styles.selectItemTextSelected, { color: colors.primary }]
                                         ]}>
                                             {item.label}
                                         </Text>
                                         {eventType === item.value && (
-                                            <Ionicons name="checkmark" size={18} color="#0f6319" />
+                                            <Ionicons name="checkmark" size={18} color={colors.primary} />
                                         )}
                                     </TouchableOpacity>
                                 ))}
@@ -453,7 +457,7 @@ export function CreateEventScreen() {
 
                     {isAdmin && (
                         <TouchableOpacity
-                            style={styles.checkboxContainer}
+                            style={[styles.checkboxContainer, { backgroundColor: isDark ? colors.card : '#f7f7f7', borderColor: colors.border }]}
                             onPress={() => {
                                 setIsPublic(!isPublic);
                                 if (!isPublic) {
@@ -462,8 +466,8 @@ export function CreateEventScreen() {
                                 }
                             }}
                         >
-                            <Text style={styles.checkboxLabel}>Публичное мероприятие</Text>
-                            <View style={[styles.checkbox, isPublic && styles.checkboxChecked]}>
+                            <Text style={[styles.checkboxLabel, { color: colors.text }]}>Публичное мероприятие</Text>
+                            <View style={[styles.checkbox, { borderColor: colors.subtext }, isPublic && [styles.checkboxChecked, { backgroundColor: colors.primary, borderColor: colors.primary }] ]}>
                                 {isPublic && <Ionicons name="checkmark" size={18} color="#fff" />}
                             </View>
                         </TouchableOpacity>
@@ -471,31 +475,31 @@ export function CreateEventScreen() {
 
                     {(!isPublic || !isAdmin) && (
                         <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>
+                            <Text style={[styles.sectionTitle, { color: colors.text }]}>
                                 {!isAdmin && !isPublic ? "Приглашения *" : "Приглашения"}
                             </Text>
                             <TouchableOpacity
-                                style={styles.inviteButton}
+                                style={[styles.inviteButton, { backgroundColor: isDark ? colors.card : '#f7f7f7', borderColor: colors.border }]}
                                 onPress={() => setPeoplePickerVisible(true)}
                             >
                                 <View style={styles.inviteButtonContent}>
-                                    <Ionicons name="people-outline" size={24} color="#0f6319" />
+                                    <Ionicons name="people-outline" size={24} color={isDark ? colors.roleText : "#0f6319"} />
                                     <View>
-                                        <Text style={styles.inviteButtonTitle}>Выбрать участников</Text>
-                                        <Text style={styles.inviteButtonSubtitle}>
+                                        <Text style={[styles.inviteButtonTitle, { color: colors.text }]}>Выбрать участников</Text>
+                                        <Text style={[styles.inviteButtonSubtitle, { color: colors.subtext }]}>
                                             {selectedUserIds.length + selectedDepartmentIds.length > 0
                                                 ? `Выбрано: ${selectedUserIds.length} пользователей, ${selectedDepartmentIds.length} отделов`
                                                 : "Нажмите для выбора пользователей и отделов"}
                                         </Text>
                                     </View>
                                 </View>
-                                <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+                                <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
                             </TouchableOpacity>
                         </View>
                     )}
 
                     <TouchableOpacity
-                        style={[styles.publishButton, isLoading && styles.publishButtonDisabled]}
+                        style={[styles.publishButton, { backgroundColor: colors.primary }, isLoading && styles.publishButtonDisabled]}
                         onPress={handleSave}
                         disabled={isLoading}
                     >

@@ -24,8 +24,10 @@ import { Select } from "@/components/ui/Shared/Select";
 import { SchedulePopup } from "@/components/EventsScreen/SchedulePopup";
 import { formatDate, getLocalDateKey, getTodayLocalKey } from "@/utils";
 import { Filters } from '../ui/Shared/Filters';
+import { useTheme } from '@/context/ThemeContext';
 
 const EventsScreen: React.FC = () => {
+    const { colors, isDark } = useTheme();
     const params = useLocalSearchParams<{ isMine?: string }>();
     const isMineMode = params.isMine === 'true';
 
@@ -190,9 +192,9 @@ const EventsScreen: React.FC = () => {
 
 
     return (
-        <View style={{ flex: 1, backgroundColor: '#ffffff' }}>
+        <View style={{ flex: 1, backgroundColor: colors.background }}>
             <LinearGradient
-                colors={['#2A6E3F', '#349339']}
+                colors={[colors.primary, colors.secondary]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={[styles.header, { paddingTop: insets.top + 15 }]}
@@ -237,8 +239,8 @@ const EventsScreen: React.FC = () => {
                         <RefreshControl
                             refreshing={refreshing}
                             onRefresh={onRefresh}
-                            colors={['#0f6219']}
-                            tintColor="#0a58ff"
+                            colors={[colors.primary]}
+                            tintColor={colors.primary}
                         />
                     }
                 >
@@ -255,7 +257,7 @@ const EventsScreen: React.FC = () => {
                 // Список выводится ТОЛЬКО в режиме 'list'
                 <View style={[styles.contentSection, { marginTop: 16 }]}>
                     {loading ? (
-                        <ActivityIndicator size="large" color="#0f6119" />
+                        <ActivityIndicator size="large" color={colors.primary} />
                     ) : (
                         <FlatList
                             data={grouped}
@@ -265,8 +267,8 @@ const EventsScreen: React.FC = () => {
                                 const formattedDate = formatDate(date);
                                 return (
                                     <View style={styles.groupBlock}>
-                                        <View style={styles.dateBadge}>
-                                            <Text style={styles.dateBadgeText}>{formattedDate}</Text>
+                                        <View style={[styles.dateBadge, { backgroundColor: isDark ? colors.primary + '20' : '#e6ecff' }]}>
+                                            <Text style={[styles.dateBadgeText, { color: isDark ? colors.roleText : '#0f6119' }]}>{formattedDate}</Text>
                                         </View>
                                         {dayEvents.map(ev => (
                                             <EventCard
@@ -287,8 +289,8 @@ const EventsScreen: React.FC = () => {
                                 <RefreshControl
                                     refreshing={refreshing}
                                     onRefresh={onRefresh}
-                                    colors={['#0f6219']}
-                                    tintColor="#0a58ff"
+                                    colors={[colors.primary]}
+                                    tintColor={colors.primary}
                                 />
                             }
                         />

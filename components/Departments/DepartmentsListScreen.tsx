@@ -21,8 +21,10 @@ import {Building2, Plus, Trash2} from "lucide-react-native";
 import {CreateDepartmentPopup} from "@/components/Departments/CreateDepartmentPopup";
 import { declOfNum } from '@/utils';
 import {Search} from "@/components/ui/Shared/Search";
+import { useTheme } from '@/context/ThemeContext';
 
 const DepartmentsListScreen = () => {
+    const { colors, isDark } = useTheme();
     const router = useRouter();
     const insets = useSafeAreaInsets();
 
@@ -141,19 +143,19 @@ const DepartmentsListScreen = () => {
 
     const renderDepartmentItem = ({ item }: { item: Department }) => (
         <TouchableOpacity
-            style={styles.departmentCard}
+            style={[styles.departmentCard, { backgroundColor: colors.card, borderColor: colors.border }]}
             onPress={() => router.push({
                 pathname: '/(screens)/DepartmentsScreen/DepartmentDetailsScreen',
                 params: { id: item.id, name: item.name }
             })}
         >
-            <View style={styles.departmentIcon}>
-                <Building2 size={22} color="#2A6E3F" />
+            <View style={[styles.departmentIcon, { backgroundColor: isDark ? colors.primary + '20' : '#ebfdeb' }]}>
+                <Building2 size={22} color={isDark ? colors.roleText : "#2A6E3F"} />
             </View>
 
             <View style={styles.departmentInfo}>
-                <Text style={styles.departmentName}>{item.name}</Text>
-                <Text style={styles.departmentId}>ID: {item.id.slice(0, 8)}...</Text>
+                <Text style={[styles.departmentName, { color: colors.text }]}>{item.name}</Text>
+                <Text style={[styles.departmentId, { color: colors.subtext }]}>ID: {item.id.slice(0, 8)}...</Text>
             </View>
 
             <TouchableOpacity
@@ -161,18 +163,18 @@ const DepartmentsListScreen = () => {
                 style={styles.deleteButton}
             >
                 <View pointerEvents={"none"}>
-                    <Trash2 size={16} color="#000" />
+                    <Trash2 size={16} color={isDark ? colors.subtext : "#000"} />
                 </View>
             </TouchableOpacity>
         </TouchableOpacity>
     );
 
     return (
-        <View style={{ flex: 1, backgroundColor: '#fff', paddingBottom: insets.bottom + 50 }}>
+        <View style={{ flex: 1, backgroundColor: colors.background, paddingBottom: insets.bottom + 50 }}>
             <StatusBar barStyle="light-content" translucent />
 
             <LinearGradient
-                colors={['#2A6E3F', '#349339']}
+                colors={[colors.primary, colors.secondary]}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                 style={[styles.header, { paddingTop: insets.top + 15 }]}
             >
@@ -202,7 +204,7 @@ const DepartmentsListScreen = () => {
 
             {loading && !refreshing ? (
                 <View style={styles.center}>
-                    <ActivityIndicator size="large" color="#2A6E3F" />
+                    <ActivityIndicator size="large" color={colors.primary} />
                 </View>
             ) : (
                 <FlatList
@@ -212,13 +214,13 @@ const DepartmentsListScreen = () => {
                     contentContainerStyle={styles.listContainer}
                     showsVerticalScrollIndicator={false}
                     refreshControl={
-                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2A6E3F']} />
+                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />
                     }
                     ListEmptyComponent={
-                        <View style={styles.emptyState}>
-                            <Ionicons name="business-outline" size={48} color="#9CA3AF" />
-                            <Text style={styles.emptyTitle}>Нет отделов</Text>
-                            <Text style={styles.emptySubtitle}>Создайте первый отдел</Text>
+                        <View style={[styles.emptyState, { backgroundColor: colors.card, marginHorizontal: 20, padding: 30, borderRadius: 20 }]}>
+                            <Ionicons name="business-outline" size={48} color={colors.subtext} />
+                            <Text style={[styles.emptyTitle, { color: colors.text }]}>Нет отделов</Text>
+                            <Text style={[styles.emptySubtitle, { color: colors.subtext }]}>Создайте первый отдел</Text>
                         </View>
                     }
                 />

@@ -20,6 +20,7 @@ import {router, useLocalSearchParams} from "expo-router";
 import { taskService } from '@/api/taskService';
 import {formatDateForDisplay} from "@/utils";
 import {ArrowLeft} from "lucide-react-native";
+import { useTheme } from '@/context/ThemeContext';
 
 
 const PRIORITY_MAP = [
@@ -31,6 +32,7 @@ const PRIORITY_MAP = [
 ];
 
 export function TaskForm() {
+    const { colors, isDark } = useTheme();
     const insets = useSafeAreaInsets();
     const { id } = useLocalSearchParams<{ id: string }>();
     const isEditMode = !!id; // Если id есть, значит мы в режиме редактирования
@@ -133,20 +135,20 @@ export function TaskForm() {
 
     if (isLoading) {
         return (
-            <View style={[styles.container, { justifyContent: 'center', backgroundColor: '#fff' }]}>
-                <ActivityIndicator size="large" color="#2A6E3F" />
+            <View style={[styles.container, { justifyContent: 'center', backgroundColor: colors.background }]}>
+                <ActivityIndicator size="large" color={colors.primary} />
             </View>
         );
     }
 
     return (
         <KeyboardAvoidingView
-            style={{ flex: 1, backgroundColor: '#fff' }}
+            style={{ flex: 1, backgroundColor: colors.background }}
             behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
             <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
             <LinearGradient
-                colors={['#2A6E3F', '#349339']}
+                colors={[colors.primary, colors.secondary]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={[styles.header, { paddingTop: insets.top + 20 }]}
@@ -170,57 +172,59 @@ export function TaskForm() {
 
                 <View style={styles.card}>
                     <TextInput
-                        style={styles.input}
+                        style={[styles.input, { backgroundColor: isDark ? colors.card : '#f7f7f7', borderColor: colors.border, color: colors.text }]}
                         value={title}
                         onChangeText={setTitle}
                         placeholder="Название *"
-                        placeholderTextColor="#999"
+                        placeholderTextColor={colors.subtext}
                     />
 
                     <TextInput
-                        style={[styles.input, styles.textArea]}
+                        style={[styles.input, styles.textArea, { backgroundColor: isDark ? colors.card : '#f7f7f7', borderColor: colors.border, color: colors.text }]}
                         multiline
                         numberOfLines={8}
                         value={description}
                         onChangeText={setDescription}
                         placeholder="Описание *"
-                        placeholderTextColor="#999"
+                        placeholderTextColor={colors.subtext}
                         textAlignVertical="top"
                     />
 
-                    <TouchableOpacity style={styles.unifiedInput} onPress={() => setDatePickerVisibility(true)}>
-                        <Text style={dueDate ? styles.inputText : styles.placeholderText}>
+                    <TouchableOpacity style={[styles.unifiedInput, { backgroundColor: isDark ? colors.card : '#f7f7f7', borderColor: colors.border }]} onPress={() => setDatePickerVisibility(true)}>
+                        <Text style={[dueDate ? styles.inputText : styles.placeholderText, dueDate && { color: colors.text }]}>
                             {dueDate ? formatDateForDisplay(dueDate) : "Выберите срок исполнения *"}
                         </Text>
+                        <Ionicons name="calendar-outline" size={20} color={colors.subtext} />
                     </TouchableOpacity>
 
                     {/* Выбор приоритета */}
                     <View style={[styles.selectWrapper, { zIndex: 900 }]}>
                         <TouchableOpacity
-                            style={styles.selectTrigger}
+                            style={[styles.selectTrigger, { backgroundColor: isDark ? colors.card : '#f7f7f7', borderColor: colors.border }]}
                             onPress={() => {
                                 setIsPrioritySelectOpen(!isPrioritySelectOpen);
                                 setIsStatusSelectOpen(false);
                             }}
                         >
-                            <Text style={priority === null ? styles.placeholderText : styles.selectValue}>
+                            <Text style={[priority === null ? styles.placeholderText : styles.selectValue, priority !== null && { color: colors.text }]}>
                                 {priority !== null ? PRIORITY_MAP.find(p => p.id === priority)?.label : 'Приоритет *'}
                             </Text>
                             <Ionicons
                                 name={isPrioritySelectOpen ? "chevron-up" : "chevron-down"}
                                 size={20}
-                                color="#6b7280"
+                                color={colors.subtext}
                             />
                         </TouchableOpacity>
 
                         {isPrioritySelectOpen && (
-                            <View style={styles.selectDropdown}>
+                            <View style={[styles.selectDropdown, { backgroundColor: colors.card, borderColor: colors.border }]}>
                                 {PRIORITY_MAP.map((item) => (
                                     <TouchableOpacity
                                         key={item.id}
                                         style={[
                                             styles.selectItem,
-                                            priority === item.id && styles.selectItemSelected
+                                            { borderBottomColor: colors.divider },
+                                            priority === item.id && [styles.selectItemSelected, { backgroundColor: isDark ? colors.primary + '20' : '#f0f7f0' }]
                                         ]}
                                         onPress={() => {
                                             setPriority(item.id);
@@ -229,12 +233,13 @@ export function TaskForm() {
                                     >
                                         <Text style={[
                                             styles.selectItemText,
-                                            priority === item.id && styles.selectItemTextSelected
+                                            { color: colors.text },
+                                            priority === item.id && [styles.selectItemTextSelected, { color: colors.primary }]
                                         ]}>
                                             {item.label}
                                         </Text>
                                         {priority === item.id && (
-                                            <Ionicons name="checkmark" size={18} color="#0f6319" />
+                                            <Ionicons name="checkmark" size={18} color={colors.primary} />
                                         )}
                                     </TouchableOpacity>
                                 ))}
@@ -245,30 +250,31 @@ export function TaskForm() {
                     {/* Выбор статуса */}
                     <View style={[styles.selectWrapper, { zIndex: 800 }]}>
                         <TouchableOpacity
-                            style={styles.selectTrigger}
+                            style={[styles.selectTrigger, { backgroundColor: isDark ? colors.card : '#f7f7f7', borderColor: colors.border }]}
                             onPress={() => {
                                 setIsStatusSelectOpen(!isStatusSelectOpen);
                                 setIsPrioritySelectOpen(false);
                             }}
                         >
-                            <Text style={!selectedStatus ? styles.placeholderText : styles.selectValue}>
+                            <Text style={[!selectedStatus ? styles.placeholderText : styles.selectValue, selectedStatus && { color: colors.text }]}>
                                 {selectedStatus || 'Статус *'}
                             </Text>
                             <Ionicons
                                 name={isStatusSelectOpen ? "chevron-up" : "chevron-down"}
                                 size={20}
-                                color="#6b7280"
+                                color={colors.subtext}
                             />
                         </TouchableOpacity>
 
                         {isStatusSelectOpen && (
-                            <View style={styles.selectDropdown}>
+                            <View style={[styles.selectDropdown, { backgroundColor: colors.card, borderColor: colors.border }]}>
                                 {statuses.map((item) => (
                                     <TouchableOpacity
                                         key={item.name}
                                         style={[
                                             styles.selectItem,
-                                            selectedStatus === item.name && styles.selectItemSelected
+                                            { borderBottomColor: colors.divider },
+                                            selectedStatus === item.name && [styles.selectItemSelected, { backgroundColor: isDark ? colors.primary + '20' : '#f0f7f0' }]
                                         ]}
                                         onPress={() => {
                                             setSelectedStatus(item.name);
@@ -277,12 +283,13 @@ export function TaskForm() {
                                     >
                                         <Text style={[
                                             styles.selectItemText,
-                                            selectedStatus === item.name && styles.selectItemTextSelected
+                                            { color: colors.text },
+                                            selectedStatus === item.name && [styles.selectItemTextSelected, { color: colors.primary }]
                                         ]}>
                                             {item.name}
                                         </Text>
                                         {selectedStatus === item.name && (
-                                            <Ionicons name="checkmark" size={18} color="#0f6319" />
+                                            <Ionicons name="checkmark" size={18} color={colors.primary} />
                                         )}
                                     </TouchableOpacity>
                                 ))}
@@ -291,7 +298,7 @@ export function TaskForm() {
                     </View>
 
                     <TouchableOpacity
-                        style={[styles.publishButton, isSubmitting && styles.publishButtonDisabled]}
+                        style={[styles.publishButton, { backgroundColor: colors.primary }, isSubmitting && styles.publishButtonDisabled]}
                         onPress={handleSubmit}
                         disabled={isSubmitting}
                     >

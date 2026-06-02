@@ -2,6 +2,7 @@ import {View, StyleSheet, Text, TouchableOpacity, Platform, Linking} from "react
 import {PhonebookModel} from "@/models/PhonebookModel";
 import {MapPin, Phone, PhoneCall} from "lucide-react-native";
 import React from "react";
+import { useTheme } from "@/context/ThemeContext";
 
 interface ContactCardProps {
     item: PhonebookModel;
@@ -20,39 +21,41 @@ const handleCall = (phoneString: string) => {
 };
 
 export const ContactCard = ({ item }: ContactCardProps) => {
+    const { colors, isDark } = useTheme();
+
     return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, shadowOpacity: isDark ? 0 : 0.05 }]}>
         <View style={styles.cardHeader}>
-            <Text style={styles.cardName}>{item.full_name}</Text>
-            <Text style={styles.cardJobTitle}>{item.job_title}</Text>
+            <Text style={[styles.cardName, { color: colors.text }]}>{item.full_name}</Text>
+            <Text style={[styles.cardJobTitle, { color: colors.subtext }]}>{item.job_title}</Text>
         </View>
 
         {item.office_number && (
-            <View style={styles.officeRow}>
-                <Text style={styles.officeText}>Кабинет: {item.office_number}</Text>
+            <View style={[styles.officeRow, { backgroundColor: isDark ? colors.iconBox : '#F3F4F6' }]}>
+                <Text style={[styles.officeText, { color: colors.text }]}>Кабинет: {item.office_number}</Text>
             </View>
         )}
 
         <View style={styles.actionsContainer}>
             <TouchableOpacity
-                style={[styles.actionButton, styles.primaryButton]}
+                style={[styles.actionButton, styles.primaryButton, { backgroundColor: colors.primary }]}
                 onPress={() => handleCall(item.internal_phone)}
             >
                 <PhoneCall size={16} color="#FFF" />
                 <View style={styles.actionTextContainer}>
-                    <Text style={[styles.actionLabel, { color: '#E0F2E9' }]}>Внутренний</Text>
+                    <Text style={[styles.actionLabel, { color: isDark ? '#dcfce7' : '#E0F2E9' }]}>Внутренний</Text>
                     <Text style={[styles.actionPhone, { color: '#FFF', fontWeight: "500" }]}>{item.internal_phone}</Text>
                 </View>
             </TouchableOpacity>
 
             <TouchableOpacity
-                style={[styles.actionButton, styles.secondaryButton]}
+                style={[styles.actionButton, styles.secondaryButton, { backgroundColor: isDark ? colors.primary + '20' : '#E8F3EB' }]}
                 onPress={() => handleCall(item.city_phone)}
             >
-                <Phone size={16} color="#2A6E3F" />
+                <Phone size={16} color={isDark ? colors.roleText : "#2A6E3F"} />
                 <View style={styles.actionTextContainer}>
-                    <Text style={[styles.actionLabel, { color: '#666' }]}>Городской</Text>
-                    <Text style={[styles.actionPhone, { color: '#2A6E3F' }]} numberOfLines={1}>
+                    <Text style={[styles.actionLabel, { color: colors.subtext }]}>Городской</Text>
+                    <Text style={[styles.actionPhone, { color: isDark ? colors.roleText : "#2A6E3F" }]} numberOfLines={1}>
                         {item.city_phone.split(' ')[0]} {/* Показываем только первый номер визуально */}
                     </Text>
                 </View>

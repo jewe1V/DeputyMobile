@@ -1,6 +1,7 @@
 import { Text, TextInput, View, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
+import { useTheme } from "@/context/ThemeContext";
 
 interface SearchProps {
     placeholder: string;
@@ -9,20 +10,22 @@ interface SearchProps {
 }
 
 export const Search = ({ placeholder, searchQuery, onChangeText }: SearchProps) => {
+    const { colors, isDark } = useTheme();
+
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: colors.card, shadowOpacity: isDark ? 0 : 0.05 }]}>
             <View style={styles.wrapper}>
                 <View style={styles.inputContainer}>
-                    <Text style={styles.label}>Поиск</Text>
-                    <View style={styles.inputWrapper}>
+                    <Text style={[styles.label, { color: colors.subtext }]}>Поиск</Text>
+                    <View style={[styles.inputWrapper, { backgroundColor: isDark ? colors.background : '#ffffff', borderColor: colors.border }]}>
                         <TextInput
-                            style={styles.input}
+                            style={[styles.input, { color: colors.text }]}
                             placeholder={placeholder}
-                            placeholderTextColor="#9ca3af"
+                            placeholderTextColor={colors.subtext}
                             value={searchQuery}
                             onChangeText={onChangeText}
                         />
-                        <Ionicons name="search" size={16} color="#6B7280" />
+                        <Ionicons name="search" size={16} color={colors.subtext} />
                     </View>
                 </View>
             </View>

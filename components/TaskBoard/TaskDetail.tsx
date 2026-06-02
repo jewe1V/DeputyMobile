@@ -36,6 +36,7 @@ import {SkeletonItem} from "@/components/ui/Shared/SkeletonLoader";
 import { apiClient } from '@/api/api';
 import { TaskCommentComponent } from './TaskComment';
 import { CommentInput } from './CommentInput';
+import { useTheme } from '@/context/ThemeContext';
 
 interface TaskStatusServer {
     name: string;
@@ -81,6 +82,7 @@ export interface Task {
 }
 
 export function TaskDetail() {
+    const { colors, isDark } = useTheme();
     const { id } = useLocalSearchParams<{ id: string }>();
     const insets = useSafeAreaInsets();
 
@@ -145,8 +147,6 @@ export function TaskDetail() {
             setIsUsersLoading(false);
         }
     };
-
-    // Добавьте после других функций
 
     const handleAddComment = async (text: string) => {
         if (!task) return;
@@ -392,10 +392,10 @@ export function TaskDetail() {
     };
 
     const renderSkeleton = () => (
-        <View style={{ flex: 1, backgroundColor: '#f8fafc' }}>
+        <View style={{ flex: 1, backgroundColor: colors.background }}>
             <StatusBar barStyle="light-content" />
             <LinearGradient
-                colors={['#2A6E3F', '#349339']}
+                colors={[colors.primary, colors.secondary]}
                 style={[styles.header, { paddingTop: insets.top + 15 }]}
             >
                 <View style={styles.headerTopRow}>
@@ -412,13 +412,13 @@ export function TaskDetail() {
 
             <View style={styles.content}>
                 {/* Карточка с датами */}
-                <View style={[styles.card, { padding: 16 }]}>
+                <View style={[styles.card, { padding: 16, backgroundColor: colors.card, shadowOpacity: isDark ? 0 : 0.05 }]}>
                     <View style={styles.timeRow}>
                         <View style={styles.timeContent}>
                             <SkeletonItem width={60} height={12} borderRadius={4} marginBottom={8} />
                             <SkeletonItem width={80} height={16} borderRadius={4} />
                         </View>
-                        <View style={styles.timeDividerVertical} />
+                        <View style={[styles.timeDividerVertical, { backgroundColor: colors.divider }]} />
                         <View style={styles.timeContent}>
                             <SkeletonItem width={60} height={12} borderRadius={4} marginBottom={8} />
                             <SkeletonItem width={80} height={16} borderRadius={4} />
@@ -428,7 +428,7 @@ export function TaskDetail() {
 
                 {/* Статус */}
                 <SkeletonItem width={100} height={16} borderRadius={4} marginBottom={12} />
-                <View style={[styles.selectTrigger, { marginBottom: 20 }]}>
+                <View style={[styles.selectTrigger, { marginBottom: 20, backgroundColor: colors.card, borderColor: colors.border }]}>
                     <SkeletonItem width={80} height={16} borderRadius={4} />
                     <SkeletonItem width={20} height={20} borderRadius={10} />
                 </View>
@@ -489,24 +489,24 @@ export function TaskDetail() {
     }
 
     if (!task) return (
-        <View style={styles.container}>
-            <Text style={{ textAlign: 'center', marginTop: 50 }}>Задача не найдена</Text>
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
+            <Text style={{ textAlign: 'center', marginTop: 50, color: colors.text }}>Задача не найдена</Text>
         </View>
     );
 
     return (
-        <View style={{ flex: 1, backgroundColor: '#f8fafc', paddingBottom: insets.bottom + 30 }}>
+        <View style={{ flex: 1, backgroundColor: colors.background, paddingBottom: insets.bottom + 30 }}>
             <StatusBar barStyle="light-content" />
 
             <ScrollView
                 style={styles.container}
                 contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#2A6E3F" />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
                 showsVerticalScrollIndicator={false}
             >
                 {/* Header */}
                 <LinearGradient
-                    colors={['#2A6E3F', '#349339']}
+                    colors={[colors.primary, colors.secondary]}
                     style={[styles.header, { paddingTop: insets.top + 15 }]}
                 >
                     <View style={styles.headerTopRow}>
@@ -540,18 +540,18 @@ export function TaskDetail() {
                 </LinearGradient>
 
                 <View style={styles.content}>
-                    <View style={styles.card}>
+                    <View style={[styles.card, { backgroundColor: colors.card, shadowOpacity: isDark ? 0 : 0.05 }]}>
                         <View style={styles.timeRow}>
                             <View style={styles.timeContent}>
-                                <Text style={styles.label}>Создано</Text>
-                                <Text style={styles.value}>
+                                <Text style={[styles.label, { color: colors.subtext }]}>Создано</Text>
+                                <Text style={[styles.value, { color: colors.text }]}>
                                     {task.created_at ? new Date(task.created_at).toLocaleDateString('ru-RU') : '-'}
                                 </Text>
                             </View>
-                            <View style={styles.timeDividerVertical} />
+                            <View style={[styles.timeDividerVertical, { backgroundColor: colors.divider }]} />
                             <View style={styles.timeContent}>
-                                <Text style={styles.label}>Крайний срок</Text>
-                                <Text style={styles.value}>
+                                <Text style={[styles.label, { color: colors.subtext }]}>Крайний срок</Text>
+                                <Text style={[styles.value, { color: colors.text }]}>
                                     {task.expected_end_date ? new Date(task.expected_end_date).toLocaleDateString('ru-RU', {
                                         day: '2-digit',
                                         month: '2-digit',
@@ -565,39 +565,41 @@ export function TaskDetail() {
                         </View>
                     </View>
 
-                    <Text style={styles.sectionTitle}>Текущий статус</Text>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Текущий статус</Text>
                     <View style={[styles.selectWrapper, { zIndex: 1000 }]}>
                         <TouchableOpacity
-                            style={styles.selectTrigger}
+                            style={[styles.selectTrigger, { backgroundColor: colors.card, borderColor: colors.border }]}
                             onPress={() => setIsStatusSelectOpen(!isStatusSelectOpen)}
                         >
-                            <Text style={styles.selectValue}>{task.status}</Text>
+                            <Text style={[styles.selectValue, { color: colors.text }]}>{task.status}</Text>
                             <Ionicons
                                 name={isStatusSelectOpen ? "chevron-up" : "chevron-down"}
                                 size={20}
-                                color="#6b7280"
+                                color={colors.subtext}
                             />
                         </TouchableOpacity>
 
                         {isStatusSelectOpen && (
-                            <View style={styles.selectDropdown}>
+                            <View style={[styles.selectDropdown, { backgroundColor: colors.card, borderColor: colors.border }]}>
                                 {statuses.map((item) => (
                                     <TouchableOpacity
                                         key={item.name}
                                         style={[
                                             styles.selectItem,
-                                            task.status === item.name && styles.selectItemSelected
+                                            { borderBottomColor: colors.divider },
+                                            task.status === item.name && [styles.selectItemSelected, { backgroundColor: isDark ? colors.primary + '20' : '#f0fdf4' }]
                                         ]}
                                         onPress={() => handleStatusChange(item.name)}
                                     >
                                         <Text style={[
                                             styles.selectItemText,
-                                            task.status === item.name && styles.selectItemTextSelected
+                                            { color: colors.text },
+                                            task.status === item.name && [styles.selectItemTextSelected, { color: colors.primary }]
                                         ]}>
                                             {item.name}
                                         </Text>
                                         {task.status === item.name && (
-                                            <Ionicons name="checkmark" size={18} color="#0f6319" />
+                                            <Ionicons name="checkmark" size={18} color={colors.primary} />
                                         )}
                                     </TouchableOpacity>
                                 ))}
@@ -606,56 +608,56 @@ export function TaskDetail() {
                     </View>
 
                     {/* Описание */}
-                    <View style={styles.card}>
-                        <Text style={styles.sectionTitle}>Описание</Text>
-                        <Text style={styles.description}>{task.description || 'Описание отсутствует'}</Text>
+                    <View style={[styles.card, { backgroundColor: colors.card, shadowOpacity: isDark ? 0 : 0.05 }]}>
+                        <Text style={[styles.sectionTitle, { color: colors.text }]}>Описание</Text>
+                        <Text style={[styles.description, { color: colors.subtext }]}>{task.description || 'Описание отсутствует'}</Text>
 
-                        <View style={styles.priorityBadge}>
-                            <View style={[styles.dot, { backgroundColor: '#64748b' }]} />
-                            <Text style={styles.priorityText}>
+                        <View style={[styles.priorityBadge, { backgroundColor: isDark ? colors.iconBox : '#f1f5f9' }]}>
+                            <View style={[styles.dot, { backgroundColor: colors.subtext }]} />
+                            <Text style={[styles.priorityText, { color: colors.subtext }]}>
                                 Приоритет: {priorityMap[task.priority] || task.priority}
                             </Text>
                         </View>
                     </View>
 
-                    <View style={styles.card}>
+                    <View style={[styles.card, { backgroundColor: colors.card, shadowOpacity: isDark ? 0 : 0.05 }]}>
                         <View style={styles.cardHeader}>
-                            <Text style={styles.cardTitle}>Постановщик</Text>
+                            <Text style={[styles.cardTitle, { color: colors.text }]}>Постановщик</Text>
                         </View>
                         <View style={styles.attendeeRow}>
-                            <View style={[styles.avatar, { backgroundColor: '#e2e8f0' }]}>
-                                <User size={18} color="#64748b" />
+                            <View style={[styles.avatar, { backgroundColor: isDark ? colors.iconBox : '#e2e8f0' }]}>
+                                <User size={18} color={colors.subtext} />
                             </View>
                             <View style={styles.attendeeInfo}>
-                                <Text style={styles.attendeeName}>{task.author_name}</Text>
-                                <Text style={styles.statusText}>Автор задачи</Text>
+                                <Text style={[styles.attendeeName, { color: colors.text }]}>{task.author_name}</Text>
+                                <Text style={[styles.statusText, { color: colors.subtext }]}>Автор задачи</Text>
                             </View>
                         </View>
                     </View>
 
                     {/* Исполнители */}
-                    <View style={styles.card}>
+                    <View style={[styles.card, { backgroundColor: colors.card, shadowOpacity: isDark ? 0 : 0.05 }]}>
                         <View style={[styles.cardHeader, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
-                            <Text style={styles.cardTitle}>Исполнители</Text>
+                            <Text style={[styles.cardTitle, { color: colors.text }]}>Исполнители</Text>
                             {(userRole === "Admin" || userId === task.author_id) && (
                                 <TouchableOpacity onPress={handleOpenAddUserModal}>
-                                    <Ionicons name="add-circle" size={24} color="#000" />
+                                    <Ionicons name="add-circle" size={24} color={colors.text} />
                                 </TouchableOpacity>
                             )}
                         </View>
                         {task.users?.length === 0 && (
-                            <Text style={styles.emptyText}>Нет назначенных исполнителей</Text>
+                            <Text style={[styles.emptyText, { color: colors.subtext }]}>Нет назначенных исполнителей</Text>
                         )}
                         {task.users?.map((user) => (
-                            <TouchableOpacity key={user.id} style={styles.attendeeRow} onPress={() => router.push({ pathname: '/(screens)/ProfileScreen', params: { id: user.id } })}>
-                                <View style={[styles.avatar, {backgroundColor: '#dcfce7'}]} >
-                                    <Text style={styles.avatarText}>
+                            <TouchableOpacity key={user.id} style={[styles.attendeeRow, { borderBottomColor: colors.divider }]} onPress={() => router.push({ pathname: '/(screens)/ProfileScreen', params: { id: user.id } })}>
+                                <View style={[styles.avatar, {backgroundColor: isDark ? colors.primary + '40' : '#dcfce7'}]} >
+                                    <Text style={[styles.avatarText, { color: isDark ? colors.roleText : '#166534' }]}>
                                         {(user.full_name || user.email || '?').charAt(0).toUpperCase()}
                                     </Text>
                                 </View>
                                 <View style={styles.attendeeInfo}>
-                                    <Text style={styles.attendeeName}>{user.full_name || user.email}</Text>
-                                    <Text style={styles.statusText}>{user.job_title || 'Сотрудник'}</Text>
+                                    <Text style={[styles.attendeeName, { color: colors.text }]}>{user.full_name || user.email}</Text>
+                                    <Text style={[styles.statusText, { color: colors.subtext }]}>{user.job_title || 'Сотрудник'}</Text>
                                 </View>
 
                                 {(userRole === "Admin" || userId === task.author_id) && task.users?.length > 1 && (
@@ -667,7 +669,7 @@ export function TaskDetail() {
                                         {removingUserId === user.id ? (
                                             <ActivityIndicator size="small" color="#ef4444" />
                                         ) : (
-                                            <X size={18} color="#000" />
+                                            <X size={18} color={colors.text} />
                                         )}
                                     </TouchableOpacity>
                                 )}
@@ -676,11 +678,11 @@ export function TaskDetail() {
                     </View>
 
                     {/* Комментарии */}
-                    <View style={[styles.card, { padding: 0, overflow: 'hidden' }]}>
-                        <View style={styles.commentsHeader}>
+                    <View style={[styles.card, { padding: 0, overflow: 'hidden', backgroundColor: colors.card, shadowOpacity: isDark ? 0 : 0.05 }]}>
+                        <View style={[styles.commentsHeader, { backgroundColor: isDark ? colors.iconBox : '#f8fafc', borderBottomColor: colors.divider }]}>
                             <View style={styles.commentsHeaderLeft}>
-                                <Text style={styles.cardTitle}>Комментарии</Text>
-                                <View style={styles.commentsCountBadge}>
+                                <Text style={[styles.cardTitle, { color: colors.text }]}>Комментарии</Text>
+                                <View style={[styles.commentsCountBadge, { backgroundColor: colors.primary }]}>
                                     <Text style={styles.commentsCountText}>{comments.length}</Text>
                                 </View>
                             </View>
@@ -706,7 +708,7 @@ export function TaskDetail() {
 
                     {(userRole === "Admin" || userId === task.author_id) && (
                         <TouchableOpacity
-                            style={styles.completeTaskBtn}
+                            style={[styles.completeTaskBtn, { backgroundColor: colors.primary }]}
                             onPress={handleArchiveTask}
                             disabled={isCompleting}
                         >
@@ -731,20 +733,20 @@ export function TaskDetail() {
                     behavior={Platform.OS === "ios" ? "padding" : "height"}
                     style={styles.modalOverlay}
                 >
-                    <View style={[styles.modalContent, { paddingBottom: insets.bottom || 24 }]}>
-                        <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Добавить исполнителя</Text>
+                    <View style={[styles.modalContent, { backgroundColor: colors.card, paddingBottom: insets.bottom || 24 }]}>
+                        <View style={[styles.modalHeader, { borderBottomColor: colors.divider }]}>
+                            <Text style={[styles.modalTitle, { color: colors.text }]}>Добавить исполнителя</Text>
                             <TouchableOpacity onPress={() => setIsAddUserModalVisible(false)} style={styles.closeModalBtn}>
-                                <X size={24} color="#64748b" />
+                                <X size={24} color={colors.subtext} />
                             </TouchableOpacity>
                         </View>
 
-                        <View style={styles.searchContainer}>
-                            <Search size={20} color="#94a3b8" style={styles.searchIcon} />
+                        <View style={[styles.searchContainer, { backgroundColor: isDark ? colors.background : '#f1f5f9' }]}>
+                            <Search size={20} color={colors.subtext} style={styles.searchIcon} />
                             <TextInput
-                                style={styles.searchInput}
+                                style={[styles.searchInput, { color: colors.text }]}
                                 placeholder="Поиск по имени или email..."
-                                placeholderTextColor="#94a3b8"
+                                placeholderTextColor={colors.subtext}
                                 value={searchQuery}
                                 onChangeText={setSearchQuery}
                                 autoCapitalize="none"
@@ -752,13 +754,13 @@ export function TaskDetail() {
                             />
                             {searchQuery.length > 0 && (
                                 <TouchableOpacity onPress={() => setSearchQuery('')}>
-                                    <X size={16} color="#94a3b8" />
+                                    <X size={16} color={colors.subtext} />
                                 </TouchableOpacity>
                             )}
                         </View>
 
                         {isUsersLoading ? (
-                            <ActivityIndicator size="large" color="#2A6E3F" style={{ marginTop: 40 }} />
+                            <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
                         ) : (
                             <FlatList
                                 data={filteredUsers}
@@ -770,33 +772,33 @@ export function TaskDetail() {
                                 contentContainerStyle={{ paddingVertical: 10 }}
                                 showsVerticalScrollIndicator={false}
                                 ListEmptyComponent={
-                                    <Text style={styles.emptyListText}>
+                                    <Text style={[styles.emptyListText, { color: colors.subtext }]}>
                                         {searchQuery ? 'Сотрудники не найдены' : 'Список пуст'}
                                     </Text>
                                 }
                                 renderItem={({ item }) => (
                                     <TouchableOpacity
-                                        style={styles.userListItem}
+                                        style={[styles.userListItem, { borderBottomColor: colors.divider }]}
                                         onPress={() => handleAddUserToTask(item)}
                                         disabled={addingUserId !== null}
                                     >
                                         <View style={styles.attendeeRow}>
-                                            <View style={[styles.avatar, { backgroundColor: '#f1f5f9' }]}>
-                                                <Text style={[styles.avatarText, { color: '#475569' }]}>
+                                            <View style={[styles.avatar, { backgroundColor: isDark ? colors.iconBox : '#f1f5f9' }]}>
+                                                <Text style={[styles.avatarText, { color: colors.text }]}>
                                                     {(item.full_name || item.email || '?').charAt(0).toUpperCase()}
                                                 </Text>
                                             </View>
                                             <View style={styles.attendeeInfo}>
-                                                <Text style={styles.attendeeName}>{item.full_name || item.email}</Text>
-                                                <Text style={styles.statusText}>{item.job_title || 'Сотрудник'}</Text>
+                                                <Text style={[styles.attendeeName, { color: colors.text }]}>{item.full_name || item.email}</Text>
+                                                <Text style={[styles.statusText, { color: colors.subtext }]}>{item.job_title || 'Сотрудник'}</Text>
                                             </View>
                                         </View>
 
                                         {addingUserId === item.id ? (
-                                            <ActivityIndicator size="small" color="#2A6E3F" />
+                                            <ActivityIndicator size="small" color={colors.primary} />
                                         ) : (
                                             <View style={styles.addButtonIcon}>
-                                                <Ionicons name="add" size={20} color="#2A6E3F" />
+                                                <Ionicons name="add" size={20} color={colors.primary} />
                                             </View>
                                         )}
                                     </TouchableOpacity>

@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@/context/ThemeContext';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -34,6 +35,7 @@ export const SelectionPopup: React.FC<SelectionPopupProps> = ({
                                                                   renderItem,
                                                                   keyExtractor
                                                               }) => {
+    const { colors, isDark } = useTheme();
     const insets = useSafeAreaInsets();
     const SHEET_HEIGHT = SCREEN_HEIGHT * 0.8;
     const panY = useRef(new Animated.Value(SHEET_HEIGHT)).current;
@@ -72,14 +74,14 @@ export const SelectionPopup: React.FC<SelectionPopupProps> = ({
 
     const defaultRenderItem = ({ item }: { item: any }) => (
         <TouchableOpacity
-            style={styles.item}
+            style={[styles.item, { borderBottomColor: colors.divider }]}
             onPress={() => {
                 onSelect(item);
                 handleClose();
             }}
         >
-            <Text style={styles.itemText}>{item.toString()}</Text>
-            <Ionicons name="chevron-forward" size={18} color="#E5E7EB" />
+            <Text style={[styles.itemText, { color: colors.text }]}>{item.toString()}</Text>
+            <Ionicons name="chevron-forward" size={18} color={colors.subtext} />
         </TouchableOpacity>
     );
 
@@ -90,12 +92,12 @@ export const SelectionPopup: React.FC<SelectionPopupProps> = ({
                 <Animated.View
                     style={[
                         styles.sheet,
-                        { transform: [{ translateY: panY }], height: SHEET_HEIGHT, paddingBottom: insets.bottom }
+                        { transform: [{ translateY: panY }], height: SHEET_HEIGHT, paddingBottom: insets.bottom, backgroundColor: colors.card }
                     ]}
                 >
                     <View {...panResponder.panHandlers} style={styles.dragArea}>
-                        <View style={styles.dragIndicator} />
-                        <Text style={styles.title}>{title}</Text>
+                        <View style={[styles.dragIndicator, { backgroundColor: colors.border }]} />
+                        <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
                     </View>
                     <FlatList
                         data={data}

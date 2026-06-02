@@ -15,6 +15,7 @@ import {
     View
 } from 'react-native';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTheme } from '@/context/ThemeContext';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -30,6 +31,7 @@ interface DocumentDetailModalProps {
 }
 
 export function DocumentDetailModal({ visible, document, onClose, onDelete, onStatusChange, getFileSize }: DocumentDetailModalProps) {
+    const { colors, isDark } = useTheme();
     const [deleting, setDeleting] = useState(false);
     const [deleteError, setDeleteError] = useState<string | null>(null);
     const panY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
@@ -136,59 +138,59 @@ export function DocumentDetailModal({ visible, document, onClose, onDelete, onSt
         <Modal visible={visible} transparent animationType="none" onRequestClose={() => closeAnim(onClose)}>
             <View style={[styles.overlay, { paddingBottom: insets.bottom }]}>
                 <TouchableOpacity style={styles.dismiss} activeOpacity={1} onPress={() => closeAnim(onClose)} />
-                <Animated.View style={[styles.sheet, { transform: [{ translateY: panY }], paddingBottom: insets.bottom + 20 }]}>
+                <Animated.View style={[styles.sheet, { transform: [{ translateY: panY }], paddingBottom: insets.bottom + 20, backgroundColor: colors.card }]}>
                     <View {...panResponder.panHandlers} style={styles.dragArea}>
-                        <View style={styles.dragIndicator} />
-                        <Text style={styles.modalTitle}>Информация о файле</Text>
+                        <View style={[styles.dragIndicator, { backgroundColor: colors.border }]} />
+                        <Text style={[styles.modalTitle, { color: colors.text }]}>Информация о файле</Text>
                     </View>
 
                     <ScrollView showsVerticalScrollIndicator={false}>
                         {/* Информация о файле */}
-                        <View style={styles.fileCard}>
+                        <View style={[styles.fileCard, { backgroundColor: isDark ? colors.iconBox : '#f8fafc', borderColor: colors.border }]}>
                             <View style={styles.fileInfo}>
-                                <Text style={styles.fileName}>{document.file_name}{document.content_type}</Text>
-                                <Text style={styles.fileSize}>{getFileSize(document.file_size)}</Text>
+                                <Text style={[styles.fileName, { color: colors.text }]}>{document.file_name}{document.content_type}</Text>
+                                <Text style={[styles.fileSize, { color: colors.subtext }]}>{getFileSize(document.file_size)}</Text>
                             </View>
                         </View>
 
                         {/* Статус */}
                         <View style={styles.statusSection}>
-                            <Text style={styles.fieldLabel}>Статус документа:</Text>
-                            <View style={styles.statusContainer}>
-                                <Text style={styles.statusValue}>{document.status || 'Не указан'}</Text>
+                            <Text style={[styles.fieldLabel, { color: colors.subtext }]}>Статус документа:</Text>
+                            <View style={[styles.statusContainer, { backgroundColor: isDark ? colors.iconBox : '#F9FAFB', borderColor: colors.border }]}>
+                                <Text style={[styles.statusValue, { color: colors.text }]}>{document.status || 'Не указан'}</Text>
                             </View>
                         </View>
 
                         {/* Детали */}
                         <View style={styles.detailsSection}>
                             <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Автор:</Text>
-                                <Text style={styles.detailValue}>{document.user_name || 'Не указан'}</Text>
+                                <Text style={[styles.detailLabel, { color: colors.subtext }]}>Автор:</Text>
+                                <Text style={[styles.detailValue, { color: colors.text }]}>{document.user_name || 'Не указан'}</Text>
                             </View>
 
-                            <View style={styles.divider} />
+                            <View style={[styles.divider, { backgroundColor: colors.divider }]} />
 
                             <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Дата загрузки:</Text>
-                                <Text style={styles.detailValue}>{formatDate(document.uploaded_at)}</Text>
+                                <Text style={[styles.detailLabel, { color: colors.subtext }]}>Дата загрузки:</Text>
+                                <Text style={[styles.detailValue, { color: colors.text }]}>{formatDate(document.uploaded_at)}</Text>
                             </View>
 
                             {document.start_date && (
                                 <>
-                                    <View style={styles.divider} />
+                                    <View style={[styles.divider, { backgroundColor: colors.divider }]} />
                                     <View style={styles.detailRow}>
-                                        <Text style={styles.detailLabel}>Дата начала:</Text>
-                                        <Text style={styles.detailValue}>{formatDate(document.start_date)}</Text>
+                                        <Text style={[styles.detailLabel, { color: colors.subtext }]}>Дата начала:</Text>
+                                        <Text style={[styles.detailValue, { color: colors.text }]}>{formatDate(document.start_date)}</Text>
                                     </View>
                                 </>
                             )}
 
                             {document.end_date && (
                                 <>
-                                    <View style={styles.divider} />
+                                    <View style={[styles.divider, { backgroundColor: colors.divider }]} />
                                     <View style={styles.detailRow}>
-                                        <Text style={styles.detailLabel}>Дата окончания:</Text>
-                                        <Text style={styles.detailValue}>{formatDate(document.end_date)}</Text>
+                                        <Text style={[styles.detailLabel, { color: colors.subtext }]}>Дата окончания:</Text>
+                                        <Text style={[styles.detailValue, { color: colors.text }]}>{formatDate(document.end_date)}</Text>
                                     </View>
                                 </>
                             )}
@@ -196,14 +198,14 @@ export function DocumentDetailModal({ visible, document, onClose, onDelete, onSt
 
                         {/* Ошибка */}
                         {deleteError && (
-                            <View style={styles.errorContainer}>
+                            <View style={[styles.errorContainer, { backgroundColor: isDark ? '#450a0a' : '#FEE2E2' }]}>
                                 <AlertCircle size={20} color="#ef4444" />
-                                <Text style={styles.errorText}>{deleteError}</Text>
+                                <Text style={[styles.errorText, { color: isDark ? '#fecaca' : '#991b1b' }]}>{deleteError}</Text>
                             </View>
                         )}
                         {/* Кнопка удаления */}
                         <TouchableOpacity
-                            style={[styles.deleteButton, deleting && { opacity: 0.6 }]}
+                            style={[styles.deleteButton, { borderColor: isDark ? '#991b1b' : '#FFA39E' }, deleting && { opacity: 0.6 }]}
                             onPress={handleDelete}
                             disabled={deleting}
                         >

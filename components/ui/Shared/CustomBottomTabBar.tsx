@@ -3,6 +3,7 @@ import { Platform, StyleSheet, Text, View, TouchableOpacity } from "react-native
 import { BlurView } from "expo-blur";
 import {Building2, Calendar, Folder, House, ListTodo, User} from "lucide-react-native";
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from "react-native-reanimated";
+import { useTheme } from "@/context/ThemeContext";
 
 const SPRING_CONFIG = {
     damping: 15, // Затухание
@@ -62,12 +63,22 @@ function TabButton({ route, isFocused, descriptors, navigation, color, Icon, lab
 }
 
 export function CustomBottomTabBar({ state, descriptors, navigation, insets, role }) {
+    const { colors, isDark } = useTheme();
+
     return (
         <View style={[styles.tabBarContainer, { paddingBottom: insets.bottom > 0 ? insets.bottom : 20 }]}>
             <BlurView
-                intensity={30}
-                tint="light"
-                style={styles.blurView}
+                intensity={isDark ? 50 : 30}
+                tint={isDark ? "dark" : "light"}
+                style={[
+                    styles.blurView,
+                    {
+                        backgroundColor: Platform.OS === "android"
+                            ? (isDark ? "rgba(30, 41, 59, 0.85)" : "rgba(255,255,255,0.85)")
+                            : (isDark ? "rgba(30, 41, 59, 0.4)" : "rgba(255,255,255,0.4)"),
+                        borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
+                    }
+                ]}
             >
                 {state.routes.map((route, index) => {
                     const { options } = descriptors[route.key];
@@ -78,7 +89,8 @@ export function CustomBottomTabBar({ state, descriptors, navigation, insets, rol
                     if (route.name === "DepartmentsScreen" && role !== "Admin") return null;
 
                     const isFocused = state.index === index;
-                    const color = isFocused ? "#11631b" : "#484f56";
+                    const activeColor = isDark ? "#4ade80" : "#2A6E3F";
+                    const color = isFocused ? activeColor : colors.subtext;
 
                     // Маппинг данных
                     let Icon = House;

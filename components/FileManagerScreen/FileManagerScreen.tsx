@@ -27,8 +27,10 @@ import { CreateCatalogModal } from './CreateCatalogModal';
 import {AuthManager} from "@/components/LoginScreen/LoginScreen";
 import {useMemo} from "react";
 import { UploadingDocumentCard } from './UploadingDocumentCard';
+import { useTheme } from '@/context/ThemeContext';
 
 export function FileManager() {
+    const { colors, isDark } = useTheme();
     const { state, handlers, computed } = useFileManagerPresenter();
     const insets = useSafeAreaInsets();
     const userRole = AuthManager.getRole();
@@ -61,10 +63,10 @@ export function FileManager() {
     }, [state.currentCatalog, userRole, state.breadcrumbPath]);
 
     return (
-        <View style={[styles.container, {paddingBottom: insets.bottom + 50}]}>
+        <View style={[styles.container, {paddingBottom: insets.bottom + 50, backgroundColor: colors.background}]}>
             {/* Header */}
             <LinearGradient
-                colors={['#2A6E3F', '#349339']}
+                colors={[colors.primary, colors.secondary]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={[styles.header, {paddingTop: insets.top + 15}]}>
@@ -102,7 +104,7 @@ export function FileManager() {
 
             {/* Breadcrumb */}
             {state.currentCatalog && (
-                <View style={styles.breadcrumb}>
+                <View style={[styles.breadcrumb, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
                     <ScrollView
                         horizontal
                         showsHorizontalScrollIndicator={false}
@@ -113,23 +115,23 @@ export function FileManager() {
                             onPress={() => handlers.handleBreadcrumbClick(-1)}
                         >
                             <View pointerEvents="none">
-                            <Home size={20} color="#2A6E3F" />
+                            <Home size={20} color={colors.primary} />
                             </View>
                         </TouchableOpacity>
 
                         {state.breadcrumbPath.map((item, index) => (
                             <View key={item.id} style={styles.breadcrumbItemContainer}>
-                                <Text style={styles.breadcrumbSeparator}> / </Text>
+                                <Text style={[styles.breadcrumbSeparator, { color: colors.subtext }]}> / </Text>
                                 {index === state.breadcrumbPath.length - 1 ? (
                                     <View style={styles.breadcrumbButtonCurrent}>
-                                        <Text style={styles.breadcrumbTextCurrent}>{item.name}</Text>
+                                        <Text style={[styles.breadcrumbTextCurrent, { color: colors.text }]}>{item.name}</Text>
                                     </View>
                                 ) : (
                                     <TouchableOpacity
                                         style={styles.breadcrumbButton}
                                         onPress={() => handlers.handleBreadcrumbClick(index)}
                                     >
-                                        <Text style={styles.breadcrumbText}>{item.name}</Text>
+                                        <Text style={[styles.breadcrumbText, { color: colors.subtext }]}>{item.name}</Text>
                                     </TouchableOpacity>
                                 )}
                             </View>
@@ -145,8 +147,8 @@ export function FileManager() {
                             <RefreshControl
                                 refreshing={state.isRefreshing || false}
                                 onRefresh={handlers.handleRefresh}
-                                colors={['#2A6E3F']}
-                                tintColor="#2A6E3F"
+                                colors={[colors.primary]}
+                                tintColor={colors.primary}
                             />
                         }>
                 {state.loading && !state.isRefreshing && (
@@ -155,11 +157,11 @@ export function FileManager() {
 
                 {state.error && (
                     <View style={styles.errorContainer}>
-                        <AlertCircle size={32} color="#ef4444" />
-                        <Text style={styles.errorText}>{state.error}</Text>
+                        <AlertCircle size={32} color={isDark ? "#f87171" : "#ef4444"} />
+                        <Text style={[styles.errorText, { color: colors.text }]}>{state.error}</Text>
                         {state.currentCatalog === null && (
                             <TouchableOpacity
-                                style={styles.errorButton}
+                                style={[styles.errorButton, { backgroundColor: colors.primary }]}
                                 onPress={() => handlers.handleGoBack()}
                             >
                                 <Text style={styles.errorButtonText}>Попробовать снова</Text>
@@ -209,7 +211,7 @@ export function FileManager() {
                 {/* Catalogs List */}
                 {state.currentCatalog && !state.loading && computed.filteredCatalogs.length > 0 && (
                     <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Каталоги ({computed.filteredCatalogs.length})</Text>
+                        <Text style={[styles.sectionTitle, { color: colors.text }]}>Каталоги ({computed.filteredCatalogs.length})</Text>
                         <View style={styles.catalogList}>
                             {computed.filteredCatalogs.map((cat: CatalogItem) => (
                                 <CatalogCard
@@ -225,7 +227,7 @@ export function FileManager() {
                 {/* Documents List */}
                 {state.currentCatalog && !state.loading && (computed.filteredDocuments.length > 0 || state.uploading) && (
                     <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>
+                        <Text style={[styles.sectionTitle, { color: colors.text }]}>
                             Файлы ({computed.filteredDocuments.length + (state.uploading ? 1 : 0)})
                         </Text>
                         <View style={styles.documentList}>
@@ -256,21 +258,21 @@ export function FileManager() {
                 {/* Empty State */}
                 {state.currentCatalog && !state.loading && computed.filteredCatalogs.length === 0 && computed.filteredDocuments.length === 0 && !state.searchQuery && !state.uploading && (
                     <View style={styles.emptyState}>
-                        <View style={styles.emptyStateIcon}>
-                            <Folder size={32} color="#9ca3af" />
+                        <View style={[styles.emptyStateIcon, { backgroundColor: isDark ? colors.iconBox : '#F3F4F6' }]}>
+                            <Folder size={32} color={colors.subtext} />
                         </View>
-                        <Text style={styles.emptyStateTitle}>Каталог пуст</Text>
+                        <Text style={[styles.emptyStateTitle, { color: colors.text }]}>Каталог пуст</Text>
                     </View>
                 )}
 
                 {/* No Results State */}
                 {state.currentCatalog && !state.loading && computed.filteredCatalogs.length === 0 && computed.filteredDocuments.length === 0 && state.searchQuery && (
                     <View style={styles.emptyState}>
-                        <View style={styles.emptyStateIcon}>
-                            <Search size={32} color="#9ca3af" />
+                        <View style={[styles.emptyStateIcon, { backgroundColor: isDark ? colors.iconBox : '#F3F4F6' }]}>
+                            <Search size={32} color={colors.subtext} />
                         </View>
-                        <Text style={styles.emptyStateTitle}>Ничего не найдено</Text>
-                        <Text style={styles.emptyStateSubtitle}>Попробуйте изменить запрос поиска</Text>
+                        <Text style={[styles.emptyStateTitle, { color: colors.text }]}>Ничего не найдено</Text>
+                        <Text style={[styles.emptyStateSubtitle, { color: colors.subtext }]}>Попробуйте изменить запрос поиска</Text>
                     </View>
                 )}
             </ScrollView>

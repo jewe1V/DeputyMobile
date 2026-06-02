@@ -26,11 +26,13 @@ import { styles } from './task-board-style';
 import { AuthManager } from "@/components/LoginScreen/LoginScreen";
 import { declOfNum } from '@/utils';
 import { Filters } from '../ui/Shared/Filters';
+import { useTheme } from '@/context/ThemeContext';
 
 type TaskMode = 'all' | 'my_tasks' | 'assigned' | 'authored';
 type StatusItem = { name: string; isDefault: boolean };
 
 export function TaskBoard() {
+    const { colors, isDark } = useTheme();
     const userRole = AuthManager.getRole();
     const params = useLocalSearchParams<{ isMine?: string }>();
 
@@ -182,9 +184,9 @@ export function TaskBoard() {
     ];
 
     return (
-        <View style={{ flex: 1, backgroundColor: '#fff' }}>
+        <View style={{ flex: 1, backgroundColor: colors.background }}>
             <LinearGradient
-                colors={['#2A6E3F', '#349339']}
+                colors={[colors.primary, colors.secondary]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={[styles.header, { paddingTop: insets.top + 15 }]}
@@ -227,10 +229,20 @@ export function TaskBoard() {
 
             {error ? (
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 }}>
-                    <AlertCircle size={48} color="#EF4444" style={{ marginBottom: 16 }} />
-                    <Text style={{ fontSize: 16, fontWeight: '600', textAlign: 'center' }}>Ошибка загрузки</Text>
-                    <Text style={{ fontSize: 14, color: '#6B7280', textAlign: 'center', marginVertical: 8 }}>{error}</Text>
-                    <TouchableOpacity onPress={() => loadTasks()}>
+                    <AlertCircle size={48} color={isDark ? "#f87171" : "#EF4444"} style={{ marginBottom: 16 }} />
+                    <Text style={{ fontSize: 16, fontWeight: '600', textAlign: 'center', color: colors.text }}>Ошибка загрузки</Text>
+                    <Text style={{ fontSize: 14, color: colors.subtext, textAlign: 'center', marginVertical: 8 }}>{error}</Text>
+                    <TouchableOpacity
+                        onPress={() => loadTasks()}
+                        style={{
+                            backgroundColor: colors.primary,
+                            paddingHorizontal: 20,
+                            paddingVertical: 10,
+                            borderRadius: 8,
+                            flexDirection: 'row',
+                            alignItems: 'center'
+                        }}
+                    >
                         <RotateCcw size={16} color="#fff" />
                         <Text style={{ color: '#fff', fontWeight: '600', marginLeft: 8 }}>Повторить</Text>
                     </TouchableOpacity>
@@ -255,16 +267,16 @@ export function TaskBoard() {
                         <RefreshControl
                             refreshing={refreshing}
                             onRefresh={onRefresh}
-                            colors={['#2A6E3F']}
-                            tintColor="#2A6E3F"
+                            colors={[colors.primary]}
+                            tintColor={colors.primary}
                         />
                     }
                     ListEmptyComponent={
-                        <View style={styles.emptyState}>
-                            <View style={styles.emptyIcon}>
-                                <Clock size={32} color="#9CA3AF" />
+                        <View style={[styles.emptyState, { backgroundColor: colors.card, marginHorizontal: 20, borderRadius: 20, paddingVertical: 40 }]}>
+                            <View style={[styles.emptyIcon, { backgroundColor: isDark ? colors.iconBox : '#F3F4F6' }]}>
+                                <Clock size={32} color={colors.subtext} />
                             </View>
-                            <Text style={styles.emptyTitle}>Задач не найдено</Text>
+                            <Text style={[styles.emptyTitle, { color: colors.text }]}>Задач не найдено</Text>
                         </View>
                     }
                 />

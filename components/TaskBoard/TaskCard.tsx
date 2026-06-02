@@ -2,6 +2,7 @@ import React from "react";
 import { Text, TouchableOpacity, View, StyleSheet } from "react-native";
 import { Calendar, CircleDotDashed, Layers, Users } from "lucide-react-native";
 import { Task } from "@/models/TaskBoardModel";
+import { useTheme } from "@/context/ThemeContext";
 
 interface TaskCardProps {
     task: Task;
@@ -17,6 +18,7 @@ const priorityConfig = {
 };
 
 export function TaskCard({ task, onPress }: TaskCardProps) {
+    const { colors, isDark } = useTheme();
     const expectedEndDate = new Date(task.expected_end_date);
     const isOverdue = new Date() > expectedEndDate && task.status !== 'completed';
 
@@ -28,55 +30,55 @@ export function TaskCard({ task, onPress }: TaskCardProps) {
 
     return (
         <TouchableOpacity
-            style={styles.card}
+            style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
             onPress={onPress}
             activeOpacity={0.8}
         >
             <View style={styles.content}>
                 <View style={styles.topRow}>
-                    <Text style={styles.title} numberOfLines={1}>
+                    <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>
                         {task.title}
                     </Text>
-                    <View style={[styles.deadlineBlock, isOverdue && styles.deadlineBlockOverdue]}>
-                        <Calendar size={12} color={isOverdue ? "#B91C1C" : "#6B7280"} />
-                        <Text style={[styles.deadlineText, isOverdue && styles.deadlineTextOverdue]}>
+                    <View style={[styles.deadlineBlock, isOverdue && styles.deadlineBlockOverdue, isOverdue && isDark && { backgroundColor: '#7f1d1d' }]}>
+                        <Calendar size={12} color={isOverdue ? (isDark ? "#fecaca" : "#B91C1C") : colors.subtext} />
+                        <Text style={[styles.deadlineText, { color: colors.subtext }, isOverdue && styles.deadlineTextOverdue, isOverdue && isDark && { color: "#fecaca" }]}>
                             {formatDate(expectedEndDate)}
                         </Text>
                     </View>
                 </View>
 
-                <Text style={styles.description} numberOfLines={1}>
+                <Text style={[styles.description, { color: colors.subtext }]} numberOfLines={1}>
                     {task.description || "Нет описания задачи"}
                 </Text>
 
                 {/* Инфо-панель: теги переносятся, assignees всегда справа */}
                 <View style={styles.infoPanel}>
                     <View style={styles.tagGroup}>
-                        <View style={styles.statusTag}>
-                            <CircleDotDashed size={12} color="#2A6E3F" />
-                            <Text style={styles.statusLabel}>
+                        <View style={[styles.statusTag, { backgroundColor: isDark ? colors.primary + '20' : '#f0fdfd', borderColor: isDark ? colors.primary + '40' : '#DCFCE7' }]}>
+                            <CircleDotDashed size={12} color={isDark ? colors.primary : "#2A6E3F"} />
+                            <Text style={[styles.statusLabel, { color: isDark ? colors.roleText : "#2a6e4f" }]}>
                                 {task.status}
                             </Text>
                         </View>
-                        <View style={styles.priorityTag}>
-                            <Layers size={12} color="#2A6E3F" />
-                            <Text style={styles.priorityLabel} numberOfLines={1}>
+                        <View style={[styles.priorityTag, { backgroundColor: isDark ? colors.primary + '20' : '#F0FDF4', borderColor: isDark ? colors.primary + '40' : '#DCFCE7' }]}>
+                            <Layers size={12} color={isDark ? colors.primary : "#2A6E3F"} />
+                            <Text style={[styles.priorityLabel, { color: isDark ? colors.roleText : "#2A6E3F" }]} numberOfLines={1}>
                                 {priorityLabel}
                             </Text>
                         </View>
 
                         {isOverdue && (
-                            <View style={styles.overdueTag}>
-                                <Text style={styles.overdueTagText}>просрочено</Text>
+                            <View style={[styles.overdueTag, { backgroundColor: isDark ? '#334155' : '#F9FAFB', borderColor: colors.border }]}>
+                                <Text style={[styles.overdueTagText, { color: colors.text }]}>просрочено</Text>
                             </View>
                         )}
                     </View>
 
                     <View style={styles.assignees}>
                         {task.users && task.users.length > 0 ? (
-                            <View style={styles.userBadge}>
-                                <Users size={12} color="#6B7280" />
-                                <Text style={styles.userCount}>{task.users.length}</Text>
+                            <View style={[styles.userBadge, { backgroundColor: isDark ? colors.iconBox : '#F3F4F6' }]}>
+                                <Users size={12} color={colors.subtext} />
+                                <Text style={[styles.userCount, { color: colors.text }]}>{task.users.length}</Text>
                             </View>
                         ) : (
                             <Text style={styles.noAssignee}>Не назначен</Text>

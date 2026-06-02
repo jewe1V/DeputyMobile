@@ -2,10 +2,12 @@ import { View } from "react-native";
 import { styles } from "./notifications-page";
 import React from "react";
 import { SkeletonItem } from "../ui/Shared/SkeletonLoader";
+import { useTheme } from "@/context/ThemeContext";
 
 export const NotificationSkeletonItem = () => {
+    const { colors } = useTheme();
     return (
-        <View style={styles.notificationItem}>
+        <View style={[styles.notificationItem, { backgroundColor: colors.card, borderBottomColor: colors.divider }]}>
             <View style={styles.row}>
 
                 {/* Иконка */}

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Animated, StyleSheet, View, Platform } from 'react-native';
+import { useTheme } from '@/context/ThemeContext';
 
 const styles = StyleSheet.create({
     skeleton: {
@@ -22,6 +23,7 @@ export const SkeletonItem: React.FC<SkeletonItemProps> = ({
     borderRadius = 12,
     marginBottom = 4
 }) => {
+    const { colors, isDark } = useTheme();
     const shimmerAnimation = React.useRef(new Animated.Value(0)).current;
 
     React.useEffect(() => {
@@ -51,6 +53,7 @@ export const SkeletonItem: React.FC<SkeletonItemProps> = ({
             style={[
                 styles.skeleton,
                 {
+                    backgroundColor: isDark ? colors.iconBox : '#E8E8E8',
                     width: typeof width === 'string' ? width : width,
                     height,
                     borderRadius,

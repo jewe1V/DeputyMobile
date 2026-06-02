@@ -1,13 +1,14 @@
 import React, { useRef, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, Animated, TouchableOpacity } from 'react-native';
 import { Event } from "@/models/EventModel";
+import { useTheme } from '@/context/ThemeContext';
 
-const getEventTypeStyles = (type: string, isPast: boolean) => {
-    if (isPast) return { label: 'Завершено', color: '#6e7378', bg: '#f1f5f9' };
+const getEventTypeStyles = (type: string, isPast: boolean, isDark: boolean) => {
+    if (isPast) return { label: 'Завершено', color: isDark ? '#94a3b8' : '#6e7378', bg: isDark ? '#334155' : '#f1f5f9' };
     switch (type) {
-        case 'Meeting': return { label: 'Заседание', color: '#6e7378', bg: '#E5F1FF' };
-        case 'Commission': return { label: 'Комиссия', color: '#6e7378', bg: '#FFF4E5' };
-        default: return { label: 'Событие', color: '#6e7378', bg: '#EBFDEB' };
+        case 'Meeting': return { label: 'Заседание', color: isDark ? '#60a5fa' : '#6e7378', bg: isDark ? '#1e3a8a33' : '#E5F1FF' };
+        case 'Commission': return { label: 'Комиссия', color: isDark ? '#fbbf24' : '#6e7378', bg: isDark ? '#78350f33' : '#FFF4E5' };
+        default: return { label: 'Событие', color: isDark ? '#34d399' : '#6e7378', bg: isDark ? '#064e3b33' : '#EBFDEB' };
     }
 };
 
@@ -18,11 +19,12 @@ interface EventCardProps {
 }
 
 export const EventCard: React.FC<EventCardProps> = ({ event, index = 0, onPress }) => {
+    const { colors, isDark } = useTheme();
     const slideAnim = useRef(new Animated.Value(30)).current;
     const opacityAnim = useRef(new Animated.Value(0)).current;
 
     const isPast = useMemo(() => new Date(event.end_at) < new Date(), [event.end_at]);
-    const typeStyle = getEventTypeStyles(event.type, isPast);
+    const typeStyle = getEventTypeStyles(event.type, isPast, isDark);
 
     useEffect(() => {
         Animated.parallel([
@@ -61,18 +63,22 @@ export const EventCard: React.FC<EventCardProps> = ({ event, index = 0, onPress 
             <TouchableOpacity
                 activeOpacity={0.7}
                 onPress={() => onPress?.(event)}
-                style={[styles.cardInner, isPast && styles.pastCard]}
+                style={[
+                    styles.cardInner,
+                    { backgroundColor: colors.card, borderColor: colors.border },
+                    isPast && { backgroundColor: isDark ? '#1e293b80' : '#f8fafc' }
+                ]}
             >
                 {/* Левая часть: Время */}
-                <View style={styles.timeSection}>
-                    <Text style={[styles.timeText, isPast && styles.pastText]}>{startTime}</Text>
-                    <View style={styles.timeDivider} />
-                    <Text style={[styles.timeTextEnd, isPast && styles.pastText]}>{endTime}</Text>
+                <View style={[styles.timeSection, { borderRightColor: colors.border }]}>
+                    <Text style={[styles.timeText, { color: colors.text }, isPast && styles.pastText]}>{startTime}</Text>
+                    <View style={[styles.timeDivider, { backgroundColor: colors.border }]} />
+                    <Text style={[styles.timeTextEnd, { color: colors.subtext }, isPast && styles.pastText]}>{endTime}</Text>
                 </View>
 
                 {/* Основная часть: Инфо */}
                 <View style={styles.infoSection}>
-                    <Text style={[styles.title, isPast && styles.pastText]} numberOfLines={2}>
+                    <Text style={[styles.title, { color: colors.text }, isPast && styles.pastText]} numberOfLines={2}>
                         {event.title}
                     </Text>
                     <View style={styles.headerRow}>
@@ -83,7 +89,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, index = 0, onPress 
                         </View>
                     </View>
                     {event.location && (
-                        <Text style={styles.location} numberOfLines={1}>
+                        <Text style={[styles.location, { color: colors.subtext }]} numberOfLines={1}>
                             {event.location.split('|')[0].trim()}
                         </Text>
                     )}

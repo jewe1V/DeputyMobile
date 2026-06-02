@@ -9,6 +9,7 @@ import {
     TextInput as RNTextInput,
 } from 'react-native';
 import { Send } from 'lucide-react-native';
+import { useTheme } from '@/context/ThemeContext';
 
 interface CommentInputProps {
     onSend: (text: string) => Promise<void>;
@@ -16,6 +17,7 @@ interface CommentInputProps {
 }
 
 export const CommentInput: React.FC<CommentInputProps> = ({ onSend, isLoading = false }) => {
+    const { colors, isDark } = useTheme();
     const [text, setText] = useState('');
     const [inputHeight, setInputHeight] = useState(40);
     const inputRef = useRef<RNTextInput>(null);
@@ -41,22 +43,22 @@ export const CommentInput: React.FC<CommentInputProps> = ({ onSend, isLoading = 
 
     return (
         <View style={styles.commentInputContainer}>
-            <View style={styles.commentInputWrapper}>
+            <View style={[styles.commentInputWrapper, { backgroundColor: isDark ? colors.background : '#f8fafc', borderColor: colors.border }]}>
                 <TextInput
                     ref={inputRef}
                     style={[
                         styles.commentInput,
-                        { height: Math.max(40, Math.min(150, inputHeight)) }
+                        { height: Math.max(40, Math.min(150, inputHeight)), color: colors.text }
                     ]}
                     placeholder="Напишите комментарий..."
-                    placeholderTextColor="#94a3b8"
+                    placeholderTextColor={colors.subtext}
                     value={text}
                     onChangeText={setText}
                     multiline
                     maxLength={1000}
                     editable={!isLoading}
                     onContentSizeChange={handleContentSizeChange}
-                    selectionColor="#2A6E3F"
+                    selectionColor={colors.primary}
                     underlineColorAndroid="transparent"
                     {...(Platform.OS === 'web' && {
                         onFocus: (e) => {
@@ -73,9 +75,9 @@ export const CommentInput: React.FC<CommentInputProps> = ({ onSend, isLoading = 
                     disabled={!text.trim() || isLoading}
                 >
                     {isLoading ? (
-                        <ActivityIndicator size="small" color={"#2e753c"} />
+                        <ActivityIndicator size="small" color={colors.primary} />
                     ) : (
-                        <Send size={18} color={(!text.trim() || isLoading) ?"#94a3b8" : "#2e753c"} />
+                        <Send size={18} color={(!text.trim() || isLoading) ? colors.subtext : colors.primary} />
                     )}
                 </TouchableOpacity>
             </View>

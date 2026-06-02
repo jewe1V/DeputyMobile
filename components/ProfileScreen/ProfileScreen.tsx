@@ -14,11 +14,24 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import {UserX, LogOut, Mail, Shield, Calendar, ListTodo, ChevronRight, Building2, Edit} from 'lucide-react-native';
+import {
+    UserX,
+    LogOut,
+    Mail,
+    Shield,
+    Calendar,
+    ListTodo,
+    ChevronRight,
+    Building2,
+    Edit,
+    Moon,
+    Sun
+} from 'lucide-react-native';
 import {Profile} from "@/models/ProfileModel";
 import {declOfNum} from "@/utils";
 import { useFocusEffect } from '@react-navigation/native';
 import {apiClient} from "@/api/api";
+import { useTheme } from '@/context/ThemeContext';
 
 
 const getInitials = (name: string) => {
@@ -45,6 +58,7 @@ export function ProfileScreen() {
     const [profile, setProfile] = useState<Profile | null>(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const { colors, isDark, toggleTheme } = useTheme();
 
     const userId = AuthManager.getUserId();
     const userRole = AuthManager.getRole();
@@ -101,9 +115,9 @@ export function ProfileScreen() {
 
     if (loading) {
         return (
-            <View style={[styles.container, { paddingTop: insets.top }]}>
+            <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.background }]}>
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#2A6E3F" />
+                    <ActivityIndicator size="large" color={colors.primary} />
                 </View>
             </View>
         );
@@ -111,11 +125,11 @@ export function ProfileScreen() {
 
     if (!profile) {
         return (
-            <View style={[styles.container, { paddingTop: insets.top }]}>
+            <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.background }]}>
                 <View style={styles.errorContainer}>
-                    <UserX size={48} color="#94a3b8" />
-                    <Text style={styles.errorTitle}>Профиль не найден</Text>
-                    <TouchableOpacity onPress={() => router.push('/login')} style={styles.errorButton}>
+                    <UserX size={48} color={colors.subtext} />
+                    <Text style={[styles.errorTitle, { color: colors.text }]}>Профиль не найден</Text>
+                    <TouchableOpacity onPress={() => router.push('/login')} style={[styles.errorButton, { backgroundColor: colors.primary }]}>
                         <Text style={styles.errorButtonText}>Войти</Text>
                     </TouchableOpacity>
                 </View>
@@ -124,7 +138,7 @@ export function ProfileScreen() {
     }
 
     return (
-        <View style={{ flex: 1, backgroundColor: '#f8fafc', paddingBottom: insets.bottom + 35 }}>
+        <View style={{ flex: 1, backgroundColor: colors.background, paddingBottom: insets.bottom + 35 }}>
             <ScrollView
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
@@ -132,19 +146,25 @@ export function ProfileScreen() {
                     <RefreshControl
                         refreshing={refreshing}
                         onRefresh={handleRefresh}
-                        colors={['#2A6E3F']}
-                        tintColor="#2A6E3F"
+                        colors={[colors.primary]}
+                        tintColor={colors.primary}
                     />
                 }
             >
                 {/* Header */}
                 <LinearGradient
-                    colors={['#2A6E3F', '#349339']}
+                    colors={[colors.primary, colors.secondary]}
                     style={[styles.header, { paddingTop: insets.top + 15 }]}
                 >
                     <View style={styles.headerTopRow}>
                         <Text style={styles.headerTitle}>Профиль</Text>
                         <View style={styles.headerButtons}>
+                            <TouchableOpacity
+                                style={styles.iconButton}
+                                onPress={toggleTheme}
+                            >
+                                {isDark ? <Sun size={20} color="white" /> : <Moon size={20} color="white" />}
+                            </TouchableOpacity>
                             {(profile.id === userId || userRole === "Admin") && (
                                 <TouchableOpacity
                                     style={styles.iconButton}
@@ -168,9 +188,9 @@ export function ProfileScreen() {
 
                 <View style={styles.content}>
                     {/* Profile Card */}
-                    <View style={styles.card}>
+                    <View style={[styles.card, { backgroundColor: colors.card }]}>
                         <View style={styles.avatarContainer}>
-                            <View style={styles.avatarBase}>
+                            <View style={[styles.avatarBase, { backgroundColor: colors.primary }]}>
                                 <Text style={styles.avatarText}>
                                     {getInitials(profile.full_name || '?')}
                                 </Text>
@@ -178,34 +198,34 @@ export function ProfileScreen() {
                         </View>
 
                         <View style={styles.userInfo}>
-                            <Text style={styles.userName}>{profile.full_name}</Text>
-                            <Text style={styles.userTitle}>{profile.job_title || 'Сотрудник'}</Text>
+                            <Text style={[styles.userName, { color: colors.text }]}>{profile.full_name}</Text>
+                            <Text style={[styles.userTitle, { color: colors.subtext }]}>{profile.job_title || 'Сотрудник'}</Text>
                         </View>
 
-                        <View style={styles.divider} />
+                        <View style={[styles.divider, { backgroundColor: colors.divider }]} />
 
                         {/* Основная информация */}
                         <View style={styles.infoSection}>
                             <View style={styles.infoRow}>
-                                <View style={[styles.infoIconBox, { backgroundColor: '#f1f5f9' }]}>
-                                    <Mail size={18} color="#64748b" />
+                                <View style={[styles.infoIconBox, { backgroundColor: colors.iconBox }]}>
+                                    <Mail size={18} color={colors.subtext} />
                                 </View>
                                 <View style={styles.infoContent}>
-                                    <Text style={styles.infoLabel}>Email</Text>
-                                    <Text style={styles.infoValue}>{profile.email}</Text>
+                                    <Text style={[styles.infoLabel, { color: colors.subtext }]}>Email</Text>
+                                    <Text style={[styles.infoValue, { color: colors.text }]}>{profile.email}</Text>
                                 </View>
                             </View>
 
                             <View style={styles.infoRow}>
-                                <View style={[styles.infoIconBox, { backgroundColor: '#f1f5f9' }]}>
-                                    <Shield size={18} color="#64748b" />
+                                <View style={[styles.infoIconBox, { backgroundColor: colors.iconBox }]}>
+                                    <Shield size={18} color={colors.subtext} />
                                 </View>
                                 <View style={styles.infoContent}>
-                                    <Text style={styles.infoLabel}>Роли в системе</Text>
+                                    <Text style={[styles.infoLabel, { color: colors.subtext }]}>Роли в системе</Text>
                                     <View style={styles.rolesList}>
                                         {profile.roles?.map((userRole: string, index: number) => (
-                                            <View key={index} style={styles.roleBadge}>
-                                                <Text style={styles.roleText}>{translateRole(userRole)}</Text>
+                                            <View key={index} style={[styles.roleBadge, { backgroundColor: colors.roleBadge }]}>
+                                                <Text style={[styles.roleText, { color: colors.roleText }]}>{translateRole(userRole)}</Text>
                                             </View>
                                         ))}
                                     </View>
@@ -217,44 +237,44 @@ export function ProfileScreen() {
                     {/* Секция: Подразделение (Департамент) */}
                     {profile.department && profile.department?.name !== "unknown"  && (
                         <>
-                            <Text style={styles.sectionTitle}>Подразделение</Text>
+                            <Text style={[styles.sectionTitle, { color: colors.text }]}>Подразделение</Text>
                             <TouchableOpacity
-                                style={[styles.card, styles.departmentCard]}
+                                style={[styles.card, styles.departmentCard, { backgroundColor: colors.card }]}
                                 onPress={() => router.push({
                                     pathname: '/(screens)/DepartmentsScreen/DepartmentDetailsScreen',
                                     params: { id: profile.department?.id, name: profile.department?.name }
                                 })}
                             >
-                                <View style={styles.departmentIcon}>
-                                    <Building2 size={24} color="#2A6E3F" />
+                                <View style={[styles.departmentIcon, { backgroundColor: isDark ? colors.primary + '20' : '#f0fdf4' }]}>
+                                    <Building2 size={24} color={isDark ? colors.primary : "#2A6E3F"} />
                                 </View>
                                 <View style={styles.departmentInfo}>
-                                    <Text style={styles.departmentName}>{profile.department?.name || profile.department}</Text>
-                                    <Text style={styles.departmentId}>
+                                    <Text style={[styles.departmentName, { color: colors.text }]}>{profile.department?.name || profile.department}</Text>
+                                    <Text style={[styles.departmentId, { color: colors.subtext }]}>
                                         ID: {profile.department?.id && profile.department.id !== '00000000-0000-0000-0000-000000000000'
                                         ? `${profile.department.id.slice(0, 8)}...`
                                         : 'Не назначен'}
                                     </Text>
                                 </View>
-                                <ChevronRight size={20} color="#cbd5e1" />
+                                <ChevronRight size={20} color={colors.subtext} />
                             </TouchableOpacity>
                         </>
                     )}
 
                     {/* Быстрые действия */}
-                    <Text style={styles.sectionTitle}>Активность</Text>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Активность</Text>
 
-                    <View style={[styles.card, { padding: 0, overflow: 'hidden' }]}>
+                    <View style={[styles.card, { padding: 0, overflow: 'hidden', backgroundColor: colors.card }]}>
                         <TouchableOpacity
                             style={styles.actionItem}
                             onPress={() => router.push({pathname: '/EventsScreen', params: {isMine: "true"}})}
                         >
-                            <View style={[styles.actionIcon, { backgroundColor: '#f5f3ff' }]}>
-                                <Calendar size={20} color="#7c3aed" />
+                            <View style={[styles.actionIcon, { backgroundColor: colors.actionIcon.events }]}>
+                                <Calendar size={20} color={colors.actionIconColor.events} />
                             </View>
                             <View style={styles.actionContent}>
-                                <Text style={styles.actionTitle}>События</Text>
-                                <Text style={styles.actionSubtitle}>
+                                <Text style={[styles.actionTitle, { color: colors.text }]}>События</Text>
+                                <Text style={[styles.actionSubtitle, { color: colors.subtext }]}>
                                     Участвует в {profile?.events?.length || profile?.event_count || 0} {
                                     declOfNum(
                                         profile?.events?.length || profile?.event_count || 0,
@@ -263,21 +283,21 @@ export function ProfileScreen() {
                                 }
                                 </Text>
                             </View>
-                            <ChevronRight size={20} color="#cbd5e1" />
+                            <ChevronRight size={20} color={colors.subtext} />
                         </TouchableOpacity>
 
-                        <View style={styles.actionDivider} />
+                        <View style={[styles.actionDivider, { backgroundColor: colors.divider }]} />
 
                         <TouchableOpacity
                             style={styles.actionItem}
                             onPress={() => router.push({pathname: '/TaskBoardScreen', params: {isMine: "true"}})}
                         >
-                            <View style={[styles.actionIcon, { backgroundColor: '#f0fdf4' }]}>
-                                <ListTodo size={20} color="#16a34a" />
+                            <View style={[styles.actionIcon, { backgroundColor: colors.actionIcon.tasks }]}>
+                                <ListTodo size={20} color={colors.actionIconColor.tasks} />
                             </View>
                             <View style={styles.actionContent}>
-                                <Text style={styles.actionTitle}>Задачи</Text>
-                                <Text style={styles.actionSubtitle}>
+                                <Text style={[styles.actionTitle, { color: colors.text }]}>Задачи</Text>
+                                <Text style={[styles.actionSubtitle, { color: colors.subtext }]}>
                                     Назначено {profile?.tasks?.length || profile?.task_count || 0} {
                                     declOfNum(
                                         profile?.tasks?.length || profile?.task_count || 0,
@@ -286,7 +306,7 @@ export function ProfileScreen() {
                                 }
                                 </Text>
                             </View>
-                            <ChevronRight size={20} color="#cbd5e1" />
+                            <ChevronRight size={20} color={colors.subtext} />
                         </TouchableOpacity>
                     </View>
                 </View>

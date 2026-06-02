@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { EventCard } from './EventCard';
 import { Event } from "@/models/EventModel";
 import { router } from "expo-router";
+import { useTheme } from '@/context/ThemeContext';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -23,6 +24,7 @@ export const SchedulePopup: React.FC<SchedulePopupProps> = ({
                                                                 events,
                                                                 date
                                                             }) => {
+    const { colors, isDark } = useTheme();
     const insets = useSafeAreaInsets();
 
     // Начальная точка появления шторки (например, 40% от верха экрана)
@@ -107,20 +109,20 @@ export const SchedulePopup: React.FC<SchedulePopupProps> = ({
                 <Animated.View
                     style={[
                         styles.sheet,
-                        { transform: [{ translateY: panY }], paddingBottom: insets.bottom + 20 }
+                        { transform: [{ translateY: panY }], paddingBottom: insets.bottom + 20, backgroundColor: colors.card }
                     ]}
                 >
                     {/* Хендл для перетаскивания (только эта часть инициирует жест) */}
                     <View {...panResponder.panHandlers} style={styles.dragArea}>
-                        <View style={styles.dragIndicator} />
-                        <Text style={styles.title}>Расписание на {formattedDate}</Text>
+                        <View style={[styles.dragIndicator, { backgroundColor: colors.border }]} />
+                        <Text style={[styles.title, { color: colors.text }]}>Расписание на {formattedDate}</Text>
                     </View>
 
                     <View style={styles.timelineContainer}>
-                        <View style={styles.progressBarBg}>
-                            <View style={[styles.progressBarFill, { height: progressHeight }]} />
+                        <View style={[styles.progressBarBg, { backgroundColor: isDark ? colors.iconBox : '#F3F4F6' }]}>
+                            <View style={[styles.progressBarFill, { backgroundColor: colors.primary, height: progressHeight }]} />
                             {progressHeight !== '0%' && progressHeight !== '100%' && (
-                                <View style={[styles.progressDot, { top: progressHeight }]} />
+                                <View style={[styles.progressDot, { backgroundColor: colors.primary, top: progressHeight, borderColor: colors.card }]} />
                             )}
                         </View>
 
@@ -141,7 +143,7 @@ export const SchedulePopup: React.FC<SchedulePopupProps> = ({
                                         </View>
                                     ))
                             ) : (
-                                <Text style={styles.noEvents}>Событий нет</Text>
+                                <Text style={[styles.noEvents, { color: colors.subtext }]}>Событий нет</Text>
                             )}
                         </ScrollView>
                     </View>

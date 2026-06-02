@@ -24,8 +24,10 @@ import { SelectionPopup } from "@/components/UsersScreen/SelectionPopup";
 import Toast from "react-native-toast-message";
 import {ArrowLeft, Building2, X} from "lucide-react-native";
 import { apiClient } from '@/api/api';
+import { useTheme } from '@/context/ThemeContext';
 
 const CreateUserScreen = () => {
+    const { colors, isDark } = useTheme();
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -232,15 +234,15 @@ const CreateUserScreen = () => {
 
     if (isLoading) {
         return (
-            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-                <ActivityIndicator size="large" color="#2A6E3F" />
+            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }]}>
+                <ActivityIndicator size="large" color={colors.primary} />
             </View>
         );
     }
 
     return (
         <KeyboardAvoidingView
-            style={{ flex: 1, backgroundColor: '#fff' }}
+            style={{ flex: 1, backgroundColor: colors.background }}
             behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
             <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
@@ -251,7 +253,7 @@ const CreateUserScreen = () => {
                 showsVerticalScrollIndicator={false}
             >
                 <LinearGradient
-                    colors={['#2A6E3F', '#349339']}
+                    colors={[colors.primary, colors.secondary]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={[styles.header, { paddingTop: insets.top + 20 }]}
@@ -268,28 +270,28 @@ const CreateUserScreen = () => {
 
                 <View style={styles.card}>
                     {/* ФИО, Email, Должность */}
-                    <TextInput style={styles.input} value={fullName} onChangeText={setFullName} placeholder="ФИО *" />
-                    <TextInput style={styles.input} value={email} onChangeText={setEmail} placeholder="Email *" />
-                    <TextInput style={styles.input} value={jobTitle} onChangeText={setJobTitle} placeholder="Должность" />
+                    <TextInput style={[styles.input, { backgroundColor: isDark ? colors.card : '#f7f7f7', borderColor: colors.border, color: colors.text }]} value={fullName} onChangeText={setFullName} placeholder="ФИО *" placeholderTextColor={colors.subtext} />
+                    <TextInput style={[styles.input, { backgroundColor: isDark ? colors.card : '#f7f7f7', borderColor: colors.border, color: colors.text }]} value={email} onChangeText={setEmail} placeholder="Email *" placeholderTextColor={colors.subtext} />
+                    <TextInput style={[styles.input, { backgroundColor: isDark ? colors.card : '#f7f7f7', borderColor: colors.border, color: colors.text }]} value={jobTitle} onChangeText={setJobTitle} placeholder="Должность" placeholderTextColor={colors.subtext} />
 
                     {/* Выбор отделов (множественный) */}
-                    <TouchableOpacity style={styles.selectTrigger} onPress={openDepartmentModal}>
-                        <Text style={selectedDepartments.length > 0 ? styles.selectValue : styles.placeholderText}>
+                    <TouchableOpacity style={[styles.selectTrigger, { backgroundColor: isDark ? colors.card : '#f7f7f7', borderColor: colors.border }]} onPress={openDepartmentModal}>
+                        <Text style={[selectedDepartments.length > 0 ? styles.selectValue : styles.placeholderText, selectedDepartments.length > 0 && { color: colors.text }]}>
                             {selectedDepartments.length > 0
                                 ? `Выбрано отделов: ${selectedDepartments.length}`
                                 : 'Выберите отделы'}
                         </Text>
-                        <Ionicons name="chevron-down" size={20} color="#6b7280" />
+                        <Ionicons name="chevron-down" size={20} color={colors.subtext} />
                     </TouchableOpacity>
 
                     {/* Список выбранных отделов */}
                     {selectedDepartments.length > 0 && (
                         <View style={styles.selectedDepartmentsContainer}>
                             {selectedDepartments.map((dept) => (
-                                <View key={dept.id} style={styles.selectedDepartmentChip}>
-                                    <Text style={styles.selectedDepartmentText}>{dept.name}</Text>
+                                <View key={dept.id} style={[styles.selectedDepartmentChip, { backgroundColor: isDark ? colors.primary + '40' : '#e8f5e9' }]}>
+                                    <Text style={[styles.selectedDepartmentText, { color: isDark ? colors.roleText : '#2A6E3F' }]}>{dept.name}</Text>
                                     <TouchableOpacity onPress={() => removeDepartment(dept.id)}>
-                                        <X size={16} color="#2A6E3F" />
+                                        <X size={16} color={isDark ? colors.roleText : "#2A6E3F"} />
                                     </TouchableOpacity>
                                 </View>
                             ))}
@@ -298,23 +300,24 @@ const CreateUserScreen = () => {
 
                     {/* ПАРОЛЬ: Показываем только если НЕ режим редактирования */}
                     {!isEditMode && (
-                        <View style={styles.passwordContainer}>
+                        <View style={[styles.passwordContainer, { backgroundColor: isDark ? colors.card : '#f7f7f7', borderColor: colors.border }]}>
                             <TextInput
-                                style={styles.passwordInput}
+                                style={[styles.passwordInput, { color: colors.text }]}
                                 value={password}
                                 onChangeText={setPassword}
                                 placeholder="Пароль *"
+                                placeholderTextColor={colors.subtext}
                                 secureTextEntry={!isPasswordVisible}
                             />
                             <View style={styles.passwordActions}>
                                 <TouchableOpacity onPress={generatePassword} style={styles.iconButton}>
-                                    <Ionicons name="refresh-outline" size={20} color="#666" />
+                                    <Ionicons name="refresh-outline" size={20} color={colors.subtext} />
                                 </TouchableOpacity>
                                 <TouchableOpacity onPress={copyPassword} style={styles.iconButton}>
-                                    <Ionicons name="copy-outline" size={20} color="#666" />
+                                    <Ionicons name="copy-outline" size={20} color={colors.subtext} />
                                 </TouchableOpacity>
                                 <TouchableOpacity onPress={() => setIsPasswordVisible(!isPasswordVisible)} style={styles.iconButton}>
-                                    <Ionicons name={isPasswordVisible ? "eye-off-outline" : "eye-outline"} size={20} color="#666" />
+                                    <Ionicons name={isPasswordVisible ? "eye-off-outline" : "eye-outline"} size={20} color={colors.subtext} />
                                 </TouchableOpacity>
                             </View>
                         </View>
@@ -323,27 +326,28 @@ const CreateUserScreen = () => {
                     {/* Выбор Роли */}
                     <View style={[styles.selectWrapper, { zIndex: 1000 }]}>
                         <TouchableOpacity
-                            style={styles.selectTrigger}
+                            style={[styles.selectTrigger, { backgroundColor: isDark ? colors.card : '#f7f7f7', borderColor: colors.border }]}
                             onPress={() => setIsRoleSelectOpen(!isRoleSelectOpen)}
                         >
-                            <Text style={!selectedRole ? styles.placeholderText : styles.selectValue}>
+                            <Text style={[!selectedRole ? styles.placeholderText : styles.selectValue, selectedRole && { color: colors.text }]}>
                                 {selectedRole || 'Выберите роль *'}
                             </Text>
                             <Ionicons
                                 name={isRoleSelectOpen ? "chevron-up" : "chevron-down"}
                                 size={20}
-                                color="#6b7280"
+                                color={colors.subtext}
                             />
                         </TouchableOpacity>
 
                         {isRoleSelectOpen && (
-                            <View style={styles.selectDropdown}>
+                            <View style={[styles.selectDropdown, { backgroundColor: colors.card, borderColor: colors.border }]}>
                                 {roles.map((role) => (
                                     <TouchableOpacity
                                         key={role}
                                         style={[
                                             styles.selectItem,
-                                            selectedRole === role && styles.selectItemSelected
+                                            { borderBottomColor: colors.divider },
+                                            selectedRole === role && [styles.selectItemSelected, { backgroundColor: isDark ? colors.primary + '20' : '#f0f7f0' }]
                                         ]}
                                         onPress={() => {
                                             setSelectedRole(role);
@@ -352,12 +356,13 @@ const CreateUserScreen = () => {
                                     >
                                         <Text style={[
                                             styles.selectItemText,
-                                            selectedRole === role && styles.selectItemTextSelected
+                                            { color: colors.text },
+                                            selectedRole === role && [styles.selectItemTextSelected, { color: colors.primary }]
                                         ]}>
                                             {role}
                                         </Text>
                                         {selectedRole === role && (
-                                            <Ionicons name="checkmark" size={18} color="#0f6319" />
+                                            <Ionicons name="checkmark" size={18} color={colors.primary} />
                                         )}
                                     </TouchableOpacity>
                                 ))}
@@ -368,12 +373,12 @@ const CreateUserScreen = () => {
                     {/* Выбор Депутата (только для Helper) */}
                     {selectedRole === 'Helper' && (
                         <TouchableOpacity
-                            style={styles.selectTrigger}
+                            style={[styles.selectTrigger, { backgroundColor: isDark ? colors.card : '#f7f7f7', borderColor: colors.border }]}
                             onPress={() => setDeputyPopupVisible(true)}
                         >
                             <View style={{ flex: 1 }}>
                                 <Text
-                                    style={selectedDeputy ? styles.selectValue : styles.placeholderText}
+                                    style={[selectedDeputy ? styles.selectValue : styles.placeholderText, selectedDeputy && { color: colors.text }]}
                                     numberOfLines={1}
                                 >
                                     {selectedDeputy
@@ -381,12 +386,12 @@ const CreateUserScreen = () => {
                                         : 'Привязать к депутату'}
                                 </Text>
                             </View>
-                            <Ionicons name="chevron-down" size={20} color="#94a3b8" />
+                            <Ionicons name="chevron-down" size={20} color={colors.subtext} />
                         </TouchableOpacity>
                     )}
 
                     <TouchableOpacity
-                        style={[styles.publishButton, isSubmitting && styles.publishButtonDisabled]}
+                        style={[styles.publishButton, { backgroundColor: colors.primary }, isSubmitting && styles.publishButtonDisabled]}
                         onPress={handleSubmit}
                         disabled={isSubmitting}
                     >
@@ -409,11 +414,11 @@ const CreateUserScreen = () => {
                 onRequestClose={() => setDepartmentPopupVisible(false)}
             >
                 <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Выберите отделы</Text>
+                    <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+                        <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+                            <Text style={[styles.modalTitle, { color: colors.text }]}>Выберите отделы</Text>
                             <TouchableOpacity onPress={() => setDepartmentPopupVisible(false)}>
-                                <Ionicons name="close" size={24} color="#333" />
+                                <Ionicons name="close" size={24} color={colors.text} />
                             </TouchableOpacity>
                         </View>
 
@@ -424,13 +429,13 @@ const CreateUserScreen = () => {
                                 const isSelected = tempSelectedDepartments.some(d => d.id === item.id);
                                 return (
                                     <TouchableOpacity
-                                        style={[styles.modalDeptItem, isSelected && styles.modalDeptItemSelected]}
+                                        style={[styles.modalDeptItem, { borderBottomColor: colors.divider }, isSelected && [styles.modalDeptItemSelected, { backgroundColor: colors.primary }] ]}
                                         onPress={() => toggleDepartmentSelection(item)}
                                     >
-                                        <View style={styles.modalDeptIcon}>
-                                            <Building2 size={20} color={isSelected ? "#fff" : "#2A6E3F"} />
+                                        <View style={[styles.modalDeptIcon, { backgroundColor: isSelected ? 'rgba(255,255,255,0.2)' : (isDark ? colors.primary + '20' : '#f0fdf4') }]}>
+                                            <Building2 size={20} color={isSelected ? "#fff" : (isDark ? colors.roleText : "#2A6E3F")} />
                                         </View>
-                                        <Text style={[styles.modalDeptName, isSelected && styles.modalDeptNameSelected]}>
+                                        <Text style={[styles.modalDeptName, { color: colors.text }, isSelected && styles.modalDeptNameSelected]}>
                                             {item.name}
                                         </Text>
                                         {isSelected && (
@@ -442,15 +447,15 @@ const CreateUserScreen = () => {
                             style={styles.modalList}
                         />
 
-                        <View style={styles.modalFooter}>
+                        <View style={[styles.modalFooter, { borderTopColor: colors.border }]}>
                             <TouchableOpacity
-                                style={styles.modalCancelButton}
+                                style={[styles.modalCancelButton, { backgroundColor: isDark ? colors.iconBox : '#f3f4f6' }]}
                                 onPress={() => setDepartmentPopupVisible(false)}
                             >
-                                <Text style={styles.modalCancelText}>Отмена</Text>
+                                <Text style={[styles.modalCancelText, { color: colors.subtext }]}>Отмена</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
-                                style={styles.modalConfirmButton}
+                                style={[styles.modalConfirmButton, { backgroundColor: colors.primary }]}
                                 onPress={confirmDepartmentSelection}
                             >
                                 <Text style={styles.modalConfirmText}>

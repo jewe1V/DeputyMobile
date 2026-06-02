@@ -11,6 +11,7 @@ import {
 import { User, Trash2 } from 'lucide-react-native';
 import { AuthManager } from '@/components/LoginScreen/LoginScreen';
 import { TaskComment } from './TaskDetail';
+import { useTheme } from '@/context/ThemeContext';
 
 interface TaskCommentProps {
     comment: TaskComment;
@@ -23,6 +24,7 @@ export const TaskCommentComponent: React.FC<TaskCommentProps> = ({
                                                                      onDelete,
                                                                      isDeleting = false,
                                                                  }) => {
+    const { colors, isDark } = useTheme();
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const userId = AuthManager.getUserId();
     const userRole = AuthManager.getRole();
@@ -86,10 +88,10 @@ export const TaskCommentComponent: React.FC<TaskCommentProps> = ({
     const avatarColor = getAvatarColor(comment.author?.email || comment.author_id);
 
     return (
-        <View style={styles.commentContainer}>
+        <View style={[styles.commentContainer, { backgroundColor: isDark ? colors.card : '#ffffff', borderColor: colors.border, shadowOpacity: isDark ? 0 : 0.05 }]}>
             <View style={styles.commentAvatar}>
-                <View style={[styles.commentAvatarCircle, { backgroundColor: avatarColor + '20' }]}>
-                    <Text style={[styles.commentAvatarText, { color: avatarColor }]}>
+                <View style={[styles.commentAvatarCircle, { backgroundColor: avatarColor + (isDark ? '40' : '20') }]}>
+                    <Text style={[styles.commentAvatarText, { color: isDark ? '#fff' : avatarColor }]}>
                         {getInitials(comment.author?.full_name || comment.author?.email || 'П')}
                     </Text>
                 </View>
@@ -97,10 +99,10 @@ export const TaskCommentComponent: React.FC<TaskCommentProps> = ({
 
             <View style={styles.commentContent}>
                 <View style={styles.commentHeader}>
-                    <Text style={styles.commentAuthor}>
+                    <Text style={[styles.commentAuthor, { color: colors.text }]}>
                         {comment.author?.full_name || comment.author?.email || 'Пользователь'}
                     </Text>
-                    <Text style={styles.commentDate}>{formatDate(comment.date)}</Text>
+                    <Text style={[styles.commentDate, { color: colors.subtext }]}>{formatDate(comment.date)}</Text>
 
                     {canDelete && (
                         <TouchableOpacity
@@ -111,13 +113,13 @@ export const TaskCommentComponent: React.FC<TaskCommentProps> = ({
                             {isDeleting ? (
                                 <ActivityIndicator size="small" color="#ef4444" />
                             ) : (
-                                <Trash2 size={16} color="#94a3b8" />
+                                <Trash2 size={16} color={colors.subtext} />
                             )}
                         </TouchableOpacity>
                     )}
                 </View>
 
-                <Text style={styles.commentText}>{comment.text}</Text>
+                <Text style={[styles.commentText, { color: isDark ? colors.subtext : '#475569' }]}>{comment.text}</Text>
             </View>
         </View>
     );

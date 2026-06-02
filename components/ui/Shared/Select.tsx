@@ -2,6 +2,7 @@ import React, {useState, useRef, useEffect} from "react";
 import {Text, TouchableOpacity, View, Pressable} from "react-native";
 import {styles} from "@/components/TaskBoard/task-board-style";
 import {ChevronDown} from "lucide-react-native";
+import { useTheme } from "@/context/ThemeContext";
 
 
 interface SelectProps {
@@ -12,6 +13,7 @@ interface SelectProps {
 }
 
 export function Select({ value, onValueChange, items, placeholder }: SelectProps) {
+    const { colors, isDark } = useTheme();
     const [isOpen, setIsOpen] = useState(false);
     const selectedItem = items.find(item => item.value === value);
     const triggerRef = useRef<View>(null);
@@ -46,24 +48,24 @@ export function Select({ value, onValueChange, items, placeholder }: SelectProps
     return (
         <View style={styles.selectContainer} ref={triggerRef}>
             <TouchableOpacity
-                style={styles.selectTrigger}
+                style={[styles.selectTrigger, { backgroundColor: colors.card, borderColor: colors.border }]}
                 onPress={handlePress}
             >
-                <Text style={styles.selectValue}>
+                <Text style={[styles.selectValue, { color: colors.text }]}>
                     {selectedItem?.label || placeholder || 'Выберите...'}
                 </Text>
-                <ChevronDown size={16} color="#6B7280" />
+                <ChevronDown size={16} color={colors.subtext} />
             </TouchableOpacity>
             {isOpen && (
                 <Pressable onPress={() => setIsOpen(false)}>
-                    <View style={[styles.selectContent]}>
+                    <View style={[styles.selectContent, { backgroundColor: colors.card, borderColor: colors.border }]}>
                         {items.map((item) => (
                             <TouchableOpacity
                                 key={item.value}
-                                style={styles.selectItem}
+                                style={[styles.selectItem, { borderBottomColor: colors.divider }]}
                                 onPress={() => handleItemPress(item.value)}
                             >
-                                <Text style={styles.selectItemText}>{item.label}</Text>
+                                <Text style={[styles.selectItemText, { color: colors.text }]}>{item.label}</Text>
                             </TouchableOpacity>
                         ))}
                     </View>

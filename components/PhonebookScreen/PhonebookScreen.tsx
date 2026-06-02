@@ -15,6 +15,7 @@ import {ContactCard} from "@/components/PhonebookScreen/ContactCard";
 import { Button } from "../ui/Shared/Button";
 import {declOfNum} from "@/utils";
 import {apiClient} from "@/api/api";
+import { useTheme } from '@/context/ThemeContext';
 
 export interface PhonebookModel {
     full_name: string;
@@ -25,6 +26,7 @@ export interface PhonebookModel {
 }
 
 export const PhonebookScreen = () => {
+    const { colors, isDark } = useTheme();
     const insets = useSafeAreaInsets();
     const navigation = useNavigation();
     const [phonebookData, setPhonebookData] = useState<PhonebookModel[]>([]);
@@ -67,11 +69,11 @@ export const PhonebookScreen = () => {
 
 
     return (
-        <View style={{ flex: 1, backgroundColor: '#fff', paddingBottom: insets.bottom + 50 }}>
+        <View style={{ flex: 1, backgroundColor: colors.background, paddingBottom: insets.bottom + 50 }}>
             <StatusBar barStyle="light-content" translucent />
 
             <LinearGradient
-                colors={['#2A6E3F', '#349339']}
+                colors={[colors.primary, colors.secondary]}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                 style={[styles.header, { paddingTop: insets.top + 15 }]}
             >
@@ -92,7 +94,7 @@ export const PhonebookScreen = () => {
             <View style={styles.content}>
                 {loading && !refreshing ? (
                     <View style={styles.centerContainer}>
-                        <ActivityIndicator size="large" color="#2A6E3F" />
+                        <ActivityIndicator size="large" color={colors.primary} />
                     </View>
                 ) : (
                     <FlatList
@@ -103,9 +105,12 @@ export const PhonebookScreen = () => {
                         showsVerticalScrollIndicator={false}
                         onRefresh={() => loadPhonebook(true)}
                         refreshing={refreshing}
+                        refreshControl={
+                            <RefreshControl refreshing={refreshing} onRefresh={() => loadPhonebook(true)} colors={[colors.primary]} tintColor={colors.primary} />
+                        }
                         ListEmptyComponent={
-                            <View style={styles.centerContainer}>
-                                <Text style={styles.emptyText}>Ничего не найдено</Text>
+                            <View style={[styles.centerContainer, { backgroundColor: colors.card, marginHorizontal: 20, marginTop: 20, borderRadius: 20, paddingVertical: 40 }]}>
+                                <Text style={[styles.emptyText, { color: colors.subtext }]}>Ничего не найдено</Text>
                             </View>
                         }
                     />

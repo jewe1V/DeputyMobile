@@ -1,6 +1,7 @@
 import {Text, View, StyleSheet} from "react-native";
 import React from "react";
 import { LinearGradient } from "expo-linear-gradient";
+import { useTheme } from "@/context/ThemeContext";
 
 
 
@@ -17,15 +18,20 @@ export const Filters = ({
                             selectComponent1,
                             selectComponent2
                         }: FiltersProps) => {
+    const { colors, isDark } = useTheme();
+
     return (
-        <LinearGradient colors={['#ebfdeb', '#fff']} style={styles.filtersSection}>
+        <LinearGradient
+            colors={isDark ? [colors.card, colors.background] : ['#ebfdeb', '#fff']}
+            style={[styles.filtersSection, { backgroundColor: colors.card, shadowOpacity: isDark ? 0 : 0.05 }]}
+        >
             <View style={styles.filtersGrid}>
                 <View style={styles.filterGroup}>
-                    <Text style={styles.filterLabel}>{title1}</Text>
+                    <Text style={[styles.filterLabel, { color: colors.subtext }]}>{title1}</Text>
                     {selectComponent1}
                 </View>
                 {title2 && <View style={styles.filterGroup}>
-                    <Text style={styles.filterLabel}>{title2}</Text>
+                    <Text style={[styles.filterLabel, { color: colors.subtext }]}>{title2}</Text>
                     {selectComponent2}
                 </View> }
             </View>

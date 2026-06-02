@@ -4,6 +4,7 @@ import Animated, { FadeIn, LinearTransition } from 'react-native-reanimated';
 import { MoveLeft, MoveRight } from 'lucide-react-native';
 import { Event } from "@/models/EventModel";
 import {getLocalDateKey, getTodayLocalKey} from "@/utils";
+import { useTheme } from '@/context/ThemeContext';
 
 interface CalendarProps {
     selectedDate: string | undefined;
@@ -13,6 +14,7 @@ interface CalendarProps {
 }
 
 export const Calendar: React.FC<CalendarProps> = ({ selectedDate, onSelectDate, events, onMonthChange }) => {
+    const { colors, isDark } = useTheme();
     const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
     const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
 
@@ -61,7 +63,7 @@ export const Calendar: React.FC<CalendarProps> = ({ selectedDate, onSelectDate, 
     const todayKey = getTodayLocalKey();
 
     return (
-        <Animated.View layout={LinearTransition} style={styles.calendar}>
+        <Animated.View layout={LinearTransition} style={[styles.calendar, { backgroundColor: colors.card }]}>
             <View style={styles.container}>
                 <View style={styles.calendarHeader}>
                     <TouchableOpacity
@@ -70,11 +72,11 @@ export const Calendar: React.FC<CalendarProps> = ({ selectedDate, onSelectDate, 
                         style={styles.navButton}
                     >
                         <View pointerEvents="none">
-                            <MoveLeft size={22} color={"#0f6319"} />
+                            <MoveLeft size={22} color={isDark ? colors.roleText : "#0f6319"} />
                         </View>
                     </TouchableOpacity>
 
-                    <Text style={styles.calendarTitle}>{`${months[currentMonth]} ${currentYear}`}</Text>
+                    <Text style={[styles.calendarTitle, { color: colors.text }]}>{`${months[currentMonth]} ${currentYear}`}</Text>
 
                     <TouchableOpacity
                         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -82,7 +84,7 @@ export const Calendar: React.FC<CalendarProps> = ({ selectedDate, onSelectDate, 
                         style={styles.navButton}
                     >
                         <View pointerEvents="none">
-                            <MoveRight size={22} color={"#0f6319"} />
+                            <MoveRight size={22} color={isDark ? colors.roleText : "#0f6319"} />
                         </View>
                     </TouchableOpacity>
                 </View>
@@ -95,7 +97,7 @@ export const Calendar: React.FC<CalendarProps> = ({ selectedDate, onSelectDate, 
                     <View style={styles.weekRow}>
                         {['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map((day) => (
                             <View key={day} style={styles.dayWrapper}>
-                                <Text style={styles.calendarDayText}>{day}</Text>
+                                <Text style={[styles.calendarDayText, { color: colors.subtext }]}>{day}</Text>
                             </View>
                         ))}
                     </View>
@@ -114,16 +116,17 @@ export const Calendar: React.FC<CalendarProps> = ({ selectedDate, onSelectDate, 
                                 return (
                                     <View key={day} style={styles.dayWrapper}>
                                         <TouchableOpacity
-                                            style={styles.daySquare}
+                                            style={[styles.daySquare, isSelected && { backgroundColor: isDark ? colors.primary + '40' : '#e6ecff' }]}
                                             onPress={() => onSelectDate(dateStr)}
                                             activeOpacity={0.7}
                                         >
-                                            <Text style={styles.calendarDateText}>
+                                            <Text style={[styles.calendarDateText, { color: colors.text }, isSelected && { color: colors.primary, fontWeight: '700' }]}>
                                                 {day}
                                             </Text>
                                             {hasEvents && (
                                                 <View style={[
                                                     styles.eventDot,
+                                                    { backgroundColor: isDark ? colors.roleText : '#13b626' },
                                                     isDayPast && styles.eventDotPast
                                                 ]} />
                                             )}

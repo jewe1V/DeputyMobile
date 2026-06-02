@@ -10,6 +10,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Profile } from "@/models/ProfileModel";
 import { BottomSheetModal as ModalBottomSheet } from '@/components/ui/BottomSheetModal/BottomSheetModal';
+import { useTheme } from '@/context/ThemeContext';
 
 interface AddUserPopupProps {
     visible: boolean;
@@ -26,23 +27,24 @@ export const AddUserPopup: React.FC<AddUserPopupProps> = ({
                                                               onAdd,
                                                               loading
                                                           }) => {
+    const { colors, isDark } = useTheme();
     const renderItem = ({ item }: { item: Profile }) => (
         <TouchableOpacity
-            style={styles.userCard}
+            style={[styles.userCard, { borderBottomColor: colors.divider }]}
             onPress={() => onAdd(item.id)}
         >
-            <View style={styles.avatar}>
-                <Text style={styles.avatarText}>
+            <View style={[styles.avatar, { backgroundColor: isDark ? colors.primary + '20' : '#ebfdeb' }]}>
+                <Text style={[styles.avatarText, { color: isDark ? colors.roleText : '#2A6E3F' }]}>
                     {(item.full_name || item.email || '?').charAt(0).toUpperCase()}
                 </Text>
             </View>
 
             <View style={styles.userInfo}>
-                <Text style={styles.userName}>{item.full_name || 'Без имени'}</Text>
-                <Text style={styles.userEmail}>{item.email}</Text>
+                <Text style={[styles.userName, { color: colors.text }]}>{item.full_name || 'Без имени'}</Text>
+                <Text style={[styles.userEmail, { color: colors.subtext }]}>{item.email}</Text>
             </View>
 
-            <Ionicons name="add-circle-outline" size={26} color="#2A6E3F" />
+            <Ionicons name="add-circle-outline" size={26} color={colors.primary} />
         </TouchableOpacity>
     );
 
@@ -58,8 +60,8 @@ export const AddUserPopup: React.FC<AddUserPopupProps> = ({
             <View style={styles.content}>
                 {availableUsers.length === 0 ? (
                     <View style={styles.emptyState}>
-                        <Ionicons name="people-outline" size={48} color="#94a3b8" />
-                        <Text style={styles.emptyText}>Нет доступных пользователей</Text>
+                        <Ionicons name="people-outline" size={48} color={colors.subtext} />
+                        <Text style={[styles.emptyText, { color: colors.subtext }]}>Нет доступных пользователей</Text>
                     </View>
                 ) : (
                     <FlatList
@@ -72,8 +74,8 @@ export const AddUserPopup: React.FC<AddUserPopupProps> = ({
                 )}
 
                 {loading && (
-                    <View style={styles.loadingOverlay}>
-                        <ActivityIndicator size="large" color="#2A6E3F" />
+                    <View style={[styles.loadingOverlay, { backgroundColor: isDark ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.7)' }]}>
+                        <ActivityIndicator size="large" color={colors.primary} />
                     </View>
                 )}
             </View>

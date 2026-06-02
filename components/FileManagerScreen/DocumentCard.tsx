@@ -7,6 +7,7 @@ import { JSX, useState, useEffect } from 'react';
 import { apiUrl, xAppSecret } from "@/api/api";
 import { AuthManager } from "@/components/LoginScreen/LoginScreen";
 import {ImagePreviewModal} from "@/components/EventsScreen/ImagePreviewModal";
+import { useTheme } from '@/context/ThemeContext';
 
 interface DocumentCardProps {
     document: Document;
@@ -17,6 +18,7 @@ interface DocumentCardProps {
 }
 
 export function DocumentCard({ document, getFileIcon, getFileSize, onInfoPress, onDownloadPress }: DocumentCardProps) {
+    const { colors, isDark } = useTheme();
     const imageExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp', '.svg'];
     const isImage = imageExtensions.includes(document.content_type?.toLowerCase());
     const token = AuthManager.getToken();
@@ -87,9 +89,9 @@ export function DocumentCard({ document, getFileIcon, getFileSize, onInfoPress, 
 
     return (
         <>
-            <View style={styles.documentItem}>
+            <View style={[styles.documentItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <TouchableOpacity onPress={handleImagePress} style={styles.documentContent}>
-                    <View style={styles.documentIconContainer}>
+                    <View style={[styles.documentIconContainer, { backgroundColor: isDark ? colors.iconBox : '#F3F4F6' }]}>
                         {isImage && !imageError ? (
                             <Image
                                 source={imageSource}
@@ -108,11 +110,11 @@ export function DocumentCard({ document, getFileIcon, getFileSize, onInfoPress, 
                     </View>
 
                     <View style={styles.documentInfo}>
-                        <Text style={styles.documentName} numberOfLines={1}>
+                        <Text style={[styles.documentName, { color: colors.text }]} numberOfLines={1}>
                             {document.file_name}{document.content_type}
                         </Text>
                         <View style={styles.documentMeta}>
-                            <Text style={styles.documentMetaText}>
+                            <Text style={[styles.documentMetaText, { color: colors.subtext }]}>
                                 Размер: {getFileSize(document.file_size)}
                             </Text>
                         </View>
@@ -123,7 +125,7 @@ export function DocumentCard({ document, getFileIcon, getFileSize, onInfoPress, 
                         onPress={() => onInfoPress(document)}
                     >
                         <View pointerEvents="none">
-                            <Info size={18} color="#777d87" />
+                            <Info size={18} color={colors.subtext} />
                         </View>
                     </TouchableOpacity>
                 </TouchableOpacity>

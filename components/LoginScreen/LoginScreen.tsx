@@ -282,7 +282,10 @@ interface AuthResponse {
     user: Profile;
 }
 
+import { useTheme } from "@/context/ThemeContext";
+
 const LoginScreen = () => {
+    const { colors, isDark } = useTheme();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -385,19 +388,19 @@ const LoginScreen = () => {
 
     if (!isAuthReady) {
         return (
-            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-                <ActivityIndicator size="large" color="#095a25" />
+            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }]}>
+                <ActivityIndicator size="large" color={colors.primary} />
             </View>
         );
     }
 
     return (
         <KeyboardAvoidingView
-            style={styles.container}
+            style={[styles.container, { backgroundColor: colors.background }]}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
             <View
-                style={styles.backgroundAccent}
+                style={[styles.backgroundAccent, { backgroundColor: isDark ? colors.card : '#F3F4F6' }]}
             />
 
             <Animated.View style={[styles.header, { opacity: fadeAnim }]}>
@@ -409,7 +412,7 @@ const LoginScreen = () => {
                     />
                 </View>
                 {/*<Text style={styles.subtitle}>Екатеринбургская городская Дума</Text>*/}
-                <Text style={styles.title}>Цифровой кабинет{'\n'}депутата</Text>
+                <Text style={[styles.title, { color: isDark ? colors.text : '#03230e' }]}>Цифровой кабинет{'\n'}депутата</Text>
             </Animated.View>
 
             <Animated.View
@@ -421,14 +424,15 @@ const LoginScreen = () => {
                     }
                 ]}
             >
-                <View style={styles.formCard}>
+                <View style={[styles.formCard, { backgroundColor: colors.card, shadowOpacity: isDark ? 0 : 0.08 }]}>
                     <View style={styles.inputWrapper}>
-                        <Text style={styles.inputLabel}>Электронная почта</Text>
+                        <Text style={[styles.inputLabel, { color: colors.text }]}>Электронная почта</Text>
                         <TextInput
-                            placeholderTextColor="#9CA3AF"
+                            placeholderTextColor={colors.subtext}
                             style={[
                                 styles.input,
-                                isEmailFocused && styles.inputFocused
+                                { backgroundColor: isDark ? colors.background : '#F9FAFB', borderColor: colors.border, color: colors.text },
+                                isEmailFocused && [styles.inputFocused, { borderColor: colors.primary }]
                             ]}
                             value={email}
                             onChangeText={setEmail}
@@ -441,13 +445,14 @@ const LoginScreen = () => {
                     </View>
 
                     <View style={styles.inputWrapper}>
-                        <Text style={styles.inputLabel}>Пароль</Text>
+                        <Text style={[styles.inputLabel, { color: colors.text }]}>Пароль</Text>
                         <TextInput
-                            placeholderTextColor="#9CA3AF"
+                            placeholderTextColor={colors.subtext}
                             secureTextEntry
                             style={[
                                 styles.input,
-                                isPasswordFocused && styles.inputFocused
+                                { backgroundColor: isDark ? colors.background : '#F9FAFB', borderColor: colors.border, color: colors.text },
+                                isPasswordFocused && [styles.inputFocused, { borderColor: colors.primary }]
                             ]}
                             value={password}
                             onChangeText={setPassword}
@@ -458,7 +463,7 @@ const LoginScreen = () => {
                     </View>
 
                     <TouchableOpacity
-                        style={[styles.loginButton, isLoading && styles.disabledButton]}
+                        style={[styles.loginButton, { backgroundColor: colors.primary, shadowColor: colors.primary }, isLoading && styles.disabledButton]}
                         onPress={handleLogin}
                         disabled={isLoading}
                         activeOpacity={0.8}

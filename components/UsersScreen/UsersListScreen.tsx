@@ -20,8 +20,10 @@ import {declOfNum} from "@/utils";
 import {Plus} from "lucide-react-native";
 import {Search} from "@/components/ui/Shared/Search";
 import {apiClient} from "@/api/api";
+import { useTheme } from '@/context/ThemeContext';
 
 const UsersListScreen = () => {
+    const { colors, isDark } = useTheme();
     const router = useRouter();
     const insets = useSafeAreaInsets();
 
@@ -83,11 +85,11 @@ const UsersListScreen = () => {
 
 
     return (
-        <View style={{ flex: 1, backgroundColor: '#fff', paddingBottom: insets.bottom + 50 }}>
+        <View style={{ flex: 1, backgroundColor: colors.background, paddingBottom: insets.bottom + 50 }}>
             <StatusBar barStyle="light-content" translucent />
 
             <LinearGradient
-                colors={['#2A6E3F', '#349339']}
+                colors={[colors.primary, colors.secondary]}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                 style={[styles.header, { paddingTop: insets.top + 15 }]}
             >
@@ -118,7 +120,7 @@ const UsersListScreen = () => {
 
             {loading && !refreshing ? (
                 <View style={styles.center}>
-                    <ActivityIndicator size="large" color="#2A6E3F" />
+                    <ActivityIndicator size="large" color={colors.primary} />
                 </View>
             ) : (
                 <FlatList
@@ -128,13 +130,13 @@ const UsersListScreen = () => {
                     contentContainerStyle={styles.taskList}
                     showsVerticalScrollIndicator={false}
                     refreshControl={
-                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2A6E3F']} />
+                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />
                     }
                     ListEmptyComponent={
-                        <View style={styles.emptyState}>
-                            <Ionicons name="people-outline" size={48} color="#9CA3AF" />
-                            <Text style={styles.emptyTitle}>Никого не нашли</Text>
-                            <Text style={styles.emptySubtitle}>Измените параметры поиска</Text>
+                        <View style={[styles.emptyState, { backgroundColor: colors.card, marginHorizontal: 20, padding: 30, borderRadius: 20 }]}>
+                            <Ionicons name="people-outline" size={48} color={colors.subtext} />
+                            <Text style={[styles.emptyTitle, { color: colors.text }]}>Никого не нашли</Text>
+                            <Text style={[styles.emptySubtitle, { color: colors.subtext }]}>Измените параметры поиска</Text>
                         </View>
                     }
                 />
