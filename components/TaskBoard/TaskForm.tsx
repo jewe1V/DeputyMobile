@@ -384,6 +384,7 @@ const styles = StyleSheet.create({
         paddingVertical: 14, // Немного увеличил высоту кнопки
         borderRadius: 10,
         marginTop: 25,
+        marginBottom: 155,
     },
     publishButtonDisabled: {
         backgroundColor: "#9ca3af",
