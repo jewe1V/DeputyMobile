@@ -1,14 +1,14 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import {
     View, Text, StyleSheet, ScrollView, TouchableOpacity,
-    ActivityIndicator, RefreshControl, Modal, Alert, Platform, Image
+    ActivityIndicator, RefreshControl, Modal, Alert, Platform, Image, Share
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { AuthManager } from "@/components/LoginScreen/LoginScreen";
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ArrowLeft, FileText, Download, CheckCircle2, XCircle, HelpCircle, X, Edit, Trash2 } from "lucide-react-native";
+import { ArrowLeft, FileText, Download, CheckCircle2, XCircle, HelpCircle, X, Edit, Trash2, Megaphone } from "lucide-react-native";
 import { EventAttachmentUploader } from "@/components/EventsScreen/EventAttachmentUploader";
 import { EventAttendanceModal } from "@/components/EventsScreen/EventAttendanceModal";
 import { useFileManagerPresenter } from "@/components/FileManagerScreen/FileManagerPresenter";
@@ -77,7 +77,6 @@ const AttachmentItem: React.FC<AttachmentItemProps> = ({ file, onImagePress }) =
                     style={styles.imagePreviewContainer}
                     onPress={() => onImagePress(file)}
                 >
-                    {/* Простой превью без сложной логики загрузки */}
                     <ImagePreviewThumbnail file={file} />
                     <View style={styles.imagePreviewOverlay}>
                         <Text style={styles.imagePreviewName} numberOfLines={1}>
@@ -191,7 +190,6 @@ export const EventDetailsScreen: React.FC = () => {
     const userRole = AuthManager.getRole();
     const userId = AuthManager.getUserId();
 
-
     const handleBack = () => {
         router.replace('/EventsScreen');
     };
@@ -217,26 +215,126 @@ export const EventDetailsScreen: React.FC = () => {
         loadEvent(true);
     }, [loadEvent]);
 
-    if (loading) {
-        return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#0f6319" />
-                <Text style={styles.loadingText}>Загрузка события...</Text>
-            </View>
-        );
-    }
+    // Функция для построения ссылки на карты
+    const getMapLink = (locationString: string): string => {
+        const parsed = parseLocation(locationString);
+        if (parsed.coordinates) {
+            return `https://yandex.ru/maps/?pt=${parsed.coordinates.lon},${parsed.coordinates.lat}&z=16`;
+        } else if (parsed.address) {
+            return `https://yandex.ru/maps/?text=${encodeURIComponent(parsed.address)}`;
+        }
+        return '';
+    };
 
-    if (!event) {
-        return (
-            <View style={styles.errorContainer}>
-                <Ionicons name="alert-circle-outline" size={64} color="#dc2626" />
-                <Text style={styles.errorText}>Событие не найдено</Text>
-                <TouchableOpacity style={styles.errorButton} onPress={handleBack}>
-                    <Text style={styles.errorButtonText}>Вернуться назад</Text>
-                </TouchableOpacity>
-            </View>
-        );
-    }
+    // Функция для формирования текста для шаринга
+    const getShareText = (): string => {
+        if (!event) return '';
+
+        const start = formatDateTime(event.start_at);
+        const end = formatDateTime(event.end_at);
+        const mapLink = getMapLink(event.location);
+        const visibility = event.is_public ? '🔓 Публичное событие' : '🔒 Приватное событие';
+        const address = parseLocation(event.location).address || 'Не указано';
+
+        let text = `\n`;
+
+        if (event.description) {
+            text += `📝 ${event.description}\n\n`;
+        }
+
+        text += `🕒 Начало: ${start.day}, ${start.time}\n`;
+        text += `⏰ Окончание: ${end.day}, ${end.time}\n\n`;
+
+        text += `📍 Место: ${address}\n`;
+
+        if (mapLink) {
+            text += `🗺️ Карта: ${mapLink}\n\n`;
+        }
+
+        text += `${visibility}\n\n`;
+
+        return text;
+    };
+
+    // Функция шаринга (работает и на нативе, и в вебе)
+    const handleShare = async () => {
+        if (!event) return;
+
+        const shareText = getShareText();
+
+        if (Platform.OS === 'web') {
+            // Веб: используем Web Share API если доступен, иначе копируем в буфер
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: event.title,
+                        text: shareText,
+                    });
+                    Toast.show({
+                        type: 'success',
+                        text1: 'Успешно',
+                        text2: 'Событие отправлено',
+                        position: 'top',
+                        visibilityTime: 2000,
+                    });
+                } catch (error: any) {
+                    if (error.name !== 'AbortError') {
+                        // Если шаринг отменен пользователем — не показываем ошибку
+                        fallbackCopyToClipboard(shareText);
+                    }
+                }
+            } else {
+                fallbackCopyToClipboard(shareText);
+            }
+        } else {
+            // Нативные платформы (iOS, Android)
+            try {
+                const result = await Share.share({
+                    title: event.title,
+                    message: shareText,
+                });
+                if (result.action === Share.sharedAction) {
+                    Toast.show({
+                        type: 'success',
+                        text1: 'Успешно',
+                        text2: 'Событие отправлено',
+                        position: 'top',
+                        visibilityTime: 2000,
+                    });
+                }
+            } catch (error: any) {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Ошибка',
+                    text2: error.message || 'Не удалось поделиться',
+                    position: 'bottom',
+                    visibilityTime: 3000,
+                });
+            }
+        }
+    };
+
+    // Fallback для веба (копирование в буфер обмена)
+    const fallbackCopyToClipboard = async (text: string) => {
+        try {
+            await navigator.clipboard.writeText(text);
+            Toast.show({
+                type: 'success',
+                text1: 'Скопировано',
+                text2: 'Текст события скопирован в буфер обмена',
+                position: 'top',
+                visibilityTime: 3000,
+            });
+        } catch (err) {
+            Toast.show({
+                type: 'error',
+                text1: 'Ошибка',
+                text2: 'Не удалось скопировать текст',
+                position: 'bottom',
+                visibilityTime: 3000,
+            });
+        }
+    };
 
     const parseLocation = (locationString: string) => {
         if (!locationString) return { address: '', coordinates: null };
@@ -249,9 +347,9 @@ export const EventDetailsScreen: React.FC = () => {
         return { address: locationString, coordinates: null };
     };
 
-    const location = parseLocation(event.location);
-    const startDate = formatDateTime(event.start_at);
-    const endDate = formatDateTime(event.end_at);
+    const location = parseLocation(event?.location || '');
+    const startDate = event ? formatDateTime(event.start_at) : { day: '', time: '' };
+    const endDate = event ? formatDateTime(event.end_at) : { day: '', time: '' };
 
     const getEventTypeLabel = (type: string) => {
         const types: Record<string, string> = {
@@ -263,7 +361,6 @@ export const EventDetailsScreen: React.FC = () => {
     };
 
     const openMaps = () => {
-        // Условие для веб-платформы: открываем обычную ссылку в браузере
         if (Platform.OS === 'web') {
             if (location.coordinates) {
                 window.open(`https://yandex.ru/maps/?pt=${location.coordinates.lon},${location.coordinates.lat}&z=16`, '_blank');
@@ -273,7 +370,6 @@ export const EventDetailsScreen: React.FC = () => {
             return;
         }
 
-        // Логика для нативных приложений
         const locationParams = {
             title: location.address,
             dialogTitle: 'Открыть в навигаторе',
@@ -355,6 +451,27 @@ export const EventDetailsScreen: React.FC = () => {
         }
     };
 
+    if (loading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#0f6319" />
+                <Text style={styles.loadingText}>Загрузка события...</Text>
+            </View>
+        );
+    }
+
+    if (!event) {
+        return (
+            <View style={styles.errorContainer}>
+                <Ionicons name="alert-circle-outline" size={64} color="#dc2626" />
+                <Text style={styles.errorText}>Событие не найдено</Text>
+                <TouchableOpacity style={styles.errorButton} onPress={handleBack}>
+                    <Text style={styles.errorButtonText}>Вернуться назад</Text>
+                </TouchableOpacity>
+            </View>
+        );
+    }
+
     return (
         <>
             <ScrollView
@@ -374,19 +491,26 @@ export const EventDetailsScreen: React.FC = () => {
                             </View>
                         </TouchableOpacity>
 
-                        {(userRole === "Admin" || userId === event.id) && (
-                            <View style={styles.headerActions}>
-                                <TouchableOpacity
-                                    style={styles.iconButton}
-                                    onPress={() => router.push({ pathname: '/(screens)/EventsScreen/CreateEventScreen', params: { id: event.id, isEdit: 1 } })}
-                                >
-                                    <Edit size={20} color="white" />
-                                </TouchableOpacity>
-                                <TouchableOpacity style={[styles.iconButton, { marginLeft: 10 }]} onPress={handleDelete}>
-                                    <Trash2 size={20} color="#fff" />
-                                </TouchableOpacity>
-                            </View>
-                        )}
+                        <View style={styles.headerActions}>
+                            {/* Новая кнопка "Поделиться" (мегафон) */}
+                            <TouchableOpacity style={styles.iconButton} onPress={handleShare}>
+                                <Megaphone size={20} color="white" />
+                            </TouchableOpacity>
+
+                            {(userRole === "Admin" || userId === event.author_id) && (
+                                <>
+                                    <TouchableOpacity
+                                        style={[styles.iconButton, { marginLeft: 10 }]}
+                                        onPress={() => router.push({ pathname: '/(screens)/EventsScreen/CreateEventScreen', params: { id: event.id, isEdit: 1 } })}
+                                    >
+                                        <Edit size={20} color="white" />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity style={[styles.iconButton, { marginLeft: 10 }]} onPress={handleDelete}>
+                                        <Trash2 size={20} color="#fff" />
+                                    </TouchableOpacity>
+                                </>
+                            )}
+                        </View>
                     </View>
 
                     <View style={styles.headerContent}>
@@ -492,9 +616,7 @@ export const EventDetailsScreen: React.FC = () => {
                                 <FileText size={20} color="#0f6319" />
                                 <Text style={styles.secondaryButtonText}>Прикрепить файл</Text>
                             </TouchableOpacity>
-
                         }
-
 
                         <TouchableOpacity style={styles.secondaryButton} onPress={() => setShowAttendanceModal(true)}>
                             <CheckCircle2 size={20} color="#0f6319" />
@@ -549,7 +671,7 @@ const styles = StyleSheet.create({
     header: { paddingHorizontal: 20, paddingBottom: 50, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
     headerTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
     backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255, 255, 255, 0.2)', justifyContent: 'center', alignItems: 'center' },
-    headerActions: { flexDirection: 'row' },
+    headerActions: { flexDirection: 'row', alignItems: 'center' },
     iconButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255, 255, 255, 0.2)', justifyContent: 'center', alignItems: 'center' },
     headerContent: { flex: 1 },
     headerTitle: { fontSize: 22, fontWeight: '700', color: '#FFFFFF', marginBottom: 10 },
