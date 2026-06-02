@@ -18,40 +18,44 @@ export default function Root({ children }: { children: React.ReactNode }) {
             <ScrollViewStyleReset/>
 
             <style dangerouslySetInnerHTML={{ __html: `
-                html, body {
+                html {
+                    /* Ключевой фикс: минимальная высота = 100% + высота safe area сверху */
+                    min-height: calc(100% + env(safe-area-inset-top));
+                    
+                    /* Заполняем safe areas со всех сторон */
+                    padding: env(safe-area-inset-top) 
+                             env(safe-area-inset-right) 
+                             env(safe-area-inset-bottom) 
+                             env(safe-area-inset-left);
+                    
+                    background-color: #ffffff;
+                }
+            
+                body {
                     margin: 0;
                     padding: 0;
-                    
-                    /* Жёстко фиксируем на весь экран, включая safe areas */
                     position: fixed;
                     top: 0;
                     left: 0;
                     right: 0;
                     bottom: 0;
-                    
-                    /* НЕТ height: dvh — position fixed + inset: 0 сам справится */
                     width: 100%;
                     height: 100%;
-                    
                     overflow: hidden;
                     overscroll-behavior: none;
                     touch-action: none;
-                    
-                    /* Цвет фона должен совпадать с цветом низа вашего приложения */
                     background-color: #ffffff;
-                    
                     -webkit-tap-highlight-color: transparent;
                 }
-
+            
                 #root {
                     display: flex;
                     flex: 1;
                     width: 100%;
                     height: 100%;
                     overflow: hidden;
-                    /* НЕТ никаких padding-bottom здесь! */
                 }
-
+            
                 input, textarea, select {
                     font-size: 16px !important;
                 }
