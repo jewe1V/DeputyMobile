@@ -159,12 +159,6 @@ export function ProfileScreen() {
                     <View style={styles.headerTopRow}>
                         <Text style={styles.headerTitle}>Профиль</Text>
                         <View style={styles.headerButtons}>
-                            <TouchableOpacity
-                                style={styles.iconButton}
-                                onPress={toggleTheme}
-                            >
-                                {isDark ? <Sun size={20} color="white" /> : <Moon size={20} color="white" />}
-                            </TouchableOpacity>
                             {(profile.id === userId || userRole === "Admin") && (
                                 <TouchableOpacity
                                     style={styles.iconButton}
@@ -308,6 +302,26 @@ export function ProfileScreen() {
                             </View>
                             <ChevronRight size={20} color={colors.subtext} />
                         </TouchableOpacity>
+
+                        <View style={[styles.actionDivider, { backgroundColor: colors.divider }]} />
+                    </View>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Активность</Text>
+                    <View style={[styles.card, { padding: 0, overflow: 'hidden', backgroundColor: colors.card }]}>
+                        {/* Кнопка переключения темы */}
+                        <TouchableOpacity style={styles.actionItem} onPress={toggleTheme}>
+                            <View style={[styles.actionIcon, { backgroundColor: colors.actionIcon.theme || (isDark ? '#374151' : '#e0e7ff') }]}>
+                                {isDark ? <Sun size={20} color={colors.actionIconColor.theme || '#f59e0b'} /> : <Moon size={20} color={colors.actionIconColor.theme || '#6366f1'} />}
+                            </View>
+                            <View style={styles.actionContent}>
+                                <Text style={[styles.actionTitle, { color: colors.text }]}>
+                                    {isDark ? 'Дневной режим' : 'Ночной режим'}
+                                </Text>
+                                <Text style={[styles.actionSubtitle, { color: colors.subtext }]}>
+                                    {isDark ? 'Переключиться на светлую тему' : 'Переключиться на тёмную тему'}
+                                </Text>
+                            </View>
+                            <ChevronRight size={20} color={colors.subtext} />
+                        </TouchableOpacity>
                     </View>
                 </View>
             </ScrollView>
@@ -385,6 +399,7 @@ const styles = StyleSheet.create({
     content: {
         paddingHorizontal: 16,
         marginTop: -55,
+        paddingBottom: 30,
     },
 
     // Unified Card
