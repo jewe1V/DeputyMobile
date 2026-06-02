@@ -228,7 +228,7 @@ export function Dashboard() {
                             <TouchableOpacity style={styles.userProfileButton} onPress={() => router.push({ pathname: '/(screens)/ProfileScreen', params: { id: null }})}>
                                 <View style={styles.avatarContainer}>
                                     <View style={[styles.avatar, { backgroundColor: colors.card }]}>
-                                        <Text style={[styles.avatarText, { color: colors.primary }]}>
+                                        <Text style={[styles.avatarText, { color: colors.roleText }]}>
                                             {getInitials(data.user_name)}
                                         </Text>
                                     </View>

@@ -5,7 +5,7 @@ import {
     View,
     ActivityIndicator,
     FlatList,
-    StatusBar
+    StatusBar, RefreshControl
 } from "react-native";
 import React, { useCallback, useEffect, useState, useMemo } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";

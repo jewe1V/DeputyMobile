@@ -39,9 +39,9 @@ export function TaskCard({ task, onPress }: TaskCardProps) {
                     <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>
                         {task.title}
                     </Text>
-                    <View style={[styles.deadlineBlock, isOverdue && styles.deadlineBlockOverdue, isOverdue && isDark && { backgroundColor: '#7f1d1d' }]}>
-                        <Calendar size={12} color={isOverdue ? (isDark ? "#fecaca" : "#B91C1C") : colors.subtext} />
-                        <Text style={[styles.deadlineText, { color: colors.subtext }, isOverdue && styles.deadlineTextOverdue, isOverdue && isDark && { color: "#fecaca" }]}>
+                    <View style={[styles.deadlineBlock, isOverdue && styles.deadlineBlockOverdue, isOverdue && isDark && { backgroundColor: '#7f1d1d', borderColor: '#680e0e' }]}>
+                        <Calendar size={12} color={isOverdue ? (isDark ? "#d6baba" : "#B91C1C") : colors.subtext} />
+                        <Text style={[styles.deadlineText, { color: colors.subtext }, isOverdue && styles.deadlineTextOverdue, isOverdue && isDark && { color: "#d6baba" }]}>
                             {formatDate(expectedEndDate)}
                         </Text>
                     </View>
@@ -55,13 +55,13 @@ export function TaskCard({ task, onPress }: TaskCardProps) {
                 <View style={styles.infoPanel}>
                     <View style={styles.tagGroup}>
                         <View style={[styles.statusTag, { backgroundColor: isDark ? colors.primary + '20' : '#f0fdfd', borderColor: isDark ? colors.primary + '40' : '#DCFCE7' }]}>
-                            <CircleDotDashed size={12} color={isDark ? colors.primary : "#2A6E3F"} />
+                            <CircleDotDashed size={12} color={isDark ? colors.roleText : "#2A6E3F"} />
                             <Text style={[styles.statusLabel, { color: isDark ? colors.roleText : "#2a6e4f" }]}>
                                 {task.status}
                             </Text>
                         </View>
                         <View style={[styles.priorityTag, { backgroundColor: isDark ? colors.primary + '20' : '#F0FDF4', borderColor: isDark ? colors.primary + '40' : '#DCFCE7' }]}>
-                            <Layers size={12} color={isDark ? colors.primary : "#2A6E3F"} />
+                            <Layers size={12} color={isDark ? colors.roleText : "#2A6E3F"} />
                             <Text style={[styles.priorityLabel, { color: isDark ? colors.roleText : "#2A6E3F" }]} numberOfLines={1}>
                                 {priorityLabel}
                             </Text>
