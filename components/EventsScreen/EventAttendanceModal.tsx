@@ -62,7 +62,9 @@ export const EventAttendanceModal: React.FC<Props> = ({
     // Сброс формы при открытии
     useEffect(() => {
         if (visible) {
-            setSelectedStatus(currentStatus);
+            // При currentStatus 'Yes' или 'No' — начальный выбор сбрасываем,
+            // чтобы пользователь явно выбрал противоположный статус
+            setSelectedStatus(currentStatus === 'Unknown' ? 'Unknown' : 'Unknown');
             setExcuseNote('');
             setExcuseDocument(null);
             setError(null);
@@ -318,23 +320,39 @@ export const EventAttendanceModal: React.FC<Props> = ({
             >
                 {/* Кнопки статуса */}
                 <View style={styles.statusButtons}>
-                    {(currentStatus === 'Unknown' || currentStatus === 'No') && (
+                    {currentStatus !== 'Yes' && (
                         <TouchableOpacity
-                            style={[styles.statusButton, selectedStatus === 'Yes' && styles.statusButtonActive]}
+                            style={[
+                                styles.statusButton,
+                                selectedStatus === 'Yes' && styles.statusButtonActive,
+                            ]}
                             onPress={() => setSelectedStatus('Yes')}
                         >
-                            <Text style={[styles.statusButtonText, selectedStatus === 'Yes' && styles.statusButtonTextActive]}>
+                            <Text
+                                style={[
+                                    styles.statusButtonText,
+                                    selectedStatus === 'Yes' && styles.statusButtonTextActive,
+                                ]}
+                            >
                                 Пойду
                             </Text>
                         </TouchableOpacity>
                     )}
 
-                    {(currentStatus === 'Unknown' || currentStatus === 'Yes') && (
+                    {currentStatus !== 'No' && (
                         <TouchableOpacity
-                            style={[styles.statusButton, selectedStatus === 'No' && styles.statusButtonActive]}
+                            style={[
+                                styles.statusButton,
+                                selectedStatus === 'No' && styles.statusButtonActive,
+                            ]}
                             onPress={() => setSelectedStatus('No')}
                         >
-                            <Text style={[styles.statusButtonText, selectedStatus === 'No' && styles.statusButtonTextActive]}>
+                            <Text
+                                style={[
+                                    styles.statusButtonText,
+                                    selectedStatus === 'No' && styles.statusButtonTextActive,
+                                ]}
+                            >
                                 Не пойду
                             </Text>
                         </TouchableOpacity>

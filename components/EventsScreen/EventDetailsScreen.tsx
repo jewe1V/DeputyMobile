@@ -226,6 +226,12 @@ export const EventDetailsScreen: React.FC = () => {
         return '';
     };
 
+    const currentUserAttendance = event?.attendees?.find(
+        (a) => a.user_id === userId
+    );
+    const currentAttendanceStatus: 'Yes' | 'No' | 'Unknown' =
+        (currentUserAttendance?.status as 'Yes' | 'No') ?? 'Unknown';
+
     // Функция для формирования текста для шаринга
     const getShareText = (): string => {
         if (!event) return '';
@@ -638,6 +644,7 @@ export const EventDetailsScreen: React.FC = () => {
                 visible={showAttendanceModal}
                 onClose={() => setShowAttendanceModal(false)}
                 onSuccess={loadEvent}
+                currentStatus={currentAttendanceStatus}
             />
             <AttendeeExcuseModal
                 visible={excuseModalVisible}
