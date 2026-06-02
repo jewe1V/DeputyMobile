@@ -1,11 +1,12 @@
 import { CatalogItem } from '@/api/catalogService';
 import { Document } from "@/api/documentService"
 import { Info } from 'lucide-react-native';
-import { Text, TouchableOpacity, View, Image, Platform } from 'react-native'; // Добавили Platform
+import { Text, TouchableOpacity, View, Image, Platform } from 'react-native';
 import { styles } from './file-manager-screen';
-import { JSX, useState, useEffect } from 'react'; // Добавили useState и useEffect
-import {apiUrl, xAppSecret} from "@/api/api";
+import { JSX, useState, useEffect } from 'react';
+import { apiUrl, xAppSecret } from "@/api/api";
 import { AuthManager } from "@/components/LoginScreen/LoginScreen";
+import {ImagePreviewModal} from "@/components/EventsScreen/ImagePreviewModal";
 
 interface DocumentCardProps {
     document: Document;
@@ -22,14 +23,14 @@ export function DocumentCard({ document, getFileIcon, getFileSize, onInfoPress, 
     const imageUrl = `${apiUrl}/api/files/${encodeURIComponent(`${document.file_name}`)}`;
     const imageHeaders = {
         Authorization: `Bearer ${token}`,
-        ...({ 'X-App-Secret': xAppSecret })
+        'X-App-Secret': xAppSecret
     };
 
-    // Состояние для хранения локальной ссылки на картинку (только для веба)
     const [webPreviewUrl, setWebPreviewUrl] = useState<string | null>(null);
+    const [previewVisible, setPreviewVisible] = useState(false);
+    const [imageError, setImageError] = useState(false);
 
     useEffect(() => {
-        // Если это веб и это изображение, загружаем его вручную с токеном
         if (Platform.OS === 'web' && isImage) {
             let isMounted = true;
 
@@ -48,12 +49,12 @@ export function DocumentCard({ document, getFileIcon, getFileSize, onInfoPress, 
                     }
                 } catch (error) {
                     console.error('Error loading image preview for web:', error);
+                    setImageError(true);
                 }
             };
 
             fetchImageForWeb();
 
-            // Очистка ссылки при размонтировании компонента для предотвращения утечек памяти
             return () => {
                 isMounted = false;
                 if (webPreviewUrl) {
@@ -63,54 +64,79 @@ export function DocumentCard({ document, getFileIcon, getFileSize, onInfoPress, 
         }
     }, [document.file_name, isImage]);
 
-    // Определяем источник изображения в зависимости от платформы
     const imageSource = Platform.OS === 'web'
-        ? { uri: webPreviewUrl || undefined } // В вебе используем blob-ссылку
+        ? { uri: webPreviewUrl || undefined }
         : {
             uri: imageUrl,
             headers: imageHeaders
         };
 
+    const handleImagePress = () => {
+        if (isImage && !imageError && (webPreviewUrl || imageSource.uri)) {
+            setPreviewVisible(true);
+        } else {
+            // Если не изображение или ошибка загрузки, скачиваем файл
+            onDownloadPress();
+        }
+    };
+
+    const handleDownloadFromPreview = () => {
+        setPreviewVisible(false);
+        onDownloadPress();
+    };
+
     return (
-        <View style={styles.documentItem}>
-            <TouchableOpacity onPress={onDownloadPress} style={styles.documentContent}>
-                <View style={styles.documentIconContainer}>
-                    {isImage ? (
-                        <Image
-                            source={imageSource}
-                            style={{ width: "100%", height: "100%", borderRadius: 8 }}
-                            resizeMode="cover"
-                        />
-                    ) : (
-                        getFileIcon({
-                            id: document.id,
-                            name: document.content_type,
-                            parent_catalog_id: null,
-                            type: 'document'
-                        } as CatalogItem)
-                    )}
-                </View>
+        <>
+            <View style={styles.documentItem}>
+                <TouchableOpacity onPress={handleImagePress} style={styles.documentContent}>
+                    <View style={styles.documentIconContainer}>
+                        {isImage && !imageError ? (
+                            <Image
+                                source={imageSource}
+                                style={{ width: "100%", height: "100%", borderRadius: 8 }}
+                                resizeMode="cover"
+                                onError={() => setImageError(true)}
+                            />
+                        ) : (
+                            getFileIcon({
+                                id: document.id,
+                                name: document.content_type,
+                                parent_catalog_id: null,
+                                type: 'document'
+                            } as CatalogItem)
+                        )}
+                    </View>
 
-                <View style={styles.documentInfo}>
-                    <Text style={styles.documentName} numberOfLines={1}>
-                        {document.file_name}{document.content_type}
-                    </Text>
-                    <View style={styles.documentMeta}>
-                        <Text style={styles.documentMetaText}>
-                            Размер: {getFileSize(document.file_size)}
+                    <View style={styles.documentInfo}>
+                        <Text style={styles.documentName} numberOfLines={1}>
+                            {document.file_name}{document.content_type}
                         </Text>
+                        <View style={styles.documentMeta}>
+                            <Text style={styles.documentMetaText}>
+                                Размер: {getFileSize(document.file_size)}
+                            </Text>
+                        </View>
                     </View>
-                </View>
 
-                <TouchableOpacity
-                    style={styles.documentActionButton}
-                    onPress={() => onInfoPress(document)}
-                >
-                    <View pointerEvents="none">
-                        <Info size={18} color="#777d87" />
-                    </View>
+                    <TouchableOpacity
+                        style={styles.documentActionButton}
+                        onPress={() => onInfoPress(document)}
+                    >
+                        <View pointerEvents="none">
+                            <Info size={18} color="#777d87" />
+                        </View>
+                    </TouchableOpacity>
                 </TouchableOpacity>
-            </TouchableOpacity>
-        </View>
+            </View>
+
+            <ImagePreviewModal
+                visible={previewVisible}
+                onClose={() => {
+                    setPreviewVisible(false);
+                }}
+                fileName={document.file_name}
+                onDownload={handleDownloadFromPreview}
+            />
+        </>
     );
 }

@@ -1,12 +1,80 @@
-import React, { useEffect, useRef } from 'react';
-import {
-    View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Animated, PanResponder, Dimensions, Alert
-} from 'react-native';
-import {useRouter } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { FileText, Download, User } from "lucide-react-native";
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Image, Platform } from 'react-native';
+import { useRouter } from 'expo-router';
+import { FileText, Download, User, X } from 'lucide-react-native';
+import { BottomSheetModal } from '@/components/ui/BottomSheetModal/BottomSheetModal';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { apiUrl, xAppSecret } from '@/api/api';
+import { AuthManager } from '@/components/LoginScreen/LoginScreen';
+import {ImagePreviewModal} from "@/components/EventsScreen/ImagePreviewModal";
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+// Компонент для загрузки изображения с авторизацией на вебе
+const AuthImage: React.FC<{ fileName: string; style: any; onPress?: () => void }> = ({ fileName, style, onPress }) => {
+    const [imageUrl, setImageUrl] = useState<string | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        let objectUrl: string | null = null;
+
+        const loadImage = async () => {
+            try {
+                setLoading(true);
+                const token = AuthManager.getToken();
+                const encodedName = encodeURIComponent(fileName);
+                const response = await fetch(`${apiUrl}/api/files/${encodedName}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'X-App-Secret': xAppSecret
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const blob = await response.blob();
+                objectUrl = URL.createObjectURL(blob);
+                setImageUrl(objectUrl);
+            } catch (error) {
+                console.error('Error loading image:', error);
+                setImageUrl(null);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadImage();
+
+        return () => {
+            if (objectUrl) {
+                URL.revokeObjectURL(objectUrl);
+            }
+        };
+    }, [fileName]);
+
+    const ImageComponent = (
+        <View style={style}>
+            {loading && <View style={[style, { backgroundColor: '#e5e7eb' }]} />}
+            {imageUrl && (
+                <Image
+                    source={{ uri: imageUrl }}
+                    style={style}
+                    resizeMode="cover"
+                />
+            )}
+        </View>
+    );
+
+    if (onPress) {
+        return (
+            <TouchableOpacity onPress={onPress} style={style}>
+                {ImageComponent}
+            </TouchableOpacity>
+        );
+    }
+
+    return ImageComponent;
+};
 
 interface Attendee {
     user_id: string;
@@ -16,6 +84,7 @@ interface Attendee {
     excuse_document_name: string | null;
     excuse_note: string | null;
     content_type: string;
+    file_name_encoded?: string;
 }
 
 const getInitials = (name: string) => {
@@ -23,168 +92,199 @@ const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 };
 
-interface AttendeeExcuseModalProps {
+const isImageFile = (content_type: string | null) => {
+    if (!content_type) return false;
+    const ext = content_type.split('.').pop()?.toLowerCase();
+    return ['jpg', 'jpeg', 'png', 'heic', 'webp', 'gif', 'bmp'].includes(ext || '');
+};
+
+interface Props {
     visible: boolean;
     onClose: () => void;
     attendee: Attendee | null;
-    onDownloadDocument: (file: {}) => void;
+    onDownloadDocument: (file: { file_name: string | null; content_type: string; file_name_encoded?: string }) => void;
 }
 
-export const AttendeeExcuseModal: React.FC<AttendeeExcuseModalProps> = ({ visible, onClose, attendee, onDownloadDocument }) => {
-    const insets = useSafeAreaInsets();
+export const AttendeeExcuseModal: React.FC<Props> = ({
+                                                         visible,
+                                                         onClose,
+                                                         attendee,
+                                                         onDownloadDocument,
+                                                     }) => {
     const router = useRouter();
-    const panY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
-    const START_Y = SCREEN_HEIGHT * 0.3; // Высота модалки
-
-    const resetPositionAnim = Animated.timing(panY, {
-        toValue: START_Y,
-        duration: 300,
-        useNativeDriver: false,
-    });
-
-    const closeAnim = (callback?: () => void) => Animated.timing(panY, {
-        toValue: SCREEN_HEIGHT,
-        duration: 250,
-        useNativeDriver: false,
-    }).start(callback);
-
-    const panResponder = useRef(
-        PanResponder.create({
-            onStartShouldSetPanResponder: () => true,
-            onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dy) > 5,
-            onPanResponderMove: (_, gestureState) => {
-                panY.setValue(Math.max(START_Y, START_Y + gestureState.dy));
-            },
-            onPanResponderRelease: (_, gestureState) => {
-                if (gestureState.dy > 100) {
-                    closeAnim(onClose);
-                } else {
-                    resetPositionAnim.start();
-                }
-            },
-        })
-    ).current;
-
-    useEffect(() => {
-        if (visible) {
-            resetPositionAnim.start();
-        }
-        console.log(attendee);
-    }, [visible]);
+    const insets = useSafeAreaInsets();
+    const [isFullscreenPreview, setIsFullscreenPreview] = useState(false);
 
     if (!attendee) return null;
 
     const navigateToProfile = () => {
-        closeAnim(() => {
-            onClose();
-            router.push({ pathname: '/(screens)/ProfileScreen', params: { id: attendee.user_id } });
+        onClose();
+        router.push({
+            pathname: '/(screens)/ProfileScreen',
+            params: { id: attendee.user_id },
         });
     };
 
-    // @ts-ignore
-    // @ts-ignore
-    // @ts-ignore
+    const isImage = isImageFile(attendee.content_type);
+
+    const handleImagePress = () => {
+        if (isImage && attendee.excuse_document_name) {
+            setIsFullscreenPreview(true);
+        }
+    };
+
+    const handleDocumentPress = () => {
+        if (isImage && attendee.excuse_document_name) {
+            setIsFullscreenPreview(true);
+        } else {
+            onDownloadDocument({
+                file_name: attendee.excuse_document_name,
+                content_type: attendee.content_type,
+                file_name_encoded: attendee.file_name_encoded,
+            });
+        }
+    };
+
     return (
-        <Modal visible={visible} transparent animationType="none" onRequestClose={() => closeAnim(onClose)}>
-            <View style={[styles.overlay, { paddingBottom: insets.bottom }]}>
-                <TouchableOpacity style={styles.dismiss} activeOpacity={1} onPress={() => closeAnim(onClose)} />
-                <Animated.View style={[styles.sheet, { transform: [{ translateY: panY }], paddingBottom: insets.bottom + 20 }]}>
-                    <View {...panResponder.panHandlers} style={styles.dragArea}>
-                        <View style={styles.dragIndicator} />
-                        <Text style={styles.modalTitle}>Причина отсутствия</Text>
+        <>
+            <BottomSheetModal
+                visible={visible}
+                onClose={onClose}
+                title="Причина отсутствия"
+                heightFraction={0.55}
+                scrollEnabled={true}
+            >
+                {/* Блок профиля */}
+                <TouchableOpacity style={styles.profileLinkCard} onPress={navigateToProfile}>
+                    <View style={styles.profileAvatar}>
+                        <Text style={styles.profileAvatarText}>
+                            {getInitials(attendee.user_full_name)}
+                        </Text>
                     </View>
+                    <View style={styles.profileInfo}>
+                        <Text style={styles.profileName}>{attendee.user_full_name}</Text>
+                        <Text style={styles.profileSubtitle}>Перейти в профиль</Text>
+                    </View>
+                    <User size={20} color="#6b7280" />
+                </TouchableOpacity>
 
-                    <ScrollView showsVerticalScrollIndicator={false}>
-                        {/* Переход в профиль */}
-                        <TouchableOpacity style={styles.profileLinkCard} onPress={navigateToProfile}>
-                            <View style={styles.profileAvatar}>
-                                <Text style={styles.profileAvatarText}>{getInitials(attendee.user_full_name)}</Text>
-                            </View>
-                            <View style={styles.profileInfo}>
-                                <Text style={styles.profileName}>{attendee.user_full_name}</Text>
-                                <Text style={styles.profileSubtitle}>Перейти в профиль</Text>
-                            </View>
-                            <User size={20} color="#6b7280" />
-                        </TouchableOpacity>
+                {/* Комментарий */}
+                <Text style={styles.fieldLabel}>Комментарий:</Text>
+                <View style={styles.noteContainer}>
+                    <Text style={styles.noteText}>
+                        {attendee.excuse_note?.trim()
+                            ? attendee.excuse_note
+                            : 'Причина не указана'}
+                    </Text>
+                </View>
 
-                        {/* Причина */}
-                        <Text style={styles.fieldLabel}>Комментарий:</Text>
-                        <View style={styles.noteContainer}>
-                            <Text style={styles.noteText}>
-                                {attendee.excuse_note && attendee.excuse_note.trim().length > 0
-                                    ? attendee.excuse_note
-                                    : 'Причина не указана'}
-                            </Text>
-                        </View>
-
-                        {/* Документ */}
-                        {attendee.excuse_document_id && (
-                            <View style={styles.documentSection}>
-                                <Text style={styles.fieldLabel}>Прикрепленный документ:</Text>
-                                <TouchableOpacity
-                                    style={styles.documentPreviewCard}
-                                    onPress={() => onDownloadDocument({file_name: attendee.excuse_document_name,
-                                            content_type: attendee.content_type})}
-                                >
-                                    <View style={styles.previewContent}>
-                                        <View style={styles.fileIconContainer}>
-                                            <FileText size={24} color="#2A6E3F" />
-                                        </View>
-                                        <View style={styles.fileInfo}>
-                                            <Text style={styles.documentName} numberOfLines={1}>
-                                                Открыть документ
-                                            </Text>
-                                            <Text style={styles.fileStatus}>{attendee.excuse_document_name}</Text>
-                                        </View>
+                {/* Документ */}
+                {attendee.excuse_document_id && (
+                    <View style={styles.documentSection}>
+                        <Text style={styles.fieldLabel}>Прикрепленный документ:</Text>
+                        <TouchableOpacity
+                            style={styles.documentPreviewCard}
+                            onPress={handleDocumentPress}
+                        >
+                            <View style={styles.previewContent}>
+                                {isImage && attendee.excuse_document_name ? (
+                                    <AuthImage
+                                        fileName={attendee.excuse_document_name}
+                                        style={styles.thumbnail}
+                                        onPress={handleImagePress}
+                                    />
+                                ) : (
+                                    <View style={styles.fileIconContainer}>
+                                        <FileText size={24} color="#2A6E3F" />
                                     </View>
-                                    <Download size={20} color="#6b7280" />
-                                </TouchableOpacity>
+                                )}
+                                <View style={styles.fileInfo}>
+                                    <Text style={styles.documentName} numberOfLines={1}>
+                                        {isImage ? 'Просмотреть изображение' : 'Открыть документ'}
+                                    </Text>
+                                    <Text style={styles.fileStatus}>
+                                        {attendee.excuse_document_name}
+                                    </Text>
+                                </View>
                             </View>
-                        )}
-                    </ScrollView>
-                </Animated.View>
-            </View>
-        </Modal>
+                            {!isImage && <Download size={20} color="#6b7280" />}
+                        </TouchableOpacity>
+                    </View>
+                )}
+            </BottomSheetModal>
+
+            <ImagePreviewModal
+                visible={isFullscreenPreview}
+                onClose={() => setIsFullscreenPreview(false)}
+                fileName={attendee.excuse_document_name}
+                onDownload={() => onDownloadDocument({
+                    file_name: attendee.excuse_document_name,
+                    content_type: attendee.content_type,
+                    file_name_encoded: attendee.file_name_encoded,
+                })}
+            />
+
+        </>
     );
 };
 
 const styles = StyleSheet.create({
-    // Стили модалки AttendeeExcuseModal
-    overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
-    dismiss: { flex: 1 },
-    sheet: {
-        position: 'absolute', left: 0, right: 0, height: SCREEN_HEIGHT,
-        backgroundColor: '#fff', borderTopLeftRadius: 28, borderTopRightRadius: 28,
-        paddingHorizontal: 20, elevation: 25,
+    profileLinkCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#f8fafc',
+        padding: 16,
+        borderRadius: 16,
+        marginBottom: 24,
+        borderWidth: 1,
+        borderColor: '#f1f5f9',
     },
-    dragArea: { paddingTop: 12, paddingBottom: 4, alignItems: 'center' },
-    dragIndicator: { width: 40, height: 5, backgroundColor: '#E5E7EB', borderRadius: 2.5, marginBottom: 16 },
-    modalTitle: { fontSize: 18, fontWeight: '700', color: '#0b2340', textAlign: 'center', marginBottom: 20 },
-
-    profileLinkCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f8fafc', padding: 16, borderRadius: 16, marginBottom: 24, borderWidth: 1, borderColor: '#f1f5f9' },
-    profileAvatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#e2e8f0', justifyContent: 'center', alignItems: 'center', marginRight: 16 },
+    profileAvatar: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        backgroundColor: '#e2e8f0',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 16,
+    },
     profileAvatarText: { fontSize: 16, fontWeight: '600', color: '#475569' },
     profileInfo: { flex: 1 },
     profileName: { fontSize: 16, fontWeight: '600', color: '#1e293b', marginBottom: 4 },
     profileSubtitle: { fontSize: 13, color: '#64748b' },
-
-    fieldLabel: { fontSize: 14, fontWeight: '600', color: '#6b7280', marginBottom: 8 },
-    noteContainer: { backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 12, padding: 16, marginBottom: 24 },
+    fieldLabel: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#6b7280',
+        marginBottom: 8,
+    },
+    noteContainer: {
+        backgroundColor: '#F9FAFB',
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 24,
+    },
     noteText: { fontSize: 15, color: '#374151', lineHeight: 22 },
-
     documentSection: { marginTop: 4 },
     documentPreviewCard: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#F3F4F6',
         borderRadius: 12,
-        padding: 12,
+        padding: 8,
         justifyContent: 'space-between',
     },
     previewContent: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+    thumbnail: {
+        width: 48,
+        height: 48,
+        borderRadius: 8,
+    },
     fileIconContainer: {
-        width: 44,
-        height: 44,
+        width: 48,
+        height: 48,
         borderRadius: 8,
         backgroundColor: '#D1FAE5',
         alignItems: 'center',
@@ -193,4 +293,55 @@ const styles = StyleSheet.create({
     fileInfo: { marginLeft: 12, flex: 1 },
     documentName: { fontSize: 14, fontWeight: '500', color: '#1f2937' },
     fileStatus: { fontSize: 12, color: '#6b7280', marginTop: 2 },
+    downloadIconContainer: {
+        marginLeft: 8,
+    },
+    fullScreenOverlay: {
+        flex: 1,
+        backgroundColor: 'black',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    closePreviewButton: {
+        position: 'absolute',
+        right: 20,
+        zIndex: 10,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        borderRadius: 20,
+        padding: 5,
+    },
+    fullImage: {
+        width: '100%',
+        height: '80%',
+    },
+    previewFooter: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: 'rgba(0,0,0,0.8)',
+        padding: 20,
+        alignItems: 'center',
+        gap: 12,
+    },
+    previewFooterText: {
+        color: 'white',
+        fontSize: 14,
+        fontWeight: '500',
+        textAlign: 'center',
+    },
+    downloadButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        backgroundColor: '#2A6E3F',
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 25,
+    },
+    downloadButtonText: {
+        color: 'white',
+        fontSize: 14,
+        fontWeight: '600',
+    },
 });

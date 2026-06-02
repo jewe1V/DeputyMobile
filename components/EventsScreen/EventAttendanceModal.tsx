@@ -1,18 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-    View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView,
-    ActivityIndicator, Alert, TextInput, Animated, PanResponder, Dimensions, Image, ImageSourcePropType
+    View, Text, StyleSheet, TouchableOpacity, Modal,
+    ActivityIndicator, Alert, TextInput, Image, Platform
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { X, Upload, FileText } from 'lucide-react-native';
 import { AuthManager } from '@/components/LoginScreen/LoginScreen';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import {apiClient, apiUrl, xAppSecret} from "@/api/api";
-import axios, { AxiosProgressEvent } from 'axios';
-
-
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+import { apiClient, apiUrl, xAppSecret } from "@/api/api";
+import { BottomSheetModal } from '@/components/ui/BottomSheetModal/BottomSheetModal';
 
 interface Props {
     eventId: string;
@@ -25,12 +22,15 @@ interface Props {
 type AttendanceStatus = 'Yes' | 'No' | 'Unknown';
 
 interface UploadedDocument {
-    id: string;
+    id?: string;
     file_name: string;
-    file_name_encoded: string;
-    size: number;
-    url: string;
+    file_name_encoded?: string;
+    size?: number;
+    url?: string;
     localUri?: string;
+    uri?: string;
+    mimeType?: string;
+    file?: File;
 }
 
 export const EventAttendanceModal: React.FC<Props> = ({
@@ -42,58 +42,8 @@ export const EventAttendanceModal: React.FC<Props> = ({
                                                       }) => {
     const insets = useSafeAreaInsets();
     const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
-
-    const panY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
-    const [uploadProgress, setUploadProgress] = useState(0);
-    const START_Y = SCREEN_HEIGHT * 0.2;
     const token = AuthManager.getToken();
-    const isImageFile = (fileName: string) => {
-        const ext = fileName.split('.').pop()?.toLowerCase();
-        return ['jpg', 'jpeg', 'png', 'heic', 'webp'].includes(ext || '');
-    };
-    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const xhrRef = useRef<XMLHttpRequest | null>(null);
-
-
-    const resetPositionAnim = Animated.timing(panY, {
-        toValue: START_Y,
-        duration: 300,
-        useNativeDriver: true,
-    });
-
-    const closeAnim = (callback?: () => void) => Animated.timing(panY, {
-        toValue: SCREEN_HEIGHT,
-        duration: 250,
-        useNativeDriver: true,
-    }).start(callback);
-
-    const panResponder = useRef(
-        PanResponder.create({
-            onStartShouldSetPanResponder: () => true,
-            onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dy) > 5,
-            onPanResponderMove: (_, gestureState) => {
-                panY.setValue(Math.max(START_Y, START_Y + gestureState.dy));
-            },
-            onPanResponderRelease: (_, gestureState) => {
-                if (gestureState.dy > 150) {
-                    closeAnim(onClose);
-                } else {
-                    resetPositionAnim.start();
-                }
-            },
-        })
-    ).current;
-
-    useEffect(() => {
-        if (visible) {
-            resetPositionAnim.start();
-            setSelectedStatus(currentStatus);
-            setExcuseNote('');
-            setExcuseDocument(null);
-            setError(null);
-            setUploadProgress(0);
-        }
-    }, [visible, currentStatus, eventId]);
 
     const [selectedStatus, setSelectedStatus] = useState<AttendanceStatus>(currentStatus);
     const [excuseNote, setExcuseNote] = useState('');
@@ -101,24 +51,40 @@ export const EventAttendanceModal: React.FC<Props> = ({
     const [uploading, setUploading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
-    const uploadFileToServer = async (fileInfo: { uri: string; name: string; mimeType?: string; file?: File }) => {
+    const isImageFile = (fileName: string) => {
+        const ext = fileName.split('.').pop()?.toLowerCase();
+        return ['jpg', 'jpeg', 'png', 'heic', 'webp'].includes(ext || '');
+    };
+
+    // Сброс формы при открытии
+    useEffect(() => {
+        if (visible) {
+            setSelectedStatus(currentStatus);
+            setExcuseNote('');
+            setExcuseDocument(null);
+            setError(null);
+            setUploadProgress(0);
+            setUploading(false);
+        }
+    }, [visible, currentStatus]);
+
+    // Выбор файла (без отправки на сервер, только локальное сохранение)
+    const selectFile = async (fileInfo: { uri: string; name: string; mimeType?: string; file?: File; size?: number }) => {
         try {
             setError(null);
-
-            // На вебе не сохраняем неправильный mimeType из браузера
-            // Будем использовать тип из оригинального File объекта при отправке
             const mimeType = (fileInfo.file as any)?.type || fileInfo.mimeType;
 
-            // Просто сохраняем файл локально, без загрузки на сервер
             setExcuseDocument({
                 uri: fileInfo.uri,
-                name: fileInfo.name,
+                localUri: fileInfo.uri,
+                file_name: fileInfo.name,
                 mimeType: mimeType,
                 file: fileInfo.file,
-                localUri: fileInfo.uri
-            } as any);
-
+                size: fileInfo.size,
+            });
         } catch (e: any) {
             console.error('Ошибка:', e);
             setError(e?.message || 'Ошибка при выборе файла');
@@ -126,16 +92,7 @@ export const EventAttendanceModal: React.FC<Props> = ({
         }
     };
 
-    const cancelUpload = () => {
-        if (xhrRef.current) {
-            xhrRef.current.abort();
-            xhrRef.current = null;
-        }
-        setUploading(false);
-        setUploadProgress(0);
-        setError(null);
-    };
-
+    // Выбор файла из файловой системы (Mobile)
     const pickFromFiles = async () => {
         const result = await DocumentPicker.getDocumentAsync({ type: '*/*', copyToCacheDirectory: true });
         if (result.canceled || !result.assets?.length) return;
@@ -144,9 +101,10 @@ export const EventAttendanceModal: React.FC<Props> = ({
             Alert.alert('Файл слишком большой', 'Максимум 50 МБ');
             return;
         }
-        await uploadFileToServer({ uri: file.uri, name: file.name, mimeType: file.mimeType });
+        await selectFile({ uri: file.uri, name: file.name, mimeType: file.mimeType, size: file.size });
     };
 
+    // Выбор файла из галереи (Mobile)
     const pickFromGallery = async () => {
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.All,
@@ -159,10 +117,60 @@ export const EventAttendanceModal: React.FC<Props> = ({
             return;
         }
         const fileName = file.fileName || file.uri.split('/').pop() || 'photo.jpg';
-        await uploadFileToServer({ uri: file.uri, name: fileName, mimeType: file.mimeType });
+        await selectFile({ uri: file.uri, name: fileName, mimeType: file.mimeType, size: file.fileSize });
     };
 
+    // Выбор файла для Web платформы
+    const pickFileFromWeb = async (): Promise<void> => {
+        return new Promise<void>((resolve) => {
+            const input = document.createElement('input') as HTMLInputElement;
+            input.type = 'file';
+            input.accept = '*/*';
+            input.style.display = 'none';
+
+            input.onchange = async (event) => {
+                const files = (event.target as HTMLInputElement).files;
+                if (!files || files.length === 0) {
+                    resolve();
+                    return;
+                }
+
+                const file = files[0];
+                if (file.size > MAX_FILE_SIZE_BYTES) {
+                    alert('Файл слишком большой. Максимум 50 МБ');
+                    resolve();
+                    return;
+                }
+
+                try {
+                    await selectFile({
+                        uri: URL.createObjectURL(file),
+                        name: file.name,
+                        mimeType: file.type || 'application/octet-stream',
+                        file: file,
+                        size: file.size
+                    });
+                } catch (error: any) {
+                    console.error('Ошибка при загрузке файла:', error);
+                    Alert.alert('Ошибка загрузки', error?.message || 'Не удалось загрузить файл');
+                } finally {
+                    resolve();
+                }
+            };
+
+            document.body.appendChild(input);
+            input.click();
+            document.body.removeChild(input);
+        });
+    };
+
+    // Показать опции выбора файла
     const showUploadOptions = () => {
+        if (Platform.OS === 'web') {
+            pickFileFromWeb();
+            return;
+        }
+
         Alert.alert('Загрузить документ', 'Выберите источник', [
             { text: 'Отмена', style: 'cancel' },
             { text: 'Галерея', onPress: pickFromGallery },
@@ -170,277 +178,371 @@ export const EventAttendanceModal: React.FC<Props> = ({
         ]);
     };
 
+    // Отмена загрузки
+    const cancelUpload = () => {
+        if (xhrRef.current) {
+            xhrRef.current.abort();
+            xhrRef.current = null;
+        }
+        setUploading(false);
+        setUploadProgress(0);
+        setError(null);
+    };
+
+    // Загрузка файла на сервер (отдельный метод, вызывается при отправке формы)
+    const uploadDocumentToServer = async (): Promise<string> => {
+        if (!excuseDocument) throw new Error('Нет документа для загрузки');
+        if (!excuseDocument.file) throw new Error('Файл не выбран');
+
+        return new Promise<string>((resolve, reject) => {
+            const formData = new FormData();
+            const xhr = new XMLHttpRequest();
+            xhrRef.current = xhr;
+
+            // Отслеживание прогресса загрузки
+            xhr.upload.addEventListener('progress', (event) => {
+                if (event.lengthComputable) {
+                    setUploadProgress(event.loaded / event.total);
+                }
+            });
+
+            xhr.addEventListener('load', () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    try {
+                        const response = JSON.parse(xhr.response);
+                        // Возвращаем ID загруженного документа
+                        resolve(response.id || response.file_name_encoded || response);
+                    } catch (e) {
+                        resolve(xhr.response);
+                    }
+                } else {
+                    reject(new Error(`Upload failed with status ${xhr.status}: ${xhr.responseText}`));
+                }
+            });
+
+            xhr.addEventListener('error', () => reject(new Error('Network error during upload')));
+            xhr.addEventListener('abort', () => reject(new Error('Upload cancelled')));
+
+            formData.append('file', excuseDocument.file);
+
+            xhr.open('POST', `${apiUrl}/api/Documents/upload/document`);
+            xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+            xhr.setRequestHeader('X-App-Secret', xAppSecret);
+            xhr.send(formData);
+        });
+    };
+
+    // Отправка ответа об участии
     const submitAttendance = async () => {
         if (selectedStatus === 'Unknown') return;
+
         try {
             setSubmitting(true);
+            setError(null);
+
             const body: any = { status: selectedStatus };
-            
+
             if (selectedStatus === 'No') {
-                if (excuseNote) body.excuse_note = excuseNote;
-                
-                // Если есть файл и он не был загружен на сервер - загружаем его
-                if (excuseDocument && !(excuseDocument as any).id && (excuseDocument as any).file) {
-                    const formData = new FormData();
-                    const token = AuthManager.getToken();
+                if (excuseNote && excuseNote.trim()) {
+                    body.excuse_note = excuseNote.trim();
+                }
 
-                    // Используем XMLHttpRequest для надежной передачи
-                    const uploadPromise = new Promise<string>((resolve, reject) => {
-                        const xhr = new XMLHttpRequest();
-
-                        xhr.upload.addEventListener('progress', (event) => {
-                            if (event.lengthComputable) {
-                                setUploadProgress(event.loaded / event.total);
-                            }
-                        });
-
-                        xhr.addEventListener('load', () => {
-                            if (xhr.status >= 200 && xhr.status < 300) {
-                                try {
-                                    const response = JSON.parse(xhr.response);
-                                    resolve(response.id || response.file_name_encoded);
-                                } catch (e) {
-                                    resolve(xhr.response);
-                                }
-                            } else {
-                                reject(new Error(`Upload failed with status ${xhr.status}`));
-                            }
-                        });
-
-                        xhr.addEventListener('error', () => reject(new Error('Network error')));
-
-                        formData.append('file', (excuseDocument as any).file);
-                        
-                        xhr.open('POST', `${apiUrl}/api/Documents/upload/document`);
-                        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-                        xhr.setRequestHeader('X-App-Secret', xAppSecret);
-                        xhr.send(formData);
-                    });
-
-                    const documentId = await uploadPromise;
+                // Если есть документ и его еще нет на сервере (нет ID)
+                if (excuseDocument && !excuseDocument.id && (excuseDocument as any).file) {
+                    setUploading(true);
+                    const documentId = await uploadDocumentToServer();
                     body.excuse_document_id = documentId;
+                    setUploading(false);
                     setUploadProgress(0);
-                } else if (excuseDocument && (excuseDocument as any).id) {
-                    body.excuse_document_id = (excuseDocument as any).id;
+                }
+                // Если документ уже загружен (есть ID)
+                else if (excuseDocument && excuseDocument.id) {
+                    body.excuse_document_id = excuseDocument.id;
                 }
             }
 
             await apiClient.post(`/api/Events/${eventId}/rsvp`, body);
 
-            closeAnim(() => { onSuccess?.(); onClose(); });
+            onSuccess?.();
+            onClose();
         } catch (e: any) {
             console.error('Ошибка:', e);
             setError(e?.message || 'Ошибка сети');
             Alert.alert('Ошибка', e?.message || 'Не удалось отправить ответ');
         } finally {
             setSubmitting(false);
-            setUploadProgress(0);
+            setUploading(false);
+            if (xhrRef.current) {
+                xhrRef.current = null;
+            }
         }
     };
 
-    const getImageSource = (): ImageSourcePropType | undefined => {
+    // Получение источника изображения для предпросмотра
+    const getImageSource = () => {
         if (!excuseDocument) return undefined;
+
         const imageHeaders = {
             Authorization: `Bearer ${token}`,
-            ...({ 'X-App-Secret': xAppSecret })
+            'X-App-Secret': xAppSecret
         };
 
+        // Для локального файла (еще не загружен)
         if (excuseDocument.localUri) {
             return { uri: excuseDocument.localUri };
         }
 
-        return {
-            uri: `${apiUrl}/api/files/${encodeURIComponent(excuseDocument.file_name_encoded)}`,
-            headers: imageHeaders
-        };
+        // Для загруженного файла (с сервера)
+        if (excuseDocument.file_name_encoded) {
+            return {
+                uri: `${apiUrl}/api/files/${encodeURIComponent(excuseDocument.file_name_encoded)}`,
+                headers: imageHeaders
+            };
+        }
+
+        return undefined;
     };
 
     const imageSource = getImageSource();
+    const isImage = excuseDocument?.file_name && isImageFile(excuseDocument.file_name);
 
     return (
-        <Modal visible={visible} transparent animationType="none" onRequestClose={() => closeAnim(onClose)}>
-            <View style={[styles.overlay, {"paddingBottom": insets.bottom}]}>
-                <TouchableOpacity style={styles.dismiss} activeOpacity={1} onPress={() => closeAnim(onClose)} />
-                <Animated.View style={[styles.sheet, { transform: [{ translateY: panY }], paddingBottom: insets.bottom + 20 }]}>
-                    <View {...panResponder.panHandlers} style={styles.dragArea}>
-                        <View style={styles.dragIndicator} />
-                        <Text style={styles.title}>Участие в мероприятии</Text>
-                    </View>
+        <>
+            <BottomSheetModal
+                visible={visible}
+                onClose={onClose}
+                title="Участие в мероприятии"
+                heightFraction={0.7}
+                scrollEnabled={true}
+                keyboardAvoiding={true}
+            >
+                {/* Кнопки статуса */}
+                <View style={styles.statusButtons}>
+                    {(currentStatus === 'Unknown' || currentStatus === 'No') && (
+                        <TouchableOpacity
+                            style={[styles.statusButton, selectedStatus === 'Yes' && styles.statusButtonActive]}
+                            onPress={() => setSelectedStatus('Yes')}
+                        >
+                            <Text style={[styles.statusButtonText, selectedStatus === 'Yes' && styles.statusButtonTextActive]}>
+                                Пойду
+                            </Text>
+                        </TouchableOpacity>
+                    )}
 
-                    <ScrollView showsVerticalScrollIndicator={false}>
-                        <View style={styles.statusButtons}>
-                            {(currentStatus === 'Unknown' || currentStatus === 'No') && (
+                    {(currentStatus === 'Unknown' || currentStatus === 'Yes') && (
+                        <TouchableOpacity
+                            style={[styles.statusButton, selectedStatus === 'No' && styles.statusButtonActive]}
+                            onPress={() => setSelectedStatus('No')}
+                        >
+                            <Text style={[styles.statusButtonText, selectedStatus === 'No' && styles.statusButtonTextActive]}>
+                                Не пойду
+                            </Text>
+                        </TouchableOpacity>
+                    )}
+                </View>
+
+                {/* Блок причины отказа */}
+                {selectedStatus === 'No' && (
+                    <View style={styles.excuseContainer}>
+                        <TextInput
+                            style={styles.textArea}
+                            value={excuseNote}
+                            onChangeText={setExcuseNote}
+                            placeholder="Укажите причину отсутствия"
+                            placeholderTextColor="#9ca3af"
+                            multiline
+                            numberOfLines={4}
+                            textAlignVertical="top"
+                        />
+
+                        <Text style={styles.label}>Приложить документ</Text>
+
+                        {excuseDocument ? (
+                            <View style={styles.documentPreviewCard}>
                                 <TouchableOpacity
-                                    style={[styles.statusButton, selectedStatus === 'Yes' && styles.statusButtonActive]}
-                                    onPress={() => setSelectedStatus('Yes')}
+                                    style={styles.previewContent}
+                                    activeOpacity={0.7}
+                                    onPress={() => {
+                                        if (isImage) {
+                                            setIsPreviewOpen(true);
+                                        }
+                                    }}
                                 >
-                                    <Text style={[styles.statusButtonText, selectedStatus === 'Yes' && styles.statusButtonTextActive]}>
-                                        Пойду
-                                    </Text>
-                                </TouchableOpacity>
-                            )}
-
-                            {(currentStatus === 'Unknown' || currentStatus === 'Yes') && (
-                                <TouchableOpacity
-                                    style={[styles.statusButton, selectedStatus === 'No' && styles.statusButtonActive]}
-                                    onPress={() => setSelectedStatus('No')}
-                                >
-                                    <Text style={[styles.statusButtonText, selectedStatus === 'No' && styles.statusButtonTextActive]}>
-                                        Не пойду
-                                    </Text>
-                                </TouchableOpacity>
-                            )}
-                        </View>
-
-                        {selectedStatus === 'No' && (
-                            <View style={styles.excuseContainer}>
-                                <TextInput
-                                    style={styles.textArea}
-                                    value={excuseNote}
-                                    onChangeText={setExcuseNote}
-                                    placeholder="Укажите причину отсутствия"
-                                    multiline
-                                />
-
-                                <Text style={styles.label}>Приложить документ</Text>
-
-                                {excuseDocument ? (
-                                <View style={styles.documentPreviewCard}>
-                                    <TouchableOpacity
-                                        style={styles.previewContent}
-                                        activeOpacity={0.7}
-                                        onPress={() => {
-                                            if (isImageFile(excuseDocument.file_name_encoded)) {
-                                                setIsPreviewOpen(true);
-                                            }
-                                        }}
-                                    >
-                                        {isImageFile(excuseDocument.file_name_encoded) ? (
-                                            <Image
-                                                source={imageSource}
-                                                style={styles.thumbnail}
-                                            />
-                                        ) : (
-                                            <View style={styles.fileIconContainer}>
-                                                <FileText size={24} color="#2A6E3F" />
-                                            </View>
-                                        )}
-                                        <View style={styles.fileInfo}>
-                                            <Text style={styles.documentName} numberOfLines={1}>
-                                                {excuseDocument.file_name}
-                                            </Text>
-                                            <Text style={styles.fileStatus}>{(excuseDocument.size / 1024 / 1024).toFixed(2)} МБ</Text>
-                                        </View>
-                                    </TouchableOpacity>
-
-                                    <TouchableOpacity
-                                        style={styles.removeButton}
-                                        onPress={() => setExcuseDocument(null)}
-                                    >
-                                        <View pointerEvents={"none"}>
-                                        <X size={18} color="#000" />
-                                        </View>
-                                    </TouchableOpacity>
-                                </View>
-                                ) : (
-                                <TouchableOpacity
-                                    style={styles.addDocumentButton}
-                                    onPress={showUploadOptions}
-                                    disabled={uploading}
-                                >
-                                    {uploading ? (
-                                        <View style={styles.uploadProgressContainer}>
-                                            <ActivityIndicator color="#2A6E3F" style={{ marginRight: 10 }} />
-                                            <Text style={styles.addDocumentText}>
-                                                Загрузка: {Math.round(uploadProgress * 100)}%
-                                            </Text>
-
-                                            <TouchableOpacity
-                                                style={styles.cancelUploadButton}
-                                                onPress={cancelUpload}
-                                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                                            >
-                                                <View pointerEvents="none">
-                                                    <X size={20} color="#2A6E3F" />
-                                                </View>
-                                            </TouchableOpacity>
-                                        </View>
+                                    {isImage ? (
+                                        <Image
+                                            source={imageSource}
+                                            style={styles.thumbnail}
+                                        />
                                     ) : (
-                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                                            <Upload size={20} color="#2A6E3F" />
-                                            <Text style={styles.addDocumentText}>Загрузить документ</Text>
+                                        <View style={styles.fileIconContainer}>
+                                            <FileText size={24} color="#2A6E3F" />
                                         </View>
                                     )}
-                                    </TouchableOpacity>
+                                    <View style={styles.fileInfo}>
+                                        <Text style={styles.documentName} numberOfLines={1}>
+                                            {excuseDocument.file_name}
+                                        </Text>
+                                        <Text style={styles.fileStatus}>
+                                            {excuseDocument.size ? `${(excuseDocument.size / 1024 / 1024).toFixed(2)} МБ` : ''}
+                                        </Text>
+                                    </View>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={styles.removeButton}
+                                    onPress={() => setExcuseDocument(null)}
+                                >
+                                    <View pointerEvents="none">
+                                        <X size={18} color="#000" />
+                                    </View>
+                                </TouchableOpacity>
+                            </View>
+                        ) : (
+                            <TouchableOpacity
+                                style={styles.addDocumentButton}
+                                onPress={showUploadOptions}
+                                disabled={uploading}
+                            >
+                                {uploading ? (
+                                    <View style={styles.uploadProgressContainer}>
+                                        <ActivityIndicator color="#2A6E3F" style={{ marginRight: 10 }} />
+                                        <Text style={styles.addDocumentText}>
+                                            Загрузка: {Math.round(uploadProgress * 100)}%
+                                        </Text>
+                                        <TouchableOpacity
+                                            style={styles.cancelUploadButton}
+                                            onPress={cancelUpload}
+                                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                        >
+                                            <View pointerEvents="none">
+                                                <X size={20} color="#2A6E3F" />
+                                            </View>
+                                        </TouchableOpacity>
+                                    </View>
+                                ) : (
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                                        <Upload size={20} color="#2A6E3F" />
+                                        <Text style={styles.addDocumentText}>Загрузить документ</Text>
+                                    </View>
                                 )}
-                            </View>
+                            </TouchableOpacity>
                         )}
-
-                        {error && <Text style={styles.errorLabel}>{error}</Text>}
-
-                        <TouchableOpacity
-                            style={[styles.submitButton, (selectedStatus === 'Unknown' || submitting) && styles.submitButtonDisabled]}
-                            onPress={submitAttendance}
-                            disabled={selectedStatus === 'Unknown' || submitting}
-                        >
-                            {submitting ? <ActivityIndicator color="white" /> : <Text style={styles.submitButtonText}>Сохранить</Text>}
-                        </TouchableOpacity>
-                    </ScrollView>
-                </Animated.View>
-                <Modal
-                    visible={isPreviewOpen}
-                    transparent={true}
-                    onRequestClose={() => setIsPreviewOpen(false)}
-                    animationType="fade"
-                >
-                    <View style={styles.fullScreenOverlay}>
-                        <TouchableOpacity
-                            style={[styles.closePreviewButton, { top: insets.top + 10 }]}
-                            onPress={() => setIsPreviewOpen(false)}
-                        >
-                            <View pointerEvents={"none"}>
-                            <X size={30} color="white" />
-                            </View>
-                        </TouchableOpacity>
-                        {excuseDocument &&
-                            <Image
-                                source={imageSource}
-                                style={styles.fullImage}
-                                resizeMode="contain"
-                            />
-                        }
-
-                        <View style={[styles.previewFooter, { paddingBottom: insets.bottom + 20 }]}>
-                            <Text style={styles.previewFooterText}>{excuseDocument?.file_name}</Text>
-                        </View>
                     </View>
-                </Modal>
-            </View>
-        </Modal>
+                )}
+
+                {/* Ошибка */}
+                {error && (
+                    <View style={styles.errorContainer}>
+                        <Text style={styles.errorLabel}>{error}</Text>
+                    </View>
+                )}
+
+                {/* Кнопка отправки */}
+                <TouchableOpacity
+                    style={[
+                        styles.submitButton,
+                        (selectedStatus === 'Unknown' || submitting || uploading) && styles.submitButtonDisabled,
+                    ]}
+                    onPress={submitAttendance}
+                    disabled={selectedStatus === 'Unknown' || submitting || uploading}
+                >
+                    {submitting ? (
+                        <ActivityIndicator color="white" />
+                    ) : (
+                        <Text style={styles.submitButtonText}>Сохранить</Text>
+                    )}
+                </TouchableOpacity>
+            </BottomSheetModal>
+
+            {/* Модалка предпросмотра изображения */}
+            <Modal
+                visible={isPreviewOpen}
+                transparent
+                onRequestClose={() => setIsPreviewOpen(false)}
+                animationType="fade"
+            >
+                <View style={styles.fullScreenOverlay}>
+                    <TouchableOpacity
+                        style={[styles.closePreviewButton, { top: insets.top + 10 }]}
+                        onPress={() => setIsPreviewOpen(false)}
+                    >
+                        <View pointerEvents="none">
+                            <X size={30} color="white" />
+                        </View>
+                    </TouchableOpacity>
+
+                    {excuseDocument && imageSource && (
+                        <Image
+                            source={imageSource}
+                            style={styles.fullImage}
+                            resizeMode="contain"
+                        />
+                    )}
+
+                    <View style={[styles.previewFooter, { paddingBottom: insets.bottom + 20 }]}>
+                        <Text style={styles.previewFooterText}>
+                            {excuseDocument?.file_name || 'Файл'}
+                        </Text>
+                    </View>
+                </View>
+            </Modal>
+        </>
     );
 };
 
 const styles = StyleSheet.create({
-    overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
-    dismiss: { flex: 1 },
-    sheet: {
-        position: 'absolute', left: 0, right: 0, height: SCREEN_HEIGHT,
-        backgroundColor: '#fff', borderTopLeftRadius: 28, borderTopRightRadius: 28,
-        paddingHorizontal: 20, elevation: 25,
+    // Кнопки статуса
+    statusButtons: {
+        flexDirection: 'row',
+        gap: 12,
+        marginVertical: 20,
     },
-    dragArea: { paddingTop: 12, paddingBottom: 4, alignItems: 'center' },
-    dragIndicator: { width: 40, height: 5, backgroundColor: '#E5E7EB', borderRadius: 2.5, marginBottom: 16 },
-    title: { fontSize: 18, fontWeight: '700', color: '#0b2340', textAlign: 'center' },
-    statusButtons: { flexDirection: 'row', gap: 12, marginVertical: 20 },
-    statusButton: { flex: 1, padding: 14, borderRadius: 12, borderWidth: 1, borderColor: '#E5E7EB', alignItems: 'center', backgroundColor: '#F9FAFB' },
-    statusButtonActive: { backgroundColor: '#2A6E3F', borderColor: '#2A6E3F' },
-    statusButtonText: { fontSize: 16, fontWeight: '600', color: '#374151' },
-    statusButtonTextActive: { color: '#fff' },
-    excuseContainer: { marginTop: 10 },
-    textArea: { backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 12, padding: 12, height: 100, textAlignVertical: 'top', marginBottom: 20 },
-    label: { fontSize: 14, fontWeight: '600', color: '#6b7280', marginBottom: 8 },
+    statusButton: {
+        flex: 1,
+        padding: 14,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        alignItems: 'center',
+        backgroundColor: '#F9FAFB',
+    },
+    statusButtonActive: {
+        backgroundColor: '#2A6E3F',
+        borderColor: '#2A6E3F',
+    },
+    statusButtonText: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#374151',
+    },
+    statusButtonTextActive: {
+        color: '#fff',
+    },
 
-    // Telegram-style Preview
+    // Блок причины
+    excuseContainer: {
+        marginTop: 10,
+    },
+    textArea: {
+        backgroundColor: '#F9FAFB',
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        borderRadius: 12,
+        padding: 12,
+        minHeight: 100,
+        textAlignVertical: 'top',
+        marginBottom: 20,
+        fontSize: 15,
+        color: '#0f172a',
+    },
+    label: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#6b7280',
+        marginBottom: 8,
+    },
+
+    // Превью документа
     documentPreviewCard: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -486,12 +588,66 @@ const styles = StyleSheet.create({
         padding: 8,
     },
 
-    addDocumentButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, borderWidth: 1, borderColor: '#2A6E3F', borderStyle: 'dashed', borderRadius: 12, gap: 10, height: 50 },
-    addDocumentText: { color: '#2A6E3F', fontWeight: '600' },
-    submitButton: { marginTop: 30, backgroundColor: '#2A6E3F', padding: 16, borderRadius: 12, alignItems: 'center' },
-    submitButtonDisabled: { backgroundColor: '#9ca3af' },
-    submitButtonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-    errorLabel: { color: '#ef4444', textAlign: 'center', marginTop: 10 },
+    // Кнопка загрузки
+    addDocumentButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 16,
+        borderWidth: 1,
+        borderColor: '#2A6E3F',
+        borderStyle: 'dashed',
+        borderRadius: 12,
+        gap: 10,
+        minHeight: 50,
+    },
+    addDocumentText: {
+        color: '#2A6E3F',
+        fontWeight: '600',
+    },
+    uploadProgressContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '100%',
+    },
+    cancelUploadButton: {
+        marginLeft: 'auto',
+    },
+
+    // Кнопка отправки
+    submitButton: {
+        marginTop: 30,
+        backgroundColor: '#2A6E3F',
+        padding: 16,
+        borderRadius: 12,
+        alignItems: 'center',
+    },
+    submitButtonDisabled: {
+        backgroundColor: '#9ca3af',
+    },
+    submitButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '700',
+    },
+
+    // Ошибка
+    errorContainer: {
+        marginTop: 16,
+        padding: 12,
+        backgroundColor: '#FEF2F2',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#FEE2E2',
+    },
+    errorLabel: {
+        color: '#ef4444',
+        textAlign: 'center',
+        fontSize: 14,
+    },
+
+    // Полноэкранный предпросмотр
     fullScreenOverlay: {
         flex: 1,
         backgroundColor: 'black',
@@ -523,28 +679,5 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 16,
         fontWeight: '500',
-    },
-    uploadProgressContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: '100%',
-    },
-    progressBarBackground: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        height: 4,
-        backgroundColor: '#E5E7EB',
-        width: '100%',
-        borderRadius: 2,
-        overflow: 'hidden'
-    },
-    progressBarFill: {
-        height: '100%',
-        backgroundColor: '#2A6E3F',
-    },
-    cancelUploadButton: {
-        marginLeft: 'auto',
     },
 });

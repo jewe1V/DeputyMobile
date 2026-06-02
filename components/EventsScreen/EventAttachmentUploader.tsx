@@ -3,7 +3,7 @@ import { CatalogItem, catalogService } from '@/api/catalogService';
 import { AuthManager } from '@/components/LoginScreen/LoginScreen';
 import DateTimePickerModal from "@/components/ui/Shared/DateTimePickerModal";
 import { SkeletonItem } from "@/components/ui/Shared/SkeletonLoader";
-import axios from 'axios';
+import { BottomSheetModal } from '@/components/ui/BottomSheetModal/BottomSheetModal';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from "expo-image-picker";
 import {
@@ -19,11 +19,9 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
-    Animated,
-    Dimensions, Image,
-    KeyboardAvoidingView,
+    Dimensions,
+    Image,
     Modal,
-    PanResponder,
     Platform,
     ScrollView,
     StyleSheet,
@@ -72,15 +70,7 @@ export const EventAttachmentUploader: React.FC<Props> = ({
                                                              onSuccess
                                                          }) => {
     const insets = useSafeAreaInsets();
-
     const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
-    // Анимации основной шторки
-    const START_Y = SCREEN_HEIGHT * 0.05;
-    const panY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
-
-    // Анимации шторки каталогов
-    const START_Y_PICKER = SCREEN_HEIGHT * 0.1;
-    const panYPicker = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
 
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
@@ -102,42 +92,6 @@ export const EventAttachmentUploader: React.FC<Props> = ({
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const token = AuthManager.getToken();
 
-    const handleClose = useCallback(() => {
-        closeMainAnim(() => {
-            onClose();
-        });
-    }, [onClose]);
-
-    const closeMainAnim = (callback?: () => void) => {
-        Animated.timing(panY, { toValue: SCREEN_HEIGHT, duration: 250, useNativeDriver: false }).start(callback);
-    };
-
-    const openPickerAnim = () => {
-        setShowCatalogPicker(true);
-        Animated.timing(panYPicker, { toValue: START_Y_PICKER, duration: 300, useNativeDriver: false }).start();
-    };
-
-    const closePickerAnim = () => {
-        Animated.timing(panYPicker, { toValue: SCREEN_HEIGHT, duration: 250, useNativeDriver: false }).start(() => {
-            setShowCatalogPicker(false);
-            setCurrentPath([]);
-        });
-    };
-
-    const mainPanResponder = useRef(PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: (_, gs) => Math.abs(gs.dy) > 5,
-        onPanResponderMove: (_, gs) => gs.dy > 0 && panY.setValue(START_Y + gs.dy),
-        onPanResponderRelease: (_, gs) => gs.dy > 150 ? handleClose() : Animated.timing(panY, { toValue: START_Y, duration: 200, useNativeDriver: false }).start()
-    })).current;
-
-    const pickerPanResponder = useRef(PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: (_, gs) => Math.abs(gs.dy) > 5,
-        onPanResponderMove: (_, gs) => gs.dy > 0 && panYPicker.setValue(START_Y_PICKER + gs.dy),
-        onPanResponderRelease: (_, gs) => gs.dy > 150 ? handleClose() : Animated.timing(panYPicker, { toValue: START_Y_PICKER, duration: 200, useNativeDriver: false }).start()
-    })).current;
-
     const fetchCatalogs = useCallback(async () => {
         try {
             setLoading(true);
@@ -155,16 +109,10 @@ export const EventAttachmentUploader: React.FC<Props> = ({
     useEffect(() => {
         if (visible) {
             fetchCatalogs();
-            Animated.timing(panY, {
-                toValue: START_Y,
-                duration: 300,
-                useNativeDriver: false
-            }).start();
         } else {
-            panY.setValue(SCREEN_HEIGHT);
             resetForm();
         }
-    }, [visible, fetchCatalogs, panY, START_Y, SCREEN_HEIGHT]);
+    }, [visible, fetchCatalogs]);
 
     const resetForm = useCallback(() => {
         setSelectedCatalog(null);
@@ -215,12 +163,8 @@ export const EventAttachmentUploader: React.FC<Props> = ({
     };
 
     const uploadFileToServer = async (fileInfo: { uri: string; name: string; mimeType?: string; file?: File }) => {
-        // Просто сохраняем файл локально, без загрузки на сервер
         try {
             setError(null);
-
-            // На вебе не сохраняем неправильный mimeType из браузера
-            // Будем использовать тип из оригинального File объекта при отправке
             const mimeType = (fileInfo.file as any)?.type || fileInfo.mimeType;
 
             setSelectedFile({
@@ -234,7 +178,6 @@ export const EventAttachmentUploader: React.FC<Props> = ({
                     mimeType: mimeType
                 }]
             } as any);
-
         } catch (e: any) {
             console.error('Ошибка:', e);
             setError(e?.message || 'Ошибка при выборе файла');
@@ -267,7 +210,6 @@ export const EventAttachmentUploader: React.FC<Props> = ({
                 }
 
                 const file = files[0];
-
                 if (file.size > MAX_FILE_SIZE_BYTES) {
                     alert('Файл слишком большой. Максимум 50 МБ');
                     resolve();
@@ -358,14 +300,11 @@ export const EventAttachmentUploader: React.FC<Props> = ({
 
             const formData = new FormData();
 
-            // ВАЖНОЕ ОТЛИЧИЕ ДЛЯ ВЕБА - используем XMLHttpRequest
             if (Platform.OS === 'web' && (selectedFile as any).file) {
                 const token = AuthManager.getToken();
                 const xhr = new XMLHttpRequest();
                 xhrRef.current = xhr;
 
-                // На вебе НЕ используем сохраненный mimeType, передаем оригинальный File объект
-                // Браузер сам установит правильный MIME type в Content-Type
                 const file = (selectedFile as any).file as File;
                 formData.append('File', file);
                 formData.append('CatalogId', selectedCatalog.id);
@@ -376,8 +315,7 @@ export const EventAttachmentUploader: React.FC<Props> = ({
 
                 xhr.upload.addEventListener('progress', (event) => {
                     if (event.lengthComputable) {
-                        const progress = event.loaded / event.total;
-                        setUploadProgress(progress);
+                        setUploadProgress(event.loaded / event.total);
                     }
                 });
 
@@ -391,7 +329,7 @@ export const EventAttachmentUploader: React.FC<Props> = ({
                             visibilityTime: 3000,
                             topOffset: 50,
                         });
-                        handleClose();
+                        onClose();
                         resetForm();
                     } else {
                         throw new Error(`Upload failed with status ${xhr.status}: ${xhr.responseText}`);
@@ -407,7 +345,6 @@ export const EventAttachmentUploader: React.FC<Props> = ({
                 xhr.setRequestHeader('X-App-Secret', xAppSecret);
                 xhr.send(formData);
             } else {
-                // В React Native используется axios
                 formData.append('File', {
                     uri: selectedFile.uri || selectedFile.assets?.[0]?.uri,
                     name: selectedFile.name || selectedFile.assets?.[0]?.name || 'file',
@@ -421,9 +358,7 @@ export const EventAttachmentUploader: React.FC<Props> = ({
                 if (endDate) formData.append('EndDate', endDate.toISOString());
 
                 await apiClient.post(`/api/Events/${eventId}/attachments`, formData, {
-                    headers: {
-                        'Accept': 'text/plain',
-                    },
+                    headers: { 'Accept': 'text/plain' },
                     onUploadProgress: (progressEvent) => {
                         if (progressEvent.total) {
                             setUploadProgress(progressEvent.loaded / progressEvent.total);
@@ -439,7 +374,7 @@ export const EventAttachmentUploader: React.FC<Props> = ({
                     visibilityTime: 3000,
                     topOffset: 50,
                 });
-                handleClose();
+                onClose();
                 resetForm();
             }
         } catch (error: any) {
@@ -460,440 +395,382 @@ export const EventAttachmentUploader: React.FC<Props> = ({
         ...({ 'X-App-Secret': xAppSecret })
     };
 
-const renderCatalogContent = () => {
-    if (loading) {
-        return Array(6).fill(0).map((_, i) => <CatalogSkeletonRow key={i} />);
-    }
+    const renderCatalogContent = () => {
+        if (loading) {
+            return Array(6).fill(0).map((_, i) => <CatalogSkeletonRow key={i} />);
+        }
 
-    const items = currentPath.length === 0 ? catalogs : currentPath[currentPath.length - 1].children || [];
-    const currentCatalog = currentPath.length > 0 ? currentPath[currentPath.length - 1] : null;
+        const items = currentPath.length === 0
+            ? catalogs
+            : currentPath[currentPath.length - 1].children || [];
+        const currentCatalog = currentPath.length > 0
+            ? currentPath[currentPath.length - 1]
+            : null;
 
-    // Если мы в каталоге, у которого нет дочерних папок
-    if (currentCatalog && (!currentCatalog.children || currentCatalog.children.length === 0)) {
-        return (
-            <View style={styles.stateContainer}>
-                <Folder size={40} color="#cbd5e1" />
-                <Text style={styles.emptyText}>Папка пуста</Text>
+        if (currentCatalog && (!currentCatalog.children || currentCatalog.children.length === 0)) {
+            return (
+                <View style={styles.stateContainer}>
+                    <Folder size={40} color="#cbd5e1" />
+                    <Text style={styles.emptyText}>Папка пуста</Text>
+                    <TouchableOpacity
+                        style={styles.selectButton}
+                        onPress={() => selectCatalog(currentCatalog)}
+                    >
+                        <Text style={styles.selectButtonText}>Выбрать в качестве каталога</Text>
+                    </TouchableOpacity>
+                </View>
+            );
+        }
+
+        if (items.length === 0) {
+            return (
+                <View style={styles.stateContainer}>
+                    <Folder size={40} color="#cbd5e1" />
+                    <Text style={styles.emptyText}>Нет доступных каталогов</Text>
+                </View>
+            );
+        }
+
+        return items.map(item => (
+            <View key={item.id} style={styles.catalogRowContainer}>
                 <TouchableOpacity
-                    style={styles.selectButton}
-                    onPress={() => selectCatalog(currentCatalog)}
+                    style={styles.catalogSelectArea}
+                    onPress={() => setCurrentPath([...currentPath, item])}
                 >
-                    <Text style={styles.selectButtonText}>Выбрать в качестве каталога</Text>
+                    <Folder size={20} color="#2A6E3F" />
+                    <Text style={styles.catalogItemText} numberOfLines={1}>{item.name}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={styles.catalogNavButton}
+                    onPress={() => selectCatalog(item)}
+                >
+                    <View style={styles.verticalDivider} />
+                    <Text>Выбрать</Text>
                 </TouchableOpacity>
             </View>
-        );
-    }
+        ));
+    };
 
-    if (items.length === 0) {
-        return (
-            <View style={styles.stateContainer}>
-                <Folder size={40} color="#cbd5e1" />
-                <Text style={styles.emptyText}>Нет доступных каталогов</Text>
-            </View>
-        );
-    }
-
-    return items.map(item => (
-        <View key={item.id} style={styles.catalogRowContainer}>
-            <TouchableOpacity style={styles.catalogSelectArea} onPress={() => setCurrentPath([...currentPath, item])}>
-                <Folder size={20} color="#2A6E3F" />
-                <Text style={styles.catalogItemText} numberOfLines={1}>{item.name}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.catalogNavButton} onPress={() => selectCatalog(item)}>
-                <View style={styles.verticalDivider} />
-                <Text>Выбрать</Text>
-            </TouchableOpacity>
-        </View>
-    ));
-};
-
-return (
-    <>
-        <Modal visible={visible} transparent animationType="none" onRequestClose={handleClose}>
-            <View style={styles.overlay}>
-                <TouchableOpacity
-                    style={styles.dismiss}
-                    activeOpacity={1}
-                    onPress={handleClose}
-                />
-
-                <Animated.View
-                    style={[
-                        styles.sheet,
-                        { transform: [{ translateY: panY }], paddingBottom: insets.bottom + 20 }
-                    ]}
+    // Кастомный header для каталог-пикера с breadcrumbs
+    const renderCatalogPickerHeader = () => (
+        <View>
+            <Text style={styles.title}>Выбор папки</Text>
+            {currentPath.length > 0 && (
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.breadcrumbContainer}
                 >
-                    <View {...mainPanResponder.panHandlers} style={styles.dragArea}>
-                        <View style={styles.dragIndicator} />
-                        <Text style={styles.title}>Прикрепить файл</Text>
+                    <View style={styles.breadcrumbItem}>
+                        <TouchableOpacity onPress={() => setCurrentPath([])}>
+                            <View pointerEvents="none">
+                                <Home color="#2A6E3F" size={18} />
+                            </View>
+                        </TouchableOpacity>
                     </View>
-                    <KeyboardAvoidingView
-                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                        style={{ flex: 1 }}
-                        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-                    >
-                    <ScrollView
-                        style={styles.form}
-                        showsVerticalScrollIndicator={false}
-                        contentContainerStyle={styles.scrollContent}
-                        keyboardShouldPersistTaps="handled"
-                    >
-                        <View style={styles.field}>
-                            <Text style={styles.label}>
-                                Каталог назначения <Text style={styles.requiredStar}>*</Text>
-                            </Text>
-                            <TouchableOpacity style={styles.selector} onPress={openPickerAnim}>
-                                <Text style={[styles.selectorText, !selectedCatalog && styles.placeholderText]}>
-                                    {selectedCatalog ? selectedCatalog.name : 'Выберите каталог'}
-                                </Text>
-                                <Folder size={18} color="#94a3b8" />
+                    {currentPath.map((item, index) => (
+                        <View key={item.id} style={styles.breadcrumbItem}>
+                            <Text style={styles.breadcrumbSeparator}> / </Text>
+                            <TouchableOpacity onPress={() => setCurrentPath(currentPath.slice(0, index + 1))}>
+                                <Text style={styles.breadcrumbText}>{item.name}</Text>
                             </TouchableOpacity>
                         </View>
+                    ))}
+                </ScrollView>
+            )}
+        </View>
+    );
 
-                        <View style={styles.field}>
-                            <Text style={styles.label}>
-                                Файл <Text style={styles.requiredStar}>*</Text>
-                            </Text>
-                            {selectedFile && selectedFile.assets?.[0] ? (
-                                <View style={styles.documentPreviewCard}>
-                                    <TouchableOpacity
-                                        style={styles.previewContent}
-                                        activeOpacity={0.7}
-                                        onPress={() => {
-                                            const fileName = selectedFile.assets?.[0]?.name || selectedFile.file_name;
-                                            if (fileName && isImageFile(fileName)) {
-                                                setIsPreviewOpen(true);
-                                            }
-                                        }}
-                                    >
-                                        {(() => {
-                                            const fileName = selectedFile.assets?.[0]?.name || selectedFile.file_name;
-                                            if (fileName && isImageFile(fileName)) {
-                                                const imageUri = selectedFile.file_name
-                                                    ? `${apiUrl}/api/files/${encodeURIComponent(selectedFile.file_name)}`
-                                                    : selectedFile.assets[0].uri;
-                                                return (
-                                                    <Image
-                                                        source={{ uri: imageUri, headers: imageHeaders }}
-                                                        style={styles.thumbnail}
-                                                    />
-                                                );
-                                            }
-                                            return (
-                                                <View style={styles.fileIconContainer}>
-                                                    <FileText size={24} color="#2A6E3F" />
-                                                </View>
-                                            );
-                                        })()}
-                                        <View style={styles.fileInfo}>
-                                            <Text style={styles.documentName} numberOfLines={1}>
-                                                {selectedFile.assets?.[0]?.name || selectedFile.file_name || 'Файл'}
-                                            </Text>
-                                            <Text style={styles.fileStatus}>
-                                                {selectedFile.size ? `${(selectedFile.size / 1024 / 1024).toFixed(2)} МБ` : ''}
-                                            </Text>
+    return (
+        <>
+            {/* ===== Основная модалка ===== */}
+            <BottomSheetModal
+                visible={visible}
+                onClose={onClose}
+                title="Прикрепить файл"
+                heightFraction={0.92}
+                keyboardAvoiding
+                scrollEnabled
+                contentContainerStyle={styles.scrollContent}
+            >
+                {/* Каталог */}
+                <View style={styles.field}>
+                    <Text style={styles.label}>
+                        Каталог назначения <Text style={styles.requiredStar}>*</Text>
+                    </Text>
+                    <TouchableOpacity
+                        style={styles.selector}
+                        onPress={() => setShowCatalogPicker(true)}
+                    >
+                        <Text style={[styles.selectorText, !selectedCatalog && styles.placeholderText]}>
+                            {selectedCatalog ? selectedCatalog.name : 'Выберите каталог'}
+                        </Text>
+                        <Folder size={18} color="#94a3b8" />
+                    </TouchableOpacity>
+                </View>
+
+                {/* Файл */}
+                <View style={styles.field}>
+                    <Text style={styles.label}>
+                        Файл <Text style={styles.requiredStar}>*</Text>
+                    </Text>
+                    {selectedFile && selectedFile.assets?.[0] ? (
+                        <View style={styles.documentPreviewCard}>
+                            <TouchableOpacity
+                                style={styles.previewContent}
+                                activeOpacity={0.7}
+                                onPress={() => {
+                                    const fileName = selectedFile.assets?.[0]?.name || selectedFile.file_name;
+                                    if (fileName && isImageFile(fileName)) {
+                                        setIsPreviewOpen(true);
+                                    }
+                                }}
+                            >
+                                {(() => {
+                                    const fileName = selectedFile.assets?.[0]?.name || selectedFile.file_name;
+                                    if (fileName && isImageFile(fileName)) {
+                                        const imageUri = selectedFile.file_name
+                                            ? `${apiUrl}/api/files/${encodeURIComponent(selectedFile.file_name)}`
+                                            : selectedFile.assets[0].uri;
+                                        return (
+                                            <Image
+                                                source={{ uri: imageUri, headers: imageHeaders }}
+                                                style={styles.thumbnail}
+                                            />
+                                        );
+                                    }
+                                    return (
+                                        <View style={styles.fileIconContainer}>
+                                            <FileText size={24} color="#2A6E3F" />
                                         </View>
-                                    </TouchableOpacity>
+                                    );
+                                })()}
+                                <View style={styles.fileInfo}>
+                                    <Text style={styles.documentName} numberOfLines={1}>
+                                        {selectedFile.assets?.[0]?.name || selectedFile.file_name || 'Файл'}
+                                    </Text>
+                                    <Text style={styles.fileStatus}>
+                                        {selectedFile.size ? `${(selectedFile.size / 1024 / 1024).toFixed(2)} МБ` : ''}
+                                    </Text>
+                                </View>
+                            </TouchableOpacity>
 
+                            <TouchableOpacity
+                                style={styles.removeButton}
+                                onPress={() => setSelectedFile(null)}
+                            >
+                                <View pointerEvents="none">
+                                    <X size={18} color="#000" />
+                                </View>
+                            </TouchableOpacity>
+                        </View>
+                    ) : (
+                        <TouchableOpacity
+                            style={styles.addDocumentButton}
+                            onPress={showUploadOptions}
+                            disabled={uploading}
+                        >
+                            {uploading ? (
+                                <View style={styles.uploadProgressContainer}>
+                                    <ActivityIndicator color="#2A6E3F" style={{ marginRight: 10 }} />
+                                    <Text style={styles.addDocumentText}>
+                                        Загрузка: {Math.round(uploadProgress * 50)}%
+                                    </Text>
                                     <TouchableOpacity
-                                        style={styles.removeButton}
-                                        onPress={() => setSelectedFile(null)}
+                                        style={styles.cancelUploadButton}
+                                        onPress={cancelUpload}
+                                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                                     >
-                                        <View pointerEvents={"none"}>
-                                            <X size={18} color="#000" />
+                                        <View pointerEvents="none">
+                                            <X size={20} color="#2A6E3F" />
                                         </View>
                                     </TouchableOpacity>
                                 </View>
                             ) : (
-                                <TouchableOpacity
-                                    style={styles.addDocumentButton}
-                                    onPress={showUploadOptions}
-                                    disabled={uploading}
-                                >
-                                    {uploading ? (
-                                        <View style={styles.uploadProgressContainer}>
-                                            <ActivityIndicator color="#2A6E3F" style={{ marginRight: 10 }} />
-                                            <Text style={styles.addDocumentText}>
-                                                Загрузка: {Math.round(uploadProgress * 50)}%
-                                            </Text>
-
-                                            <TouchableOpacity
-                                                style={styles.cancelUploadButton}
-                                                onPress={cancelUpload}
-                                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                                            >
-                                                <View pointerEvents="none">
-                                                    <X size={20} color="#2A6E3F" />
-                                                </View>
-                                            </TouchableOpacity>
-                                        </View>
-                                    ) : (
-                                        <>
-                                            <Text style={[styles.selectorText, styles.placeholderText]} numberOfLines={1}>
-                                                Выберите файл
-                                            </Text>
-                                            <Upload size={18} color="#94a3b8" />
-                                        </>
-                                    )}
-                                </TouchableOpacity>
-                            )}
-                        </View>
-
-                        <View style={styles.field}>
-                            <Text style={styles.label}>Описание</Text>
-                            <TextInput
-                                style={styles.textArea}
-                                value={description}
-                                onChangeText={setDescription}
-                                placeholder="Введите краткое описание документа..."
-                                placeholderTextColor="#9ca3af"
-                                multiline
-                                numberOfLines={4}
-                                textAlignVertical="top"
-                            />
-                        </View>
-
-                        <View style={styles.field}>
-                            <Text style={styles.label}>Статус обработки</Text>
-                            <View style={styles.selectWrapper}>
-                                <TouchableOpacity
-                                    style={[styles.selector, isStatusSelectOpen && styles.selectorActive]}
-                                    onPress={() => setIsStatusSelectOpen(!isStatusSelectOpen)}
-                                >
-                                    <Text style={[styles.selectorText, !status && styles.placeholderText]}>
-                                        {status ? FILE_STATUSES[status] : 'Выберите статус'}
-                                    </Text>
-                                    <View pointerEvents="none">
-                                        <ChevronDown size={18} color="#94a3b8" />
-                                    </View>
-                                </TouchableOpacity>
-
-                                {isStatusSelectOpen && (
-                                    <View style={styles.selectDropdown}>
-                                        {Object.entries(FILE_STATUSES).map(([key, value]) => (
-                                            <TouchableOpacity
-                                                key={key}
-                                                style={[styles.selectItem, status === key && styles.selectItemSelected]}
-                                                onPress={() => {
-                                                    setStatus(key as FileStatus);
-                                                    setIsStatusSelectOpen(false);
-                                                }}
-                                            >
-                                                <Text style={[styles.selectItemText, status === key && styles.selectItemTextSelected]}>
-                                                    {value}
-                                                </Text>
-                                            </TouchableOpacity>
-                                        ))}
-                                    </View>
-                                )}
-                            </View>
-                        </View>
-
-                        <View style={styles.row}>
-                            <View style={[styles.field, { flex: 1, marginRight: 8 }]}>
-                                <Text style={styles.label}>Дата начала</Text>
-                                <TouchableOpacity style={styles.selector} onPress={() => setStartPickerVisible(true)}>
-                                    <Text style={[styles.selectorText, !startDate && styles.placeholderText]}>
-                                        {startDate ? formatDate(startDate) : 'Не задана'}
-                                    </Text>
-                                </TouchableOpacity>
-                            </View>
-
-                            <View style={[styles.field, { flex: 1, marginLeft: 8 }]}>
-                                <Text style={styles.label}>Дата окончания</Text>
-                                <TouchableOpacity style={styles.selector} onPress={() => setEndPickerVisible(true)}>
-                                    <Text style={[styles.selectorText, !endDate && styles.placeholderText]}>
-                                        {endDate ? formatDate(endDate) : 'Не задана'}
-                                    </Text>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-
-                        {error && (
-                            <View style={styles.formError}>
-                                <AlertCircle size={18} color="#ef4444" />
-                                <Text style={styles.formErrorText}>{error}</Text>
-                            </View>
-                        )}
-
-                        <TouchableOpacity
-                            style={[styles.uploadButton, (!selectedFile || !selectedCatalog || uploading) && styles.uploadButtonDisabled]}
-                            onPress={uploadFile}
-                            disabled={!selectedFile || !selectedCatalog || uploading}
-                        >
-                            {uploading ? (
-                                <ActivityIndicator size="small" color="white" />
-                            ) : (
                                 <>
-                                    <Upload size={20} color="white" />
-                                    <Text style={styles.uploadButtonText}>Сохранить документ</Text>
+                                    <Text style={[styles.selectorText, styles.placeholderText]} numberOfLines={1}>
+                                        Выберите файл
+                                    </Text>
+                                    <Upload size={18} color="#94a3b8" />
                                 </>
                             )}
                         </TouchableOpacity>
-                    </ScrollView>
-                    </KeyboardAvoidingView>
-                </Animated.View>
-            </View>
-        </Modal>
-
-        <Modal visible={showCatalogPicker} transparent animationType="none" onRequestClose={closePickerAnim}>
-            <View style={styles.overlay}>
-                <TouchableOpacity style={styles.dismiss} activeOpacity={1} onPress={closePickerAnim} />
-                <Animated.View style={[styles.sheet, { transform: [{ translateY: panYPicker }], height: SCREEN_HEIGHT * 0.85, paddingBottom: insets.bottom + 20 }]}>
-                    <View {...pickerPanResponder.panHandlers} style={styles.dragArea}>
-                        <View style={styles.dragIndicator} />
-                        <Text style={styles.title}>Выбор папки</Text>
-                    </View>
-
-                    {currentPath.length > 0 && (
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.breadcrumbContainer}>
-                            <View style={styles.breadcrumbItem}>
-                                <TouchableOpacity onPress={() => setCurrentPath([])}>
-                                    <View pointerEvents="none">
-                                        <Home color="#2A6E3F" size={18} />
-                                    </View>
-                                </TouchableOpacity>
-                            </View>
-                            {currentPath.map((item, index) => (
-                                <View key={item.id} style={styles.breadcrumbItem}>
-                                    <Text style={styles.breadcrumbSeparator}> / </Text>
-                                    <TouchableOpacity onPress={() => setCurrentPath(currentPath.slice(0, index + 1))}>
-                                        <Text style={styles.breadcrumbText}>{item.name}</Text>
-                                    </TouchableOpacity>
-                                </View>
-                            ))}
-                        </ScrollView>
                     )}
-
-                    <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: insets.bottom + 10 }}>
-                        {renderCatalogContent()}
-                    </ScrollView>
-                </Animated.View>
-            </View>
-        </Modal>
-
-        <Modal
-            visible={isPreviewOpen}
-            transparent={true}
-            onRequestClose={() => setIsPreviewOpen(false)}
-            animationType="fade"
-        >
-            <View style={styles.fullScreenOverlay}>
-                <TouchableOpacity
-                    style={[styles.closePreviewButton, { top: insets.top + 10 }]}
-                    onPress={() => setIsPreviewOpen(false)}
-                >
-                    <View pointerEvents={"none"}>
-                        <X size={30} color="white" />
-                    </View>
-                </TouchableOpacity>
-                {selectedFile && (() => {
-                    const imageUri = selectedFile.file_name
-                        ? `${apiUrl}/api/files/${encodeURIComponent(selectedFile.file_name)}`
-                        : selectedFile.assets?.[0]?.uri;
-                    if (imageUri) {
-                        return (
-                            <Image
-                                source={{ uri: imageUri, headers: imageHeaders }}
-                                style={styles.fullImage}
-                                resizeMode="contain"
-                            />
-                        );
-                    }
-                    return null;
-                })()}
-
-                <View style={[styles.previewFooter, { paddingBottom: insets.bottom + 20 }]}>
-                    <Text style={styles.previewFooterText}>
-                        {selectedFile?.assets?.[0]?.name || selectedFile?.file_name || 'Файл'}
-                    </Text>
                 </View>
-            </View>
-        </Modal>
 
-        <DateTimePickerModal
-            isVisible={isStartPickerVisible}
-            mode="datetime"
-            onConfirm={handleStartDateConfirm}
-            onCancel={() => setStartPickerVisible(false)}
-        />
-        <DateTimePickerModal
-            isVisible={isEndPickerVisible}
-            mode="datetime"
-            onConfirm={handleEndDateConfirm}
-            onCancel={() => setEndPickerVisible(false)}
-        />
-    </>
-);
+                {/* Описание */}
+                <View style={styles.field}>
+                    <Text style={styles.label}>Описание</Text>
+                    <TextInput
+                        style={styles.textArea}
+                        value={description}
+                        onChangeText={setDescription}
+                        placeholder="Введите краткое описание документа..."
+                        placeholderTextColor="#9ca3af"
+                        multiline
+                        numberOfLines={4}
+                        textAlignVertical="top"
+                    />
+                </View>
+
+                {/* Статус */}
+                <View style={styles.field}>
+                    <Text style={styles.label}>Статус обработки</Text>
+                    <View style={styles.selectWrapper}>
+                        <TouchableOpacity
+                            style={[styles.selector, isStatusSelectOpen && styles.selectorActive]}
+                            onPress={() => setIsStatusSelectOpen(!isStatusSelectOpen)}
+                        >
+                            <Text style={[styles.selectorText, !status && styles.placeholderText]}>
+                                {status ? FILE_STATUSES[status] : 'Выберите статус'}
+                            </Text>
+                            <View pointerEvents="none">
+                                <ChevronDown size={18} color="#94a3b8" />
+                            </View>
+                        </TouchableOpacity>
+
+                        {isStatusSelectOpen && (
+                            <View style={styles.selectDropdown}>
+                                {Object.entries(FILE_STATUSES).map(([key, value]) => (
+                                    <TouchableOpacity
+                                        key={key}
+                                        style={[styles.selectItem, status === key && styles.selectItemSelected]}
+                                        onPress={() => {
+                                            setStatus(key as FileStatus);
+                                            setIsStatusSelectOpen(false);
+                                        }}
+                                    >
+                                        <Text style={[styles.selectItemText, status === key && styles.selectItemTextSelected]}>
+                                            {value}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        )}
+                    </View>
+                </View>
+
+                {/* Даты */}
+                <View style={styles.row}>
+                    <View style={[styles.field, { flex: 1, marginRight: 8 }]}>
+                        <Text style={styles.label}>Дата начала</Text>
+                        <TouchableOpacity style={styles.selector} onPress={() => setStartPickerVisible(true)}>
+                            <Text style={[styles.selectorText, !startDate && styles.placeholderText]}>
+                                {startDate ? formatDate(startDate) : 'Не задана'}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    <View style={[styles.field, { flex: 1, marginLeft: 8 }]}>
+                        <Text style={styles.label}>Дата окончания</Text>
+                        <TouchableOpacity style={styles.selector} onPress={() => setEndPickerVisible(true)}>
+                            <Text style={[styles.selectorText, !endDate && styles.placeholderText]}>
+                                {endDate ? formatDate(endDate) : 'Не задана'}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+
+                {/* Ошибка */}
+                {error && (
+                    <View style={styles.formError}>
+                        <AlertCircle size={18} color="#ef4444" />
+                        <Text style={styles.formErrorText}>{error}</Text>
+                    </View>
+                )}
+
+                {/* Кнопка загрузки */}
+                <TouchableOpacity
+                    style={[
+                        styles.uploadButton,
+                        (!selectedFile || !selectedCatalog || uploading) && styles.uploadButtonDisabled
+                    ]}
+                    onPress={uploadFile}
+                    disabled={!selectedFile || !selectedCatalog || uploading}
+                >
+                    {uploading ? (
+                        <ActivityIndicator size="small" color="white" />
+                    ) : (
+                        <>
+                            <Upload size={20} color="white" />
+                            <Text style={styles.uploadButtonText}>Сохранить документ</Text>
+                        </>
+                    )}
+                </TouchableOpacity>
+            </BottomSheetModal>
+
+            {/* ===== Модалка выбора каталога ===== */}
+            <BottomSheetModal
+                visible={showCatalogPicker}
+                onClose={() => {
+                    setShowCatalogPicker(false);
+                    setCurrentPath([]);
+                }}
+                heightFraction={0.85}
+                renderHeader={renderCatalogPickerHeader}
+            >
+                {renderCatalogContent()}
+            </BottomSheetModal>
+
+            {/* ===== Полноэкранный предпросмотр изображения ===== */}
+            <Modal
+                visible={isPreviewOpen}
+                transparent
+                onRequestClose={() => setIsPreviewOpen(false)}
+                animationType="fade"
+            >
+                <View style={styles.fullScreenOverlay}>
+                    <TouchableOpacity
+                        style={[styles.closePreviewButton, { top: insets.top + 10 }]}
+                        onPress={() => setIsPreviewOpen(false)}
+                    >
+                        <View pointerEvents="none">
+                            <X size={30} color="white" />
+                        </View>
+                    </TouchableOpacity>
+                    {selectedFile && (() => {
+                        const imageUri = selectedFile.file_name
+                            ? `${apiUrl}/api/files/${encodeURIComponent(selectedFile.file_name)}`
+                            : selectedFile.assets?.[0]?.uri;
+                        if (imageUri) {
+                            return (
+                                <Image
+                                    source={{ uri: imageUri, headers: imageHeaders }}
+                                    style={styles.fullImage}
+                                    resizeMode="contain"
+                                />
+                            );
+                        }
+                        return null;
+                    })()}
+
+                    <View style={[styles.previewFooter, { paddingBottom: insets.bottom + 20 }]}>
+                        <Text style={styles.previewFooterText}>
+                            {selectedFile?.assets?.[0]?.name || selectedFile?.file_name || 'Файл'}
+                        </Text>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* ===== Date pickers ===== */}
+            <DateTimePickerModal
+                isVisible={isStartPickerVisible}
+                mode="datetime"
+                onConfirm={handleStartDateConfirm}
+                onCancel={() => setStartPickerVisible(false)}
+            />
+            <DateTimePickerModal
+                isVisible={isEndPickerVisible}
+                mode="datetime"
+                onConfirm={handleEndDateConfirm}
+                onCancel={() => setEndPickerVisible(false)}
+            />
+        </>
+    );
 };
 
 const styles = StyleSheet.create({
-    overlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        justifyContent: 'flex-end',
-    },
-    dismiss: {
-        flex: 1,
-    },
-    sheet: {
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        height: SCREEN_HEIGHT,
-        backgroundColor: '#ffffff',
-        borderTopLeftRadius: 28,
-        borderTopRightRadius: 28,
-        paddingHorizontal: 20,
-        elevation: 25,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: -10 },
-        shadowOpacity: 0.15,
-        shadowRadius: 15,
-    },
-    staticSheet: {
-        backgroundColor: '#ffffff',
-        borderTopLeftRadius: 28,
-        borderTopRightRadius: 28,
-        maxHeight: '80%',
-        paddingHorizontal: 20,
-    },
-    dragArea: {
-        paddingTop: 12,
-        paddingBottom: 4,
-        width: '100%',
-        alignItems: 'center',
-    },
-    dragIndicator: {
-        width: 40,
-        height: 5,
-        backgroundColor: '#E2E8F0',
-        borderRadius: 2.5,
-        marginBottom: 16,
-    },
-    title: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: '#0b2340',
-        marginBottom: 10,
-        textAlign: 'center'
-    },
-    modalHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingVertical: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f1f5f9',
-    },
-    closeButton: {
-        padding: 4,
-        backgroundColor: '#f1f5f9',
-        borderRadius: 20,
-    },
-    form: {
-        flex: 1,
-    },
+    // Контент скролла
     scrollContent: {
         paddingBottom: 150,
         paddingTop: 10,
@@ -913,6 +790,13 @@ const styles = StyleSheet.create({
         marginLeft: 4,
         textTransform: 'uppercase',
         letterSpacing: 0.5,
+    },
+    title: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#0b2340',
+        marginBottom: 10,
+        textAlign: 'center',
     },
     selector: {
         flexDirection: 'row',
@@ -1013,6 +897,8 @@ const styles = StyleSheet.create({
         color: '#ffffff',
         fontWeight: '600',
     },
+
+    // Breadcrumbs
     breadcrumbContainer: {
         paddingVertical: 12,
         borderBottomWidth: 1,
@@ -1033,78 +919,19 @@ const styles = StyleSheet.create({
         color: '#2A6E3F',
         fontWeight: '500',
     },
-    backButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginRight: 10,
-    },
-    backButtonText: {
-        fontSize: 15,
-        color: '#2A6E3F',
-        fontWeight: '600',
-    },
-    catalogList: {
-        maxHeight: SCREEN_HEIGHT * 0.5,
-    },
-    catalogItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingVertical: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f1f5f9',
-    },
-    catalogItemContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-        flex: 1,
-    },
+
+    // Каталоги
     stateContainer: {
         padding: 40,
         alignItems: 'center',
         justifyContent: 'center',
         minHeight: 200,
     },
-    errorText: {
-        marginTop: 12,
-        fontSize: 15,
-        color: '#64748b',
-        textAlign: 'center',
-    },
-    retryButton: {
-        marginTop: 16,
-        paddingHorizontal: 24,
-        paddingVertical: 12,
-        backgroundColor: '#f1f5f9',
-        borderRadius: 10,
-    },
-    retryButtonText: {
-        color: '#334155',
-        fontSize: 14,
-        fontWeight: '600',
-    },
     emptyText: {
         marginTop: 12,
         fontSize: 15,
         color: '#64748b',
         textAlign: 'center',
-    },
-    formError: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#fef2f2',
-        padding: 14,
-        borderRadius: 12,
-        marginBottom: 16,
-        borderWidth: 1,
-        borderColor: '#fecaca',
-        gap: 10,
-    },
-    formErrorText: {
-        fontSize: 14,
-        color: '#b91c1c',
-        flex: 1,
     },
     catalogRowContainer: {
         flexDirection: 'row',
@@ -1158,61 +985,26 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '500',
     },
-    fullScreenOverlay: {
-        flex: 1,
-        backgroundColor: 'black',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    closePreviewButton: {
-        position: 'absolute',
-        right: 20,
-        zIndex: 10,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        borderRadius: 20,
-        padding: 5,
-    },
-    fullImage: {
-        width: '100%',
-        height: '80%',
-    },
-    previewFooter: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        backgroundColor: 'rgba(0,0,0,0.6)',
-        padding: 20,
-        alignItems: 'center',
-    },
-    previewFooterText: {
-        color: 'white',
-        fontSize: 16,
-        fontWeight: '500',
-    },
-    uploadProgressContainer: {
+
+    // Ошибка формы
+    formError: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
-        width: '100%',
+        backgroundColor: '#fef2f2',
+        padding: 14,
+        borderRadius: 12,
+        marginBottom: 16,
+        borderWidth: 1,
+        borderColor: '#fecaca',
+        gap: 10,
     },
-    progressBarBackground: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        height: 4,
-        backgroundColor: '#E5E7EB',
-        width: '100%',
-        borderRadius: 2,
-        overflow: 'hidden'
+    formErrorText: {
+        fontSize: 14,
+        color: '#b91c1c',
+        flex: 1,
     },
-    progressBarFill: {
-        height: '100%',
-        backgroundColor: '#2A6E3F',
-    },
-    cancelUploadButton: {
-        marginLeft: 'auto',
-    },
+
+    // Файл
     addDocumentButton: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -1277,5 +1069,48 @@ const styles = StyleSheet.create({
         padding: 12,
         borderLeftWidth: 1,
         borderLeftColor: '#e2e8f0',
+    },
+    uploadProgressContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '100%',
+    },
+    cancelUploadButton: {
+        marginLeft: 'auto',
+    },
+
+    // Полноэкранный предпросмотр
+    fullScreenOverlay: {
+        flex: 1,
+        backgroundColor: 'black',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    closePreviewButton: {
+        position: 'absolute',
+        right: 20,
+        zIndex: 10,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        borderRadius: 20,
+        padding: 5,
+    },
+    fullImage: {
+        width: '100%',
+        height: '80%',
+    },
+    previewFooter: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        padding: 20,
+        alignItems: 'center',
+    },
+    previewFooterText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: '500',
     },
 });

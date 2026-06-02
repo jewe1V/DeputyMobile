@@ -1,4 +1,3 @@
-// ImagePreviewModal.tsx
 import React, { useEffect, useState } from 'react';
 import { Modal, View, TouchableOpacity, Image, Text, Platform } from 'react-native';
 import { X, Download } from 'lucide-react-native';
@@ -30,7 +29,6 @@ export const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({
     };
 
     useEffect(() => {
-        // Загружаем изображение для веб-платформы
         if (Platform.OS === 'web' && visible && fileName && imageUrl) {
             let isMounted = true;
 
