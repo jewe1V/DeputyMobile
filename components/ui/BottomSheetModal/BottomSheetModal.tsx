@@ -197,7 +197,7 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
                         styles.sheet,
                         {
                             transform: [{ translateY: panY }],
-                            paddingBottom: insets.bottom + 20,
+                            height: SCREEN_HEIGHT * heightFraction,
                         },
                         sheetStyle,
                     ]}

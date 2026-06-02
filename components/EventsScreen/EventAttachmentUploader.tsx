@@ -613,13 +613,24 @@ export const EventAttachmentUploader: React.FC<Props> = ({
                     />
                 </View>
 
+                {/* Оверлей для закрытия дропдауна при нажатии вне */}
+                {isStatusSelectOpen && (
+                    <TouchableOpacity
+                        style={styles.dropdownOverlay}
+                        activeOpacity={1}
+                        onPress={() => setIsStatusSelectOpen(false)}
+                    />
+                )}
+
                 {/* Статус */}
-                <View style={styles.field}>
+                <View style={[styles.field, isStatusSelectOpen && styles.fieldOnTop]}>
                     <Text style={styles.label}>Статус обработки</Text>
-                    <View style={styles.selectWrapper}>
+
+                    <View style={[styles.selectWrapper, isStatusSelectOpen && styles.selectWrapperOpen]}>
                         <TouchableOpacity
                             style={[styles.selector, isStatusSelectOpen && styles.selectorActive]}
-                            onPress={() => setIsStatusSelectOpen(!isStatusSelectOpen)}
+                            onPress={() => setIsStatusSelectOpen(prev => !prev)}
+                            activeOpacity={0.85}
                         >
                             <Text style={[styles.selectorText, !status && styles.placeholderText]}>
                                 {status ? FILE_STATUSES[status] : 'Выберите статус'}
@@ -631,16 +642,25 @@ export const EventAttachmentUploader: React.FC<Props> = ({
 
                         {isStatusSelectOpen && (
                             <View style={styles.selectDropdown}>
-                                {Object.entries(FILE_STATUSES).map(([key, value]) => (
+                                {Object.entries(FILE_STATUSES).map(([key, value], index, arr) => (
                                     <TouchableOpacity
                                         key={key}
-                                        style={[styles.selectItem, status === key && styles.selectItemSelected]}
+                                        style={[
+                                            styles.selectItem,
+                                            index === arr.length - 1 && styles.selectItemLast,
+                                            status === key && styles.selectItemSelected
+                                        ]}
                                         onPress={() => {
                                             setStatus(key as FileStatus);
                                             setIsStatusSelectOpen(false);
                                         }}
                                     >
-                                        <Text style={[styles.selectItemText, status === key && styles.selectItemTextSelected]}>
+                                        <Text
+                                            style={[
+                                                styles.selectItemText,
+                                                status === key && styles.selectItemTextSelected
+                                            ]}
+                                        >
                                             {value}
                                         </Text>
                                     </TouchableOpacity>
@@ -708,6 +728,7 @@ export const EventAttachmentUploader: React.FC<Props> = ({
                 }}
                 heightFraction={0.85}
                 renderHeader={renderCatalogPickerHeader}
+                scrollEnabled={true}
             >
                 {renderCatalogContent()}
             </BottomSheetModal>
@@ -770,18 +791,92 @@ export const EventAttachmentUploader: React.FC<Props> = ({
 };
 
 const styles = StyleSheet.create({
-    // Контент скролла
+    dropdownOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 4999,
+    },
     scrollContent: {
         paddingBottom: 150,
         paddingTop: 10,
+        overflow: 'visible',
     },
+
     row: {
         flexDirection: 'row',
         justifyContent: 'space-between',
+        zIndex: 1,
     },
+
     field: {
         marginBottom: 18,
+        zIndex: 1,
+        overflow: 'visible',
     },
+
+    fieldOnTop: {
+        zIndex: 5000,
+    },
+
+    selectWrapper: {
+        position: 'relative',
+        zIndex: 1,
+        overflow: 'visible',
+    },
+
+    selectWrapperOpen: {
+        zIndex: 5000,
+        elevation: 30,
+    },
+
+    selectDropdown: {
+        position: 'absolute',
+        top: 60,
+        left: 0,
+        right: 0,
+        backgroundColor: '#ffffff',
+        borderWidth: 1,
+        borderColor: '#e2e8f0',
+        borderRadius: 12,
+        marginTop: 6,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.12,
+        shadowRadius: 16,
+        elevation: 30,
+        zIndex: 5001,
+        overflow: 'hidden',
+    },
+
+    selectItem: {
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        backgroundColor: '#ffffff',
+        borderBottomWidth: 1,
+        borderBottomColor: '#f1f5f9',
+    },
+
+    selectItemLast: {
+        borderBottomWidth: 0,
+    },
+
+    selectItemSelected: {
+        backgroundColor: '#f0fdf4',
+    },
+
+    selectItemText: {
+        fontSize: 15,
+        color: '#334155',
+    },
+
+    selectItemTextSelected: {
+        color: '#2A6E3F',
+        fontWeight: '600',
+    },
+    // Контент скролла
     label: {
         fontSize: 13,
         fontWeight: '600',
@@ -832,45 +927,6 @@ const styles = StyleSheet.create({
         fontSize: 15,
         color: '#0f172a',
         minHeight: 100,
-    },
-    selectWrapper: {
-        position: 'relative',
-        zIndex: 1000,
-    },
-    selectDropdown: {
-        position: 'absolute',
-        top: '100%',
-        left: 0,
-        right: 0,
-        backgroundColor: '#ffffff',
-        borderWidth: 1,
-        borderColor: '#e2e8f0',
-        borderRadius: 12,
-        marginTop: 6,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 12,
-        elevation: 5,
-        zIndex: 1001,
-        overflow: 'hidden',
-    },
-    selectItem: {
-        paddingHorizontal: 16,
-        paddingVertical: 14,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f1f5f9',
-    },
-    selectItemSelected: {
-        backgroundColor: '#f0fdf4',
-    },
-    selectItemText: {
-        fontSize: 15,
-        color: '#334155',
-    },
-    selectItemTextSelected: {
-        color: '#2A6E3F',
-        fontWeight: '600',
     },
     uploadButton: {
         flexDirection: 'row',
