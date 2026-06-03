@@ -3,7 +3,6 @@ import { Platform, StyleSheet } from "react-native";
 export const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#ffffff',
     },
     header: {
         flexDirection: 'row',
@@ -13,6 +12,7 @@ export const styles = StyleSheet.create({
         paddingBottom: 22,
         paddingHorizontal: 20,
         paddingTop: Platform.OS === 'ios' ? 70 : 50,
+        zIndex: 10,
     },
     headerContent: {
         flex: 1,
@@ -44,7 +44,9 @@ export const styles = StyleSheet.create({
     breadcrumb: {
         backgroundColor: '#ffffff',
         paddingHorizontal: 16,
-        paddingVertical: 12,
+        paddingTop: 26,
+        paddingBottom: 10,
+        marginTop: -16,
     },
     breadcrumbScroll: {
         flexDirection: 'row',
@@ -99,11 +101,12 @@ export const styles = StyleSheet.create({
     },
     content: {
         flex: 1,
-        paddingTop: 10,
         padding: Platform.OS === "web" ? 8 : 16,
+        paddingTop: 0,
     },
     section: {
-        marginBottom: 24,
+        marginTop: 14,
+        marginBottom: 32,
     },
     sectionTitle: {
         fontSize: 14,
@@ -119,7 +122,7 @@ export const styles = StyleSheet.create({
         backgroundColor: '#ffffff',
         borderWidth: 1,
         borderColor: '#e5e7eb',
-        borderRadius: 8,
+        borderRadius: 12,
         padding: 12,
     },
     catalogContent: {
@@ -155,7 +158,7 @@ export const styles = StyleSheet.create({
         backgroundColor: '#ffffff',
         borderWidth: 1,
         borderColor: '#e5e7eb',
-        borderRadius: 8,
+        borderRadius: 12,
         padding: 8,
     },
     documentContent: {

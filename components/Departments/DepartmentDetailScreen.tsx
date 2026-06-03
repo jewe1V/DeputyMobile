@@ -15,7 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Profile } from "@/models/ProfileModel";
-import { AuthManager } from "@/components/LoginScreen/LoginScreen";
+import { AuthManager } from "@/api/auth";
 import Toast from "react-native-toast-message";
 import {renderUserItem} from "@/components/UsersScreen/RenderUserItem";
 import { AddUserPopup } from "./AddUserPopup";

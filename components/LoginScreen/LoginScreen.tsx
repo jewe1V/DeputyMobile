@@ -19,270 +19,14 @@ import {apiClient, apiUrl, xAppSecret} from "@/api/api";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from "axios";
 
-// Адаптер для кроссплатформенного хранения
-class StorageAdapter {
-    private static isWeb = Platform.OS === 'web';
-    private static memoryStorage: Map<string, string> = new Map();
-
-    static async getItem(key: string): Promise<string | null> {
-        if (this.isWeb && typeof window !== 'undefined' && window.localStorage) {
-            return localStorage.getItem(key);
-        }
-
-        try {
-            return await AsyncStorage.getItem(key);
-        } catch (error) {
-            // Fallback на память если AsyncStorage недоступен
-            return this.memoryStorage.get(key) || null;
-        }
-    }
-
-    static async setItem(key: string, value: string): Promise<void> {
-        if (this.isWeb && typeof window !== 'undefined' && window.localStorage) {
-            localStorage.setItem(key, value);
-            return;
-        }
-
-        try {
-            await AsyncStorage.setItem(key, value);
-        } catch (error) {
-            this.memoryStorage.set(key, value);
-        }
-    }
-
-    static async multiSet(keyValuePairs: [string, string][]): Promise<void> {
-        if (this.isWeb && typeof window !== 'undefined' && window.localStorage) {
-            keyValuePairs.forEach(([key, value]) => {
-                localStorage.setItem(key, value);
-            });
-            return;
-        }
-
-        try {
-            await AsyncStorage.multiSet(keyValuePairs);
-        } catch (error) {
-            keyValuePairs.forEach(([key, value]) => {
-                this.memoryStorage.set(key, value);
-            });
-        }
-    }
-
-    static async multiRemove(keys: string[]): Promise<void> {
-        if (this.isWeb && typeof window !== 'undefined' && window.localStorage) {
-            keys.forEach(key => localStorage.removeItem(key));
-            return;
-        }
-
-        try {
-            await AsyncStorage.multiRemove(keys);
-        } catch (error) {
-            keys.forEach(key => this.memoryStorage.delete(key));
-        }
-    }
-
-    static async removeItem(key: string): Promise<void> {
-        if (this.isWeb && typeof window !== 'undefined' && window.localStorage) {
-            localStorage.removeItem(key);
-            return;
-        }
-
-        try {
-            await AsyncStorage.removeItem(key);
-        } catch (error) {
-            this.memoryStorage.delete(key);
-        }
-    }
-
-    static async clear(): Promise<void> {
-        if (this.isWeb && typeof window !== 'undefined' && window.localStorage) {
-            localStorage.clear();
-            return;
-        }
-
-        try {
-            await AsyncStorage.clear();
-        } catch (error) {
-            this.memoryStorage.clear();
-        }
-    }
-}
-
-class AuthManager {
-    private static token: string | null = null;
-    private static refreshToken: string | null = null;
-    private static role: string | null = null;
-    private static userId: string | null = null;
-    private static listeners: ((token: string | null) => void)[] = [];
-    private static initialized = false;
-
-    static async initialize() {
-        // Защита от двойной инициализации
-        if (this.initialized) return;
-
-        // Проверка окружения
-        if (!this.isValidEnvironment()) {
-            console.log('AuthManager: Invalid environment for storage');
-            this.initialized = true;
-            return;
-        }
-
-        try {
-            const [token, refreshToken, role, userId] = await Promise.all([
-                StorageAdapter.getItem('authToken'),
-                StorageAdapter.getItem('refreshToken'),
-                StorageAdapter.getItem('userRole'),
-                StorageAdapter.getItem('userId')
-            ]);
-
-            if (token && refreshToken) {
-                this.token = token;
-                this.refreshToken = refreshToken;
-                this.role = role;
-                this.userId = userId;
-            } else {
-                await this.clearAuth();
-            }
-        } catch (e) {
-            console.error('Auth initialization error:', e);
-        } finally {
-            this.initialized = true;
-        }
-    }
-
-    private static isValidEnvironment(): boolean {
-        // Для web - проверяем наличие localStorage
-        if (Platform.OS === 'web') {
-            if (typeof window === 'undefined' || !window.localStorage) {
-                console.warn('AuthManager: localStorage not available');
-                return false;
-            }
-            return true;
-        }
-
-        // Для native - всегда true (но AsyncStorage может упать)
-        return true;
-    }
-
-    static getToken() { return this.token; }
-    static getRefreshToken() { return this.refreshToken; }
-    static getRole() { return this.role; }
-    static getUserId() { return this.userId; }
-    static isInitialized() { return this.initialized; }
-
-    static async setAuth(token: string, refreshToken: string, userId: string, roles: any[]) {
-        this.token = token;
-        this.refreshToken = refreshToken;
-        this.userId = userId;
-        this.role = roles.length > 0 ? roles[0].role.name : null;
-
-        try {
-            await StorageAdapter.multiSet([
-                ['authToken', token],
-                ['refreshToken', refreshToken],
-                ['userId', userId],
-                ['userRole', this.role || '']
-            ]);
-        } catch (e) {
-            console.error('Error saving auth data:', e);
-        }
-
-        this.notifyListeners();
-    }
-
-    static async clearAuth() {
-        this.token = null;
-        this.refreshToken = null;
-        this.role = null;
-        this.userId = null;
-        try {
-            await StorageAdapter.multiRemove([
-                'authToken',
-                'refreshToken',
-                'userRole',
-                'userData',
-                'userId'
-            ]);
-        } catch (e) {
-            console.error('Error clearing auth:', e);
-        }
-        this.notifyListeners();
-    }
-
-    static async refreshAuthTokens(): Promise<string | null> {
-        if (!this.token || !this.refreshToken) {
-            await this.clearAuth();
-            return null;
-        }
-
-        try {
-            const response = await fetch(`${apiUrl}/api/Auth/refresh`, {
-                method: 'POST',
-                headers: {
-                    'accept': 'text/plain',
-                    'Content-Type': 'application/json-patch+json',
-                    'Authorization': `Bearer ${this.token}`,
-                    'X-App-Secret': xAppSecret
-                },
-                body: JSON.stringify({
-                    access_token: this.token,
-                    refresh_token: this.refreshToken
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error('Refresh failed');
-            }
-
-            const data = await response.json();
-
-            await this.setAuth(
-                data.token,
-                data.refresh_token,
-                data.user.id,
-                data.user.user_roles || []
-            );
-
-            await StorageAdapter.setItem('userData', JSON.stringify(data));
-
-            return data.token;
-        } catch (error) {
-            console.error('Token refresh error:', error);
-            await this.clearAuth();
-            return null;
-        }
-    }
-
-    static addListener(listener: (token: string | null) => void) {
-        this.listeners.push(listener);
-        return () => {
-            this.listeners = this.listeners.filter(l => l !== listener);
-        };
-    }
-
-    private static notifyListeners() {
-        this.listeners.forEach(l => l(this.token));
-    }
-
-    static isTokenValid(): boolean {
-        return this.token !== null;
-    }
-}
-
-// Отложенная инициализация для кроссплатформенности
-if (typeof window !== 'undefined' || Platform.OS !== 'web') {
-    // Используем setTimeout для отложенной инициализации
-    setTimeout(() => {
-        AuthManager.initialize().catch(console.error);
-    }, 0);
-}
+import { AuthManager } from '@/api/auth';
+import { useTheme } from "@/context/ThemeContext";
 
 interface AuthResponse {
     token: string;
     refresh_token: string;
     user: Profile;
 }
-
-import { useTheme } from "@/context/ThemeContext";
 
 const LoginScreen = () => {
     const { colors, isDark } = useTheme();
@@ -303,9 +47,7 @@ const LoginScreen = () => {
     // Инициализация AuthManager при монтировании
     useEffect(() => {
         const initAuth = async () => {
-            if (!AuthManager.isInitialized()) {
-                await AuthManager.initialize();
-            }
+            await AuthManager.ensureInitialized();
             setIsAuthReady(true);
         };
 
@@ -369,7 +111,6 @@ const LoginScreen = () => {
                 // @ts-ignore
                 data.user.user_roles || []
             );
-            await StorageAdapter.setItem('userData', JSON.stringify(data));
             console.log('Успешная авторизация, токены сохранены');
 
             // Используем router.replace чтобы нельзя было вернуться на логин
@@ -389,7 +130,7 @@ const LoginScreen = () => {
     if (!isAuthReady) {
         return (
             <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }]}>
-                <ActivityIndicator size="large" color={colors.primary} />
+                <ActivityIndicator size="large" color={isDark ? colors.text : colors.primary} />
             </View>
         );
     }
@@ -481,4 +222,4 @@ const LoginScreen = () => {
     );
 };
 
-export { AuthManager, LoginScreen, StorageAdapter };
+export { LoginScreen };

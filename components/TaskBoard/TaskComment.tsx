@@ -9,7 +9,7 @@ import {
     Platform,
 } from 'react-native';
 import { User, Trash2 } from 'lucide-react-native';
-import { AuthManager } from '@/components/LoginScreen/LoginScreen';
+import { AuthManager } from '@/api/auth';
 import { TaskComment } from './TaskDetail';
 import { useTheme } from '@/context/ThemeContext';
 

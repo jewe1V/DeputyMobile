@@ -1,6 +1,7 @@
-import { apiClient, apiUrl, xAppSecret } from '@/api/api';
+import { apiClient, apiUrl} from '@/api/api';
+import {xAppSecret} from "@/api/auth";
 import { CatalogItem, catalogService } from '@/api/catalogService';
-import { AuthManager } from '@/components/LoginScreen/LoginScreen';
+import { AuthManager } from '@/api/auth';
 import DateTimePickerModal from "@/components/ui/Shared/DateTimePickerModal";
 import { SkeletonItem } from "@/components/ui/Shared/SkeletonLoader";
 import { BottomSheetModal } from '@/components/ui/BottomSheetModal/BottomSheetModal';

@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {SafeAreaProvider} from "react-native-safe-area-context";
-import {AuthManager} from "@/components/LoginScreen/LoginScreen";
+import {AuthManager} from "@/api/auth";
 import {useRouter, useSegments} from 'expo-router';
 import {requestUserPermission, registerDeviceToken, getFCMToken} from "@/api/fcmService"
 import { getMessaging, onMessage, onTokenRefresh } from '@react-native-firebase/messaging';
@@ -29,11 +29,13 @@ const AppNative: React.FC = () => {
     useEffect(() => {
         YamapInstance.setLocale('ru_RU');
         YamapInstance.init(process.env.EXPO_PUBLIC_YAMAP_API_KEY!);
-        // Проверка авторизации
-        const token = AuthManager.getToken();
-        setIsAuthenticated(!!token);
 
-        // Слушатель изменений токена авторизации
+        const init = async () => {
+            await AuthManager.ensureInitialized();
+            setIsAuthenticated(!!AuthManager.getToken());
+        };
+        init();
+
         return AuthManager.addListener((token) => {
             setIsAuthenticated(!!token);
         });
@@ -58,52 +60,31 @@ const AppNative: React.FC = () => {
 
             unsubscribeOnMessage = onMessage(messagingInstance, async (remoteMessage) => {
                 try {
-                    console.log('--- Новое сообщение ---');
-                    console.log('Data:', remoteMessage.data);
+                    let headerTitle = remoteMessage.notification?.title || 'Новое уведомление';
+                    let mainText = remoteMessage.notification?.body || 'Текст отсутствует';
+                    let subText = '';
 
-                    let headerTitle = 'Уведомление';
-                    let mainText = 'Нет заголовка';
-                    let subText = 'Время не указано';
-
-                    // 1. Проверяем, есть ли поле payload и нужно ли его парсить
                     if (remoteMessage.data && typeof remoteMessage.data.payload === 'string') {
                         try {
                             const payload = JSON.parse(remoteMessage.data.payload);
                             const eventData = payload.data || {};
-
                             headerTitle = payload.type === 'event' ? 'Напоминание о событии' : 'Напоминание о дедлайне';
-                            mainText = eventData.Title || 'Без названия';
-                            subText = eventData.StartAt || 'Время не указано';
-                        } catch (parseError) {
-                            console.warn("Payload пришел строкой, но это не JSON:", remoteMessage.data.payload);
-                        }
+                            mainText = eventData.Title || mainText;
+                            subText = eventData.StartAt || '';
+                        } catch (e) {}
                     }
 
-                    // 2. Если payload нет (как в твоем логе), берем данные напрямую из data или notification
-                    else {
-                        headerTitle = remoteMessage.notification?.title || 'Новое уведомление';
-                        // @ts-ignore
-                        mainText = remoteMessage.data?.description || remoteMessage.notification?.body || 'Текст отсутствует';
-                    }
-
-                    // 3. Показываем Toast только с проверенными данными
                     Toast.show({
                         type: 'customNotification',
                         text1: headerTitle,
-                        position: 'top',
-                        props: {
-                            title: mainText,
-                            time: subText
-                        },
+                        props: { title: mainText, time: subText },
                     });
-
                 } catch (e) {
-                    console.error("Критическая ошибка в onMessage:", e);
+                    console.error("Critical error in onMessage:", e);
                 }
             });
 
             unsubscribeOnTokenRefresh = onTokenRefresh(messagingInstance, async (newToken) => {
-                console.log('FCM Token refreshed:', newToken);
                 const authToken = AuthManager.getToken();
                 if (authToken) {
                     await registerDeviceToken(authToken, newToken);

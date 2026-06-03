@@ -1,12 +1,24 @@
 import { Tabs } from "expo-router";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { AuthManager } from "@/components/LoginScreen/LoginScreen";
+import { AuthManager } from "@/api/auth";
 import { CustomBottomTabBar } from "@/components/ui/Shared/CustomBottomTabBar";
 
 export default function AppLayout() {
     const insets = useSafeAreaInsets();
-    const role = AuthManager.getRole();
+    const [role, setRole] = useState(AuthManager.getRole());
+
+    useEffect(() => {
+        const updateRole = async () => {
+            await AuthManager.ensureInitialized();
+            setRole(AuthManager.getRole());
+        };
+        updateRole();
+
+        return AuthManager.addListener(() => {
+            setRole(AuthManager.getRole());
+        });
+    }, []);
 
     return (
         <Tabs

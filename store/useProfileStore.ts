@@ -6,7 +6,7 @@ import NetInfo from '@react-native-community/netinfo';
 import Toast from 'react-native-toast-message';
 import { Profile } from "@/models/ProfileModel";
 
-import { AuthManager } from '@/components/LoginScreen/LoginScreen';
+import { AuthManager } from '@/api/auth';
 
 interface ProfileState {
     profiles: Record<string, Profile>;

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Modal, View, TouchableOpacity, Image, Text, Platform } from 'react-native';
 import { X, Download } from 'lucide-react-native';
-import { AuthManager } from "@/components/LoginScreen/LoginScreen";
+import { AuthManager } from "@/api/auth";
 import { apiUrl, xAppSecret } from '@/api/api';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 

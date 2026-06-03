@@ -4,8 +4,9 @@ import { Info } from 'lucide-react-native';
 import { Text, TouchableOpacity, View, Image, Platform } from 'react-native';
 import { styles } from './file-manager-screen';
 import { JSX, useState, useEffect } from 'react';
-import { apiUrl, xAppSecret } from "@/api/api";
-import { AuthManager } from "@/components/LoginScreen/LoginScreen";
+import { apiUrl } from "@/api/api";
+import {xAppSecret} from "@/api/auth";
+import { AuthManager } from "@/api/auth";
 import {ImagePreviewModal} from "@/components/EventsScreen/ImagePreviewModal";
 import { useTheme } from '@/context/ThemeContext';
 

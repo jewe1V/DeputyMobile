@@ -31,7 +31,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { taskService } from '@/api/taskService';
 import { Task, priorityMap } from '@/models/TaskBoardModel';
 import { styles } from './task-detail-style';
-import { AuthManager } from "@/components/LoginScreen/LoginScreen";
+import { AuthManager } from "@/api/auth";
 import {SkeletonItem} from "@/components/ui/Shared/SkeletonLoader";
 import { apiClient } from '@/api/api';
 import { TaskCommentComponent } from './TaskComment';

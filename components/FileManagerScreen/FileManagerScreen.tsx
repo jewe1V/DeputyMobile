@@ -15,8 +15,7 @@ import {
     Text,
     TouchableOpacity,
     View,
-    RefreshControl, Modal, ActivityIndicator,
-} from 'react-native';
+    RefreshControl} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CatalogCard } from './CatalogCard';
 import { DocumentCard } from './DocumentCard';
@@ -24,8 +23,8 @@ import { DocumentDetailModal } from './DocumentDetailModal';
 import { useFileManagerPresenter } from './FileManagerPresenter';
 import { styles } from './file-manager-screen';
 import { CreateCatalogModal } from './CreateCatalogModal';
-import {AuthManager} from "@/components/LoginScreen/LoginScreen";
-import {useMemo} from "react";
+import {AuthManager} from "@/api/auth";
+import {useMemo, useState, useEffect} from "react";
 import { UploadingDocumentCard } from './UploadingDocumentCard';
 import { useTheme } from '@/context/ThemeContext';
 
@@ -33,7 +32,19 @@ export function FileManager() {
     const { colors, isDark } = useTheme();
     const { state, handlers, computed } = useFileManagerPresenter();
     const insets = useSafeAreaInsets();
-    const userRole = AuthManager.getRole();
+    const [userRole, setUserRole] = useState(AuthManager.getRole());
+
+    useEffect(() => {
+        const updateRole = async () => {
+            await AuthManager.ensureInitialized();
+            setUserRole(AuthManager.getRole());
+        };
+        updateRole();
+
+        return AuthManager.addListener(() => {
+            setUserRole(AuthManager.getRole());
+        });
+    }, []);
 
     const showCreateCatalogButton = useMemo(() => {
         if (!state.currentCatalog) return false;
@@ -104,7 +115,7 @@ export function FileManager() {
 
             {/* Breadcrumb */}
             {state.currentCatalog && (
-                <View style={[styles.breadcrumb, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+                <View style={[styles.breadcrumb, { backgroundColor: colors.card }]}>
                     <ScrollView
                         horizontal
                         showsHorizontalScrollIndicator={false}
@@ -226,7 +237,7 @@ export function FileManager() {
 
                 {/* Documents List */}
                 {state.currentCatalog && !state.loading && (computed.filteredDocuments.length > 0 || state.uploading) && (
-                    <View style={styles.section}>
+                    <View style={[styles.section, {marginTop: -8}]}>
                         <Text style={[styles.sectionTitle, { color: colors.text }]}>
                             Файлы ({computed.filteredDocuments.length + (state.uploading ? 1 : 0)})
                         </Text>

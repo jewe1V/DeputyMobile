@@ -45,7 +45,7 @@ export const SkeletonItem: React.FC<SkeletonItemProps> = ({
 
     const opacity = shimmerAnimation.interpolate({
         inputRange: [0, 1],
-        outputRange: [0.3, 0.7],
+        outputRange: isDark ? [0.1, 0.3] : [0.3, 0.7],
     });
 
     return (
@@ -53,7 +53,7 @@ export const SkeletonItem: React.FC<SkeletonItemProps> = ({
             style={[
                 styles.skeleton,
                 {
-                    backgroundColor: isDark ? colors.iconBox : '#E8E8E8',
+                    backgroundColor: isDark ? '#334155' : '#E8E8E8',
                     width: typeof width === 'string' ? width : width,
                     height,
                     borderRadius,
@@ -76,8 +76,9 @@ export const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
     itemHeight = 100,
     itemMargin = 12
 }) => {
+    const { colors } = useTheme();
     return (
-        <View style={{ padding: 16, flex: 1,  }}>
+        <View style={{ padding: 16, flex: 1, backgroundColor: colors.background }}>
             {[...Array(count)].map((_, i) => (
                 <SkeletonItem
                     key={i}

@@ -19,7 +19,7 @@ import {router, useLocalSearchParams, useRouter} from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import { Profile } from "@/models/ProfileModel";
-import { AuthManager } from "@/components/LoginScreen/LoginScreen";
+import { AuthManager } from "@/api/auth";
 import { SelectionPopup } from "@/components/UsersScreen/SelectionPopup";
 import Toast from "react-native-toast-message";
 import {ArrowLeft, Building2, X} from "lucide-react-native";

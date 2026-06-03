@@ -4,7 +4,7 @@ import {
     ActivityIndicator, RefreshControl, Modal, Alert, Platform, Image, Share
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { AuthManager } from "@/components/LoginScreen/LoginScreen";
+import { AuthManager } from "@/api/auth";
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from "react-native-safe-area-context";

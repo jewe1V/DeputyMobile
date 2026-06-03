@@ -9,7 +9,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DateTimePickerModal from "@/components/ui/Shared/DateTimePickerModal";
 import { router, useLocalSearchParams } from "expo-router";
 import {apiClient } from "@/api/api";
-import { AuthManager } from "@/components/LoginScreen/LoginScreen";
+import { AuthManager } from "@/api/auth";
 import { LinearGradient } from "expo-linear-gradient";
 import LocationPickerModal from "./LocationPickerModal";
 import Toast from "react-native-toast-message";

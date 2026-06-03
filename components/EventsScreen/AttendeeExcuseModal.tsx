@@ -5,7 +5,7 @@ import { FileText, Download, User, X } from 'lucide-react-native';
 import { BottomSheetModal } from '@/components/ui/BottomSheetModal/BottomSheetModal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { apiUrl, xAppSecret } from '@/api/api';
-import { AuthManager } from '@/components/LoginScreen/LoginScreen';
+import { AuthManager } from '@/api/auth';
 import {ImagePreviewModal} from "@/components/EventsScreen/ImagePreviewModal";
 import { useTheme } from '@/context/ThemeContext';
 

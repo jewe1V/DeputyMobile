@@ -106,9 +106,7 @@ const UsersListScreen = () => {
             />
 
             {loading && !refreshing ? (
-                <View style={styles.center}>
-                    <ActivityIndicator size="large" color={colors.primary} />
-                </View>
+                <SkeletonLoader count={6} itemHeight={70} itemMargin={12} />
             ) : (
                 <FlatList
                     data={filteredUsers}

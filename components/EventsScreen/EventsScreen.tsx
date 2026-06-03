@@ -220,19 +220,25 @@ const EventsScreen: React.FC = () => {
                     }
                 >
                     <View style={styles.calendarContainer}>
-                        <Calendar
-                            selectedDate={selectedDate}
-                            onSelectDate={handleDateSelect}
-                            events={events}
-                            onMonthChange={(y, m) => loadEvents(y, m, false, eventsFilter === 'mine')}
-                        />
+                        {loading && !refreshing ? (
+                            <View style={{ width: '100%', padding: 20 }}>
+                                <SkeletonLoader count={1} itemHeight={350} />
+                            </View>
+                        ) : (
+                            <Calendar
+                                selectedDate={selectedDate}
+                                onSelectDate={handleDateSelect}
+                                events={events}
+                                onMonthChange={(y, m) => loadEvents(y, m, false, eventsFilter === 'mine')}
+                            />
+                        )}
                     </View>
                 </ScrollView>
             ) : (
                 // Список выводится ТОЛЬКО в режиме 'list'
                 <View style={[styles.contentSection, { marginTop: 16 }]}>
-                    {loading ? (
-                        <ActivityIndicator size="large" color={colors.primary} />
+                    {loading && !refreshing ? (
+                        <SkeletonLoader count={5} itemHeight={90} itemMargin={12} />
                     ) : (
                         <FlatList
                             data={grouped}

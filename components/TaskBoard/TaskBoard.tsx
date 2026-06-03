@@ -23,7 +23,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { styles } from './task-board-style';
-import { AuthManager } from "@/components/LoginScreen/LoginScreen";
+import { AuthManager } from "@/api/auth";
 import { declOfNum } from '@/utils';
 import { Filters } from '../ui/Shared/Filters';
 import { useTheme } from '@/context/ThemeContext';

@@ -1,4 +1,4 @@
-import {AuthManager} from '@/components/LoginScreen/LoginScreen';
+import { AuthManager } from '@/api/auth';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState, useCallback, useEffect } from 'react';
 import {
@@ -59,14 +59,19 @@ export function ProfileScreen() {
     const insets = useSafeAreaInsets();
 
     const { profiles, isLoading: loading, fetchProfile } = useProfileStore();
-    const profile = profiles[id || 'current'] || null;
     const [refreshing, setRefreshing] = useState(false);
+    const [isReady, setIsReady] = useState(false);
     const { colors, isDark, toggleTheme } = useTheme();
 
-    const userId = AuthManager.getUserId();
-    const userRole = AuthManager.getRole();
+    const [userId, setUserId] = useState<string | null>(null);
+    const [userRole, setUserRole] = useState<string | null>(null);
 
     const loadProfile = useCallback(async () => {
+        await AuthManager.ensureInitialized();
+        setUserId(AuthManager.getUserId());
+        setUserRole(AuthManager.getRole());
+        setIsReady(true);
+
         await fetchProfile(id);
         setRefreshing(false);
     }, [id, fetchProfile]);
@@ -85,6 +90,8 @@ export function ProfileScreen() {
         setRefreshing(true);
         loadProfile();
     };
+
+    const profile = profiles[id || 'current'] || null;
 
     const handleLogout = () => {
         if (Platform.OS === 'web') {
@@ -107,12 +114,10 @@ export function ProfileScreen() {
         }
     };
 
-    if (loading) {
+    if (loading || !isReady) {
         return (
-            <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.background }]}>
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={colors.primary} />
-                </View>
+            <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.background, flex: 1, justifyContent: 'center', alignItems: 'center' }]}>
+                <ActivityIndicator size="large" color={isDark ? colors.text : colors.primary} />
             </View>
         );
     }
@@ -326,7 +331,6 @@ export function ProfileScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f8fafc',
     },
     loadingContainer: {
         flex: 1,

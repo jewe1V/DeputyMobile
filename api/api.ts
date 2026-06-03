@@ -1,13 +1,11 @@
 import axios, { AxiosInstance } from "axios";
-import { AuthManager } from "@/components/LoginScreen/LoginScreen";
+import { AuthManager, xAppSecret } from "./auth";
 import Toast from "react-native-toast-message";
-import { router } from "expo-router";
 
-export const apiUrl = process.env.EXPO_PUBLIC_API_URL;
-export const xAppSecret = "AAUMisSb1yxKapDSZbWKvNCUEFQJaM7Zwa4ViPSxMhGsi9bWk7mJBjOlvc9w";
+export const apiUrl = process.env.EXPO_PUBLIC_API_URL || "https://ddc.egd.ru";
 
 export const apiClient: AxiosInstance = axios.create({
-    baseURL: "https://ddc.egd.ru",
+    baseURL: apiUrl,
     headers: {
         'X-App-Secret': xAppSecret,
         'Content-Type': 'application/json',
@@ -16,20 +14,18 @@ export const apiClient: AxiosInstance = axios.create({
 
 apiClient.interceptors.request.use(
     async (config) => {
+        // Ждем, пока AuthManager загрузит токены из хранилища
+        await AuthManager.ensureInitialized();
+
         const token = AuthManager.getToken();
 
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
-        } else {
-            console.log(`⚠️ No token for ${config.method?.toUpperCase()} ${config.url}`);
         }
-
-        config.headers['X-App-Secret'] = xAppSecret;
 
         return config;
     },
     (error) => {
-        console.error('Request interceptor error:', error);
         return Promise.reject(error);
     }
 );
@@ -97,6 +93,7 @@ apiClient.interceptors.response.use(
                     text1: 'Сессия истекла',
                     text2: 'Пожалуйста, войдите снова'
                 });
+                router.push('/login');
                 return Promise.reject(refreshError);
             } finally {
                 isRefreshing = false;

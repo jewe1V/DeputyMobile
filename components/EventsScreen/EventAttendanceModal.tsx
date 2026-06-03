@@ -6,7 +6,7 @@ import {
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { X, Upload, FileText } from 'lucide-react-native';
-import { AuthManager } from '@/components/LoginScreen/LoginScreen';
+import { AuthManager } from '@/api/auth';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { apiClient, apiUrl, xAppSecret } from "@/api/api";
 import { BottomSheetModal } from '@/components/ui/BottomSheetModal/BottomSheetModal';

@@ -72,20 +72,32 @@ export function Dashboard() {
 
     if (isLoading) {
         return (
-            <ScrollView
-                showsVerticalScrollIndicator={false}
-                style={{ backgroundColor: colors.background }}
-                refreshControl={
-                    <RefreshControl
-                        refreshing={refreshing}
-                        onRefresh={onRefresh}
-                        colors={[colors.primary]}
-                        tintColor={colors.primary}
-                    />
-                }
-            >
+            <View style={{ flex: 1, backgroundColor: colors.background }}>
                 <HeaderSkeleton insetsTop={insets.top}/>
-            </ScrollView>
+                <ScrollView
+                    showsVerticalScrollIndicator={false}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={onRefresh}
+                            colors={[colors.primary]}
+                            tintColor={colors.primary}
+                        />
+                    }
+                >
+                    <View style={{ padding: 16 }}>
+                        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
+                            <SkeletonItem width="31%" height={100} borderRadius={20} />
+                            <SkeletonItem width="31%" height={100} borderRadius={20} />
+                            <SkeletonItem width="31%" height={100} borderRadius={20} />
+                        </View>
+                        <SkeletonItem width="50%" height={24} marginBottom={16} borderRadius={4} />
+                        <SkeletonItem height={90} marginBottom={12} borderRadius={20} />
+                        <SkeletonItem height={90} marginBottom={12} borderRadius={20} />
+                        <SkeletonItem height={90} marginBottom={12} borderRadius={20} />
+                    </View>
+                </ScrollView>
+            </View>
         );
     }
     if (error || !data) {
