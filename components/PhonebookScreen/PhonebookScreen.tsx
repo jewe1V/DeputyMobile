@@ -25,29 +25,22 @@ export interface PhonebookModel {
     office_number: string;
 }
 
+import { usePhonebookStore } from "@/store/usePhonebookStore";
+
 export const PhonebookScreen = () => {
     const { colors, isDark } = useTheme();
     const insets = useSafeAreaInsets();
     const navigation = useNavigation();
-    const [phonebookData, setPhonebookData] = useState<PhonebookModel[]>([]);
-    const [loading, setLoading] = useState(false);
+
+    const { data: phonebookData, isLoading: loading, fetchPhonebook } = usePhonebookStore();
     const [refreshing, setRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
 
     const loadPhonebook = useCallback(async (isRefresh = false) => {
-        try {
-            if (isRefresh) setRefreshing(true);
-            else setLoading(true);
-
-            const { data } = await apiClient.get<PhonebookModel[]>('/api/PhoneBook');
-            setPhonebookData(data);
-        } catch (e) {
-            console.error('Ошибка при загрузке телефонной книги:', e);
-        }  finally {
-            setLoading(false);
-            setRefreshing(false);
-        }
-    }, []);
+        if (isRefresh) setRefreshing(true);
+        await fetchPhonebook(isRefresh);
+        setRefreshing(false);
+    }, [fetchPhonebook]);
 
     useEffect(() => {
         loadPhonebook();

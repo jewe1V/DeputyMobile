@@ -26,6 +26,8 @@ import { formatDate, getLocalDateKey, getTodayLocalKey } from "@/utils";
 import { Filters } from '../ui/Shared/Filters';
 import { useTheme } from '@/context/ThemeContext';
 
+import { useEventsStore } from '@/store/useEventsStore';
+
 const EventsScreen: React.FC = () => {
     const { colors, isDark } = useTheme();
     const params = useLocalSearchParams<{ isMine?: string }>();
@@ -34,8 +36,8 @@ const EventsScreen: React.FC = () => {
     const now = new Date();
     const [viewDate, setViewDate] = useState({ year: now.getFullYear(), month: now.getMonth() });
     const [selectedDate, setSelectedDate] = useState<string | undefined>();
-    const [events, setEvents] = useState<Event[]>([]);
-    const [loading, setLoading] = useState(false);
+
+    const { events, isLoading: loading, fetchEvents } = useEventsStore();
     const [refreshing, setRefreshing] = useState(false);
     const [isDayModalVisible, setIsDayModalVisible] = useState(false);
     const [selectedDayEvents, setSelectedDayEvents] = useState<Event[]>([]);
@@ -63,36 +65,9 @@ const EventsScreen: React.FC = () => {
     );
 
     const loadEvents = useCallback(async (year: number, month: number, isRefresh = false, isOnlyMy = false) => {
-        try {
-            if (!isRefresh) setLoading(true);
-
-            setViewDate({ year, month });
-
-            const from = new Date(year, month, 1).toISOString();
-            const to = new Date(year, month + 1, 0, 23, 59, 59).toISOString();
-
-            const response = await apiClient.get('/api/Events/upcoming', {
-                params: {
-                    from: from,
-                    to: to,
-                    onlyMy: isOnlyMy
-                },
-                headers: {
-                    Accept: 'text/plain'
-                }
-            });
-            const data: Event[] = await response.data;
-            console.log(data);
-            setEvents(data);
-            return data;
-        } catch (e) {
-            console.error('Ошибка при загрузке событий:', e);
-            return [];
-        } finally {
-            if (isRefresh) setRefreshing(false);
-            else setLoading(false);
-        }
-    }, []);
+        setViewDate({ year, month });
+        return await fetchEvents(year, month, isRefresh, isOnlyMy);
+    }, [fetchEvents]);
 
     useFocusEffect(
         useCallback(() => {

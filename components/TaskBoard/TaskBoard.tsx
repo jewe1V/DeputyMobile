@@ -31,6 +31,8 @@ import { useTheme } from '@/context/ThemeContext';
 type TaskMode = 'all' | 'my_tasks' | 'assigned' | 'authored';
 type StatusItem = { name: string; isDefault: boolean };
 
+import { useTaskStore } from '@/store/useTaskStore';
+
 export function TaskBoard() {
     const { colors, isDark } = useTheme();
     const userRole = AuthManager.getRole();
@@ -42,11 +44,9 @@ export function TaskBoard() {
     const [taskMode, setTaskMode] = useState<TaskMode>('all'); // По умолчанию все задачи
     const [filterStatus, setFilterStatus] = useState<string | 'all'>('all');
     const [sortBy, setSortBy] = useState<'date' | 'priority'>('date');
-    const [tasks, setTasks] = useState<Task[]>([]);
-    const [statuses, setStatuses] = useState<StatusItem[]>([]);
-    const [loading, setLoading] = useState(true);
+
+    const { tasks, statuses, isLoading: loading, error, fetchTasks, fetchStatuses } = useTaskStore();
     const [refreshing, setRefreshing] = useState(false);
-    const [error, setError] = useState<string | null>(null);
     const insets = useSafeAreaInsets();
 
     // Функция для определения начального режима при заходе на экран
@@ -81,61 +81,14 @@ export function TaskBoard() {
     );
 
     useEffect(() => {
-        const fetchStatuses = async () => {
-            try {
-                // @ts-ignore
-                const data = await taskService.getStatuses();
-                setStatuses(data);
-            } catch (err) {
-                console.error('Ошибка при загрузке статусов:', err);
-            }
-        };
-
         fetchStatuses();
-    }, []);
+    }, [fetchStatuses]);
 
     const loadTasks = useCallback(async (isSilentRefresh = false) => {
-        if (!isSilentRefresh) setLoading(true);
-        setError(null);
-
-        try {
-            let apiData: Task[] = [];
-
-            switch (taskMode) {
-                case 'all':
-                    // @ts-ignore
-                    apiData = userRole === 'Admin'
-                        ? await taskService.getAllTasks()
-                        : await taskService.getTasksByCurrentUser();
-                    break;
-                case 'my_tasks':
-                    // @ts-ignore
-                    apiData = await taskService.getTasksByCurrentUser();
-                    break;
-                case 'assigned':
-                    // @ts-ignore
-                    apiData = await taskService.getAssignedTasks();
-                    break;
-                case 'authored':
-                    // @ts-ignore
-                    apiData = await taskService.getAuthorTasks();
-                    break;
-                default:
-                    // @ts-ignore
-                    apiData = await taskService.getTasksByCurrentUser();
-            }
-
-            setTasks(apiData);
-        } catch (error: any) {
-            console.error('Ошибка при загрузке задач:', error);
-            const errorMessage = error?.message || 'Не удалось загрузить задачи';
-            setError(errorMessage);
-            setTasks([]);
-        } finally {
-            setLoading(false);
-            setRefreshing(false);
-        }
-    }, [taskMode, userRole]);
+        if (isSilentRefresh) setRefreshing(true);
+        await fetchTasks(taskMode, userRole || '', isSilentRefresh);
+        setRefreshing(false);
+    }, [taskMode, userRole, fetchTasks]);
 
     useFocusEffect(
         useCallback(() => {

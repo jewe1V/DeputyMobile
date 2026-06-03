@@ -50,13 +50,16 @@ const translateRole = (role: string): string => {
 };
 
 
+import { useProfileStore } from '@/store/useProfileStore';
+
 export function ProfileScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const navigation = useNavigation();
     const router = useRouter();
     const insets = useSafeAreaInsets();
-    const [profile, setProfile] = useState<Profile | null>(null);
-    const [loading, setLoading] = useState(true);
+
+    const { profiles, isLoading: loading, fetchProfile } = useProfileStore();
+    const profile = profiles[id || 'current'] || null;
     const [refreshing, setRefreshing] = useState(false);
     const { colors, isDark, toggleTheme } = useTheme();
 
@@ -64,18 +67,9 @@ export function ProfileScreen() {
     const userRole = AuthManager.getRole();
 
     const loadProfile = useCallback(async () => {
-        try {
-            const url = id ? `/api/Auth/${id}` : '/api/Auth/current';
-
-            const { data } = await apiClient.get(url);
-            setProfile(data);
-        } catch (error) {
-            console.error('Profile load error:', error);
-        } finally {
-            setLoading(false);
-            setRefreshing(false);
-        }
-    }, [id]);
+        await fetchProfile(id);
+        setRefreshing(false);
+    }, [id, fetchProfile]);
 
     useEffect(() => {
         loadProfile();

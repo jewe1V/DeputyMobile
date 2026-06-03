@@ -22,14 +22,15 @@ import {Search} from "@/components/ui/Shared/Search";
 import {apiClient} from "@/api/api";
 import { useTheme } from '@/context/ThemeContext';
 
+import { useUsersStore } from '@/store/useUsersStore';
+
 const UsersListScreen = () => {
     const { colors, isDark } = useTheme();
     const router = useRouter();
     const insets = useSafeAreaInsets();
 
-    const [users, setUsers] = useState<Profile[]>([]);
+    const { users, isLoading: loading, fetchUsers } = useUsersStore();
     const [filteredUsers, setFilteredUsers] = useState<Profile[]>([]);
-    const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
     // Добавляем недостающие состояния для фильтрации
@@ -55,32 +56,18 @@ const UsersListScreen = () => {
         setFilteredUsers(result);
     }, []);
 
-    const fetchUsers = async () => {
-        try {
-            const response = await apiClient.get('/api/Auth/all', {
-                headers: { 'Accept': 'application/json' }
-            });
-
-            const data = response.data ? response.data : [];
-            setUsers(data);
-            applyFilters(data, searchQuery, roleFilter);
-        } catch (error) {
-            console.error("Ошибка при загрузке:", error);
-            setUsers([]);
-            setFilteredUsers([]);
-        } finally {
-            setLoading(false);
-            setRefreshing(false);
-        }
-    };
-
     useEffect(() => {
         fetchUsers();
     }, []);
 
-    const onRefresh = () => {
+    useEffect(() => {
+        applyFilters(users, searchQuery, roleFilter);
+    }, [users, searchQuery, roleFilter, applyFilters]);
+
+    const onRefresh = async () => {
         setRefreshing(true);
-        fetchUsers();
+        await fetchUsers(true);
+        setRefreshing(false);
     };
 
 

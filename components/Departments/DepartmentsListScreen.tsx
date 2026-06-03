@@ -23,14 +23,15 @@ import { declOfNum } from '@/utils';
 import {Search} from "@/components/ui/Shared/Search";
 import { useTheme } from '@/context/ThemeContext';
 
+import { useDepartmentsStore } from '@/store/useDepartmentsStore';
+
 const DepartmentsListScreen = () => {
     const { colors, isDark } = useTheme();
     const router = useRouter();
     const insets = useSafeAreaInsets();
 
-    const [departments, setDepartments] = useState<Department[]>([]);
+    const { departments, isLoading: loading, fetchDepartments } = useDepartmentsStore();
     const [filteredDepartments, setFilteredDepartments] = useState<Department[]>([]);
-    const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -50,33 +51,6 @@ const DepartmentsListScreen = () => {
         setFilteredDepartments(result);
     }, []);
 
-    const fetchDepartments = async () => {
-        try {
-            const response = await apiClient.get('/api/Department/get-all', {
-                headers: {
-                    'Accept': 'application/json'
-                }
-            });
-
-            const data = response.data;
-
-            setDepartments(data);
-            applyFilters(data, searchQuery);
-        } catch (error) {
-            setDepartments([]);
-            setFilteredDepartments([]);
-            console.error("Ошибка при загрузке отделов:", error);
-            Toast.show({
-                type: 'error',
-                text1: 'Ошибка',
-                text2: 'Не удалось загрузить список отделов'
-            });
-        } finally {
-            setLoading(false);
-            setRefreshing(false);
-        }
-    };
-
     const createDepartment = async (name: string) => {
         setCreating(true);
         try {
@@ -90,7 +64,7 @@ const DepartmentsListScreen = () => {
             });
 
             Toast.show({ type: 'success', text1: 'Успешно', text2: 'Отдел создан' });
-            await fetchDepartments();
+            await fetchDepartments(true);
         } catch (error) {
             Toast.show({ type: 'error', text1: 'Ошибка', text2: 'Не удалось создать отдел' });
             throw error;
@@ -117,7 +91,7 @@ const DepartmentsListScreen = () => {
                                 text1: 'Успешно',
                                 text2: 'Отдел удален'
                             });
-                            await fetchDepartments();
+                            await fetchDepartments(true);
                         } catch (error) {
                             console.error("Ошибка при удалении отдела:", error);
                             Toast.show({
@@ -136,9 +110,14 @@ const DepartmentsListScreen = () => {
         fetchDepartments();
     }, []);
 
-    const onRefresh = () => {
+    useEffect(() => {
+        applyFilters(departments, searchQuery);
+    }, [departments, searchQuery, applyFilters]);
+
+    const onRefresh = async () => {
         setRefreshing(true);
-        fetchDepartments();
+        await fetchDepartments(true);
+        setRefreshing(false);
     };
 
     const renderDepartmentItem = ({ item }: { item: Department }) => (

@@ -22,77 +22,28 @@ import {EventCard} from "@/components/EventsScreen/EventCard";
 import {Task} from "@/models/TaskBoardModel";
 import {formatDateToDay} from "@/utils";
 import {TaskCard} from "@/components/TaskBoard/TaskCard";
-import { StatCard } from './StatCard';
+import {StatCard} from './StatCard';
 import {HeaderSkeleton} from "@/components/DashboardScreen/HeaderSkeleton";
 import {apiClient} from "@/api/api";
-
-interface DashboardData {
-    job_title: string;
-    user_name: string;
-    event_count: number;
-    urgent_event_count: number;
-    task_count: number;
-    urgent_tasks_count: number;
-    tasks: any[];
-    urgent_tasks: any[];
-    urgent_events: any[];
-    events_by_status: {
-        Going: any[];
-        NotGoing: any[];
-        Unknown: any[];
-        NotAnswered: any[];
-    };
-}
-
-import { useTheme } from '@/context/ThemeContext';
+import {useDashboardStore} from '@/store/useDashboardStore';
+import {useTheme} from '@/context/ThemeContext';
 
 export function Dashboard() {
     const insets = useSafeAreaInsets();
-    const { colors, isDark } = useTheme();
+    const {colors, isDark} = useTheme();
 
-    const [data, setData] = useState<DashboardData | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const {data, isLoading, error, fetchDashboardData} = useDashboardStore();
     const [refreshing, setRefreshing] = useState(false);
 
     useEffect(() => {
         fetchDashboardData(false);
     }, []);
 
-    const fetchDashboardData = async (isRefresh = false) => {
-        try {
-            if (!isRefresh) {
-                setIsLoading(true);
-            }
-            setError(null);
-
-            const response = await apiClient.get('/api/Dashboard/get', {
-                headers: { 'accept': '*/*' }
-            });
-
-            setData(response.data);
-        } catch (error: any) {
-            console.error(error);
-
-            if (error.response?.status === 401) {
-                setError('Сессия истекла. Пожалуйста, войдите снова');
-            } else if (error.response?.status) {
-                setError(`Ошибка сервера: ${error.response.status}`);
-            } else {
-                setError('Не удалось загрузить данные дашборда. Проверьте подключение к интернету');
-            }
-        } finally {
-            if (!isRefresh) {
-                setIsLoading(false);
-            }
-            setRefreshing(false);
-        }
-    };
-
-    const onRefresh = useCallback(() => {
+    const onRefresh = useCallback(async () => {
         setRefreshing(true);
-        fetchDashboardData(true);
-    }, []);
+        await fetchDashboardData(true);
+        setRefreshing(false);
+    }, [fetchDashboardData]);
 
     const getInitials = (name: string) => {
         if (!name) return '';
