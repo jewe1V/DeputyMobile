@@ -5,10 +5,9 @@ import {
     StyleSheet,
     FlatList,
     TouchableOpacity,
-    ActivityIndicator,
     StatusBar,
     RefreshControl,
-    Platform
+    Platform, ScrollView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -19,10 +18,10 @@ import {renderUserItem} from "@/components/UsersScreen/RenderUserItem";
 import {declOfNum} from "@/utils";
 import {Plus} from "lucide-react-native";
 import {Search} from "@/components/ui/Shared/Search";
-import {apiClient} from "@/api/api";
 import { useTheme } from '@/context/ThemeContext';
 
 import { useUsersStore } from '@/store/useUsersStore';
+import {SkeletonLoader} from "@/components/ui/Shared/SkeletonLoader";
 
 const UsersListScreen = () => {
     const { colors, isDark } = useTheme();

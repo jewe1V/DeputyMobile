@@ -1,6 +1,6 @@
 import {View, StyleSheet, Text, TouchableOpacity, Platform, Linking} from "react-native";
 import {PhonebookModel} from "@/models/PhonebookModel";
-import {MapPin, Phone, PhoneCall} from "lucide-react-native";
+import {Phone, PhoneCall} from "lucide-react-native";
 import React from "react";
 import { useTheme } from "@/context/ThemeContext";
 

@@ -19,7 +19,6 @@ import { Select } from "@/components/ui/Shared/Select";
 import {Notification, NotificationType} from "@/models/NotificationModel";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 import {NotificationSkeletonItem} from "@/components/NotificationsPage/NotificationSkeletonItem";
-import {SkeletonItem} from "@/components/ui/Shared/SkeletonLoader";
 import { Filters } from '../ui/Shared/Filters';
 import {apiClient} from "@/api/api";
 import { useTheme } from '@/context/ThemeContext';

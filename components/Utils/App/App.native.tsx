@@ -55,7 +55,7 @@ const AppNative: React.FC = () => {
             const authToken = AuthManager.getToken();
 
             if (fcmToken && authToken) {
-                await registerDeviceToken(authToken, fcmToken);
+                await registerDeviceToken(authToken);
             }
 
             unsubscribeOnMessage = onMessage(messagingInstance, async (remoteMessage) => {
@@ -84,10 +84,10 @@ const AppNative: React.FC = () => {
                 }
             });
 
-            unsubscribeOnTokenRefresh = onTokenRefresh(messagingInstance, async (newToken) => {
+            unsubscribeOnTokenRefresh = onTokenRefresh(messagingInstance, async () => {
                 const authToken = AuthManager.getToken();
                 if (authToken) {
-                    await registerDeviceToken(authToken, newToken);
+                    await registerDeviceToken(authToken);
                 }
             });
         };

@@ -180,10 +180,6 @@ export const styles = StyleSheet.create({
         marginBottom: 4,
         lineHeight: 20,
     },
-    time: {
-        fontSize: 12,
-        color: '#9CA3AF',
-    },
     emptyContainer: {
         alignItems: 'center',
         justifyContent: 'center',

@@ -8,7 +8,8 @@ import {
     ActivityIndicator,
     StatusBar,
     RefreshControl,
-    Alert, Platform
+    Alert, Platform,
+    ScrollView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -24,6 +25,7 @@ import {Search} from "@/components/ui/Shared/Search";
 import { useTheme } from '@/context/ThemeContext';
 
 import { useDepartmentsStore } from '@/store/useDepartmentsStore';
+import {SkeletonLoader} from "@/components/ui/Shared/SkeletonLoader";
 
 const DepartmentsListScreen = () => {
     const { colors, isDark } = useTheme();

@@ -1,7 +1,7 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import {
     View, Text, StyleSheet, ScrollView, TouchableOpacity,
-    ActivityIndicator, RefreshControl, Modal, Alert, Platform, Image, Share
+    ActivityIndicator, RefreshControl, Alert, Platform, Image, Share
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { AuthManager } from "@/api/auth";
@@ -18,7 +18,8 @@ import Toast from "react-native-toast-message";
 // @ts-ignore
 import { EventMap } from "@/components/ui/EventMap/EventMap";
 import {showLocation} from "react-native-map-link";
-import {apiClient, apiUrl, xAppSecret} from '@/api/api';
+import {apiClient, apiUrl} from '@/api/api';
+import {xAppSecret} from "@/api/auth";
 import {ImagePreviewModal} from "@/components/EventsScreen/ImagePreviewModal";
 import { useTheme } from '@/context/ThemeContext';
 

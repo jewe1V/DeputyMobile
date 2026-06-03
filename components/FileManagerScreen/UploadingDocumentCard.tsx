@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import {FileText, File, X} from 'lucide-react-native';
+import {File, X} from 'lucide-react-native';
 import { styles } from './file-manager-screen';
 import {LinearGradient} from "expo-linear-gradient";
 import { useTheme } from '@/context/ThemeContext';

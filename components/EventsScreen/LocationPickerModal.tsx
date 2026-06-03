@@ -6,7 +6,6 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LocationPickerMap } from "@/components/ui/LocationPickerMap/LocationPickerMap";
-import { Platform } from 'react-native';
 import * as Location from 'expo-location';
 
 const INITIAL_REGION = {

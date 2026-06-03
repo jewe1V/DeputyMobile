@@ -8,7 +8,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { X, Upload, FileText } from 'lucide-react-native';
 import { AuthManager } from '@/api/auth';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { apiClient, apiUrl, xAppSecret } from "@/api/api";
+import { apiClient, apiUrl,  } from "@/api/api";
+import {xAppSecret} from '@/api/auth';
 import { BottomSheetModal } from '@/components/ui/BottomSheetModal/BottomSheetModal';
 import { useTheme } from '@/context/ThemeContext';
 

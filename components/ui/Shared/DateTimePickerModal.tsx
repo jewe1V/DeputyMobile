@@ -6,8 +6,6 @@ import {
     TouchableOpacity,
     StyleSheet,
     ScrollView,
-    NativeSyntheticEvent,
-    NativeScrollEvent,
 } from 'react-native';
 import DateTimePicker from 'react-native-ui-datepicker';
 import dayjs from 'dayjs';

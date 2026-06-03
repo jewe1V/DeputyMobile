@@ -2,7 +2,6 @@ import { taskService } from '@/api/taskService';
 import { TaskCard } from "@/components/TaskBoard/TaskCard";
 import { Select } from "@/components/ui/Shared/Select";
 import { SkeletonLoader } from "@/components/ui/Shared/SkeletonLoader";
-import { Task } from '@/models/TaskBoardModel';
 import { useFocusEffect } from '@react-navigation/native';
 import { useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from "expo-linear-gradient";
@@ -19,7 +18,7 @@ import {
     Text,
     TouchableOpacity,
     View,
-    RefreshControl
+    RefreshControl, ScrollView
 } from 'react-native';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { styles } from './task-board-style';

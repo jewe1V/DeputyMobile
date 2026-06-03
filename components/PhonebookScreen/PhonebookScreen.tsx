@@ -14,7 +14,6 @@ import { Search } from "@/components/ui/Shared/Search";
 import {ContactCard} from "@/components/PhonebookScreen/ContactCard";
 import { Button } from "../ui/Shared/Button";
 import {declOfNum} from "@/utils";
-import {apiClient} from "@/api/api";
 import { useTheme } from '@/context/ThemeContext';
 
 export interface PhonebookModel {

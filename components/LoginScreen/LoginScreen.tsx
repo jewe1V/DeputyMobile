@@ -14,9 +14,6 @@ import {
 import { styles } from './style';
 import {Profile} from "@/models/ProfileModel"
 import Toast from "react-native-toast-message";
-import {LinearGradient} from "expo-linear-gradient";
-import {apiClient, apiUrl, xAppSecret} from "@/api/api";
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from "axios";
 
 import { AuthManager } from '@/api/auth';

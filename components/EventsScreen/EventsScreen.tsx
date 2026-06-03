@@ -27,6 +27,7 @@ import { Filters } from '../ui/Shared/Filters';
 import { useTheme } from '@/context/ThemeContext';
 
 import { useEventsStore } from '@/store/useEventsStore';
+import {SkeletonLoader} from "@/components/ui/Shared/SkeletonLoader";
 
 const EventsScreen: React.FC = () => {
     const { colors, isDark } = useTheme();

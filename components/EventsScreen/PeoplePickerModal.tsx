@@ -1,15 +1,15 @@
-import React, { useRef, useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import {
-    Modal, View, Text, TouchableOpacity, ScrollView, StyleSheet,
-    Animated, PanResponder, TextInput, Dimensions
+    View,
+    Text,
+    TouchableOpacity,
+    ScrollView,
+    StyleSheet,
+    TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import {BriefcaseBusiness, Building2} from "lucide-react-native";
-
-const { height: SCREEN_HEIGHT } = Dimensions.get("window");
-const START_Y = SCREEN_HEIGHT * 0.15; // Стартовая позиция (отступ сверху)
-const SHEET_HEIGHT = SCREEN_HEIGHT - START_Y;
+import { Building2 } from "lucide-react-native";
+import { BottomSheetModal as ModalBottomSheet } from "@/components/ui/BottomSheetModal/BottomSheetModal";
 
 type User = { id: string; full_name: string; email: string };
 type Department = { id: string; name: string };
@@ -35,55 +35,21 @@ export const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
                                                                         onConfirm,
                                                                         mode = "both"
                                                                     }) => {
-    const insets = useSafeAreaInsets();
     const [searchQuery, setSearchQuery] = useState("");
-    const [activeTab, setActiveTab] = useState<"users" | "departments">("users");
+    const [activeTab, setActiveTab] = useState<"users" | "departments">(
+        mode === "departments" ? "departments" : "users"
+    );
     const [tempUserIds, setTempUserIds] = useState<string[]>(initialUserIds);
     const [tempDepartmentIds, setTempDepartmentIds] = useState<string[]>(initialDepartmentIds);
 
-    // Анимация шторки
-    const START_Y = SCREEN_HEIGHT * 0.15;
-    const panY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
-
-    // Сброс временных состояний при открытии
     useEffect(() => {
         if (visible) {
             setTempUserIds(initialUserIds);
             setTempDepartmentIds(initialDepartmentIds);
             setSearchQuery("");
-            resetPositionAnim.start();
+            setActiveTab(mode === "departments" ? "departments" : "users");
         }
-    }, [visible]);
-
-    const resetPositionAnim = Animated.timing(panY, {
-        toValue: START_Y,
-        duration: 300,
-        useNativeDriver: false,
-    });
-
-    const closeAnim = (callback?: () => void) => Animated.timing(panY, {
-        toValue: SCREEN_HEIGHT,
-        duration: 250,
-        useNativeDriver: false,
-    }).start(callback);
-
-    const panResponder = useRef(
-        PanResponder.create({
-            onStartShouldSetPanResponder: () => true,
-            onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dy) > 5,
-            onPanResponderMove: (_, gestureState) => {
-                if (gestureState.dy < 0) return;
-                panY.setValue(START_Y + gestureState.dy);
-            },
-            onPanResponderRelease: (_, gestureState) => {
-                if (gestureState.dy > 150) {
-                    closeAnim(onClose);
-                } else {
-                    resetPositionAnim.start();
-                }
-            },
-        })
-    ).current;
+    }, [visible, initialUserIds, initialDepartmentIds, mode]);
 
     const toggleUser = (userId: string) => {
         setTempUserIds(prev =>
@@ -98,10 +64,8 @@ export const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
     };
 
     const handleConfirm = () => {
-        closeAnim(() => {
-            onConfirm(tempUserIds, tempDepartmentIds);
-            onClose();
-        });
+        onConfirm(tempUserIds, tempDepartmentIds);
+        onClose();
     };
 
     const filteredUsers = users.filter(user =>
@@ -112,221 +76,180 @@ export const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
         dept.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const totalSelected = tempUserIds.length + tempDepartmentIds.length;
+    const renderUsers = () => {
+        if (filteredUsers.length === 0) {
+            return <Text style={styles.emptyText}>Пользователи не найдены</Text>;
+        }
 
-    return (
-        <Modal visible={visible} transparent animationType="none" onRequestClose={() => closeAnim(onClose)}>
-            <View style={styles.overlay}>
-                <TouchableOpacity
-                    style={styles.dismiss}
-                    activeOpacity={1}
-                    onPress={() => closeAnim(onClose)}
-                />
+        return filteredUsers.map(user => (
+            <TouchableOpacity
+                key={user.id}
+                style={styles.listItem}
+                onPress={() => toggleUser(user.id)}
+            >
+                <View style={styles.userInfo}>
+                    <View style={styles.avatar}>
+                        <Text style={styles.avatarText}>
+                            {user.full_name.charAt(0).toUpperCase()}
+                        </Text>
+                    </View>
+                    <View style={styles.userTextBlock}>
+                        <Text style={styles.itemName}>{user.full_name}</Text>
+                        <Text style={styles.itemEmail}>{user.email}</Text>
+                    </View>
+                </View>
 
-                <Animated.View
+                <View style={[styles.checkbox, tempUserIds.includes(user.id) && styles.checkboxChecked]}>
+                    {tempUserIds.includes(user.id) && (
+                        <Ionicons name="checkmark" size={14} color="#fff" />
+                    )}
+                </View>
+            </TouchableOpacity>
+        ));
+    };
+
+    const renderDepartments = () => {
+        if (filteredDepartments.length === 0) {
+            return <Text style={styles.emptyText}>Отделы не найдены</Text>;
+        }
+
+        return filteredDepartments.map(dept => (
+            <TouchableOpacity
+                key={dept.id}
+                style={styles.listItem}
+                onPress={() => toggleDepartment(dept.id)}
+            >
+                <View style={styles.userInfo}>
+                    <View style={styles.departmentIcon}>
+                        <Building2 size={22} color="#0f6319" />
+                    </View>
+                    <View style={styles.userTextBlock}>
+                        <Text style={styles.itemName}>{dept.name}</Text>
+                    </View>
+                </View>
+
+                <View
                     style={[
-                        styles.sheet,
-                        { transform: [{ translateY: panY }] }
+                        styles.checkbox,
+                        tempDepartmentIds.includes(dept.id) && styles.checkboxChecked
                     ]}
                 >
-                    <View {...panResponder.panHandlers} style={styles.dragArea}>
-                        <View style={styles.dragIndicator} />
-                        <Text style={styles.title}>Выбор участников</Text>
-                    </View>
-
-                    {/* Поиск */}
-                    <View style={styles.searchContainer}>
-                        <Ionicons name="search-outline" size={20} color="#9ca3af" />
-                        <TextInput
-                            style={styles.searchInput}
-                            placeholder="Поиск..."
-                            value={searchQuery}
-                            onChangeText={setSearchQuery}
-                            placeholderTextColor="#9ca3af"
-                        />
-                        {searchQuery !== "" && (
-                            <TouchableOpacity onPress={() => setSearchQuery("")}>
-                                <Ionicons name="close-circle" size={20} color="#9ca3af" />
-                            </TouchableOpacity>
-                        )}
-                    </View>
-
-                    {/* Табы */}
-                    {mode === "both" && (
-                        <View style={styles.tabsContainer}>
-                            <TouchableOpacity
-                                style={[styles.tab, activeTab === "users" && styles.tabActive]}
-                                onPress={() => setActiveTab("users")}
-                            >
-                                <Text style={[styles.tabText, activeTab === "users" && styles.tabTextActive]}>
-                                    Пользователи
-                                </Text>
-                                {tempUserIds.length > 0 && (
-                                    <View style={styles.tabBadge}>
-                                        <Text style={styles.tabBadgeText}>{tempUserIds.length}</Text>
-                                    </View>
-                                )}
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.tab, activeTab === "departments" && styles.tabActive]}
-                                onPress={() => setActiveTab("departments")}
-                            >
-                                <Text style={[styles.tabText, activeTab === "departments" && styles.tabTextActive]}>
-                                    Отделы
-                                </Text>
-                                {tempDepartmentIds.length > 0 && (
-                                    <View style={styles.tabBadge}>
-                                        <Text style={styles.tabBadgeText}>{tempDepartmentIds.length}</Text>
-                                    </View>
-                                )}
-                            </TouchableOpacity>
-                        </View>
+                    {tempDepartmentIds.includes(dept.id) && (
+                        <Ionicons name="checkmark" size={14} color="#fff" />
                     )}
+                </View>
+            </TouchableOpacity>
+        ));
+    };
 
-                    <ScrollView
-                        style={styles.listContainer}
-                        showsVerticalScrollIndicator={false}
+    return (
+        <ModalBottomSheet
+            visible={visible}
+            onClose={onClose}
+            title="Выбор участников"
+            heightFraction={0.85}
+            scrollEnabled={false}
+            keyboardAvoiding
+            contentContainerStyle={styles.contentContainer}
+            renderFooter={() => (
+                <View style={styles.actionsContainer}>
+                    <TouchableOpacity
+                        style={[styles.actionButton, styles.clearButton]}
+                        onPress={() => {
+                            setTempUserIds([]);
+                            setTempDepartmentIds([]);
+                        }}
                     >
-                        {mode === "users" || activeTab === "users" ? (
-                            <>
-                                {filteredUsers.length === 0 ? (
-                                    <Text style={styles.emptyText}>Пользователи не найдены</Text>
-                                ) : (
-                                    filteredUsers.map(user => (
-                                        <TouchableOpacity
-                                            key={user.id}
-                                            style={styles.listItem}
-                                            onPress={() => toggleUser(user.id)}
-                                        >
-                                            <View style={styles.userInfo}>
-                                                <View style={styles.avatar}>
-                                                    <Text style={styles.avatarText}>
-                                                        {user.full_name.charAt(0).toUpperCase()}
-                                                    </Text>
-                                                </View>
-                                                <View>
-                                                    <Text style={styles.itemName}>{user.full_name}</Text>
-                                                    <Text style={styles.itemEmail}>{user.email}</Text>
-                                                </View>
-                                            </View>
-                                            <View style={[styles.checkbox, tempUserIds.includes(user.id) && styles.checkboxChecked]}>
-                                                {tempUserIds.includes(user.id) && <Ionicons name="checkmark" size={14} color="#fff" />}
-                                            </View>
-                                        </TouchableOpacity>
-                                    ))
-                                )}
-                            </>
-                        ) : null}
+                        <Text style={styles.clearButtonText}>Очистить все</Text>
+                    </TouchableOpacity>
 
-                        {(mode === "departments" || activeTab === "departments") && mode !== "users" ? (
-                            <>
-                                {filteredDepartments.length === 0 ? (
-                                    <Text style={styles.emptyText}>Отделы не найдены</Text>
-                                ) : (
-                                    filteredDepartments.map(dept => (
-                                        <TouchableOpacity
-                                            key={dept.id}
-                                            style={styles.listItem}
-                                            onPress={() => toggleDepartment(dept.id)}
-                                        >
-                                            <View style={styles.departmentIcon}>
-                                                <Building2 size={22} color="#0f6319"/>
-                                            </View>
-                                            <Text style={styles.itemName}>{dept.name}</Text>
-                                            <View style={[styles.checkbox, tempDepartmentIds.includes(dept.id) && styles.checkboxChecked]}>
-                                                {tempDepartmentIds.includes(dept.id) && <Ionicons name="checkmark" size={14} color="#fff" />}
-                                            </View>
-                                        </TouchableOpacity>
-                                    ))
-                                )}
-                            </>
-                        ) : null}
-                    </ScrollView>
-
-                    {/* Кнопки действий */}
-                    <View style={[styles.actionsContainer]}>
-                        <TouchableOpacity
-                            style={[styles.actionButton, styles.clearButton]}
-                            onPress={() => {
-                                setTempUserIds([]);
-                                setTempDepartmentIds([]);
-                            }}
-                        >
-                            <Text style={styles.clearButtonText}>Очистить все</Text>
+                    <TouchableOpacity
+                        style={[styles.actionButton, styles.confirmButton]}
+                        onPress={handleConfirm}
+                    >
+                        <Text style={styles.confirmButtonText}>Сохранить</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
+        >
+            <View style={styles.content}>
+                {/* Поиск */}
+                <View style={styles.searchContainer}>
+                    <Ionicons name="search-outline" size={20} color="#9ca3af" />
+                    <TextInput
+                        style={styles.searchInput}
+                        placeholder="Поиск..."
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                        placeholderTextColor="#9ca3af"
+                    />
+                    {searchQuery !== "" && (
+                        <TouchableOpacity onPress={() => setSearchQuery("")}>
+                            <Ionicons name="close-circle" size={20} color="#9ca3af" />
                         </TouchableOpacity>
+                    )}
+                </View>
+
+                {/* Табы */}
+                {mode === "both" && (
+                    <View style={styles.tabsContainer}>
                         <TouchableOpacity
-                            style={[styles.actionButton, styles.confirmButton]}
-                            onPress={handleConfirm}
+                            style={[styles.tab, activeTab === "users" && styles.tabActive]}
+                            onPress={() => setActiveTab("users")}
                         >
-                            <Text style={styles.confirmButtonText}>Сохранить</Text>
+                            <Text style={[styles.tabText, activeTab === "users" && styles.tabTextActive]}>
+                                Пользователи
+                            </Text>
+                            {tempUserIds.length > 0 && (
+                                <View style={styles.tabBadge}>
+                                    <Text style={styles.tabBadgeText}>{tempUserIds.length}</Text>
+                                </View>
+                            )}
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={[styles.tab, activeTab === "departments" && styles.tabActive]}
+                            onPress={() => setActiveTab("departments")}
+                        >
+                            <Text style={[styles.tabText, activeTab === "departments" && styles.tabTextActive]}>
+                                Отделы
+                            </Text>
+                            {tempDepartmentIds.length > 0 && (
+                                <View style={styles.tabBadge}>
+                                    <Text style={styles.tabBadgeText}>{tempDepartmentIds.length}</Text>
+                                </View>
+                            )}
                         </TouchableOpacity>
                     </View>
-                </Animated.View>
+                )}
+
+                {/* Список */}
+                <ScrollView
+                    style={styles.listContainer}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                >
+                    {(mode === "users" || activeTab === "users") && renderUsers()}
+                    {(mode === "departments" || activeTab === "departments") && mode !== "users" && renderDepartments()}
+                </ScrollView>
             </View>
-        </Modal>
+        </ModalBottomSheet>
     );
 };
 
 const styles = StyleSheet.create({
-    overlay: {
+    contentContainer: {
+        paddingTop: 0,
+    },
+    content: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
     },
-    dismiss: {
-        flex: 1,
-    },
-    sheet: {
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        height: SHEET_HEIGHT,
-        backgroundColor: '#fff',
-        borderTopLeftRadius: 28,
-        borderTopRightRadius: 28,
-        elevation: 25,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: -10 },
-        shadowOpacity: 0.15,
-        shadowRadius: 15,
-    },
-    dragArea: {
-        paddingTop: 12,
-        paddingBottom: 8,
-        width: '100%',
-        alignItems: 'center',
-        borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
-    },
-    dragIndicator: {
-        width: 40,
-        height: 5,
-        backgroundColor: '#E5E7EB',
-        borderRadius: 2.5,
-        marginBottom: 12,
-    },
-    title: {
-        fontSize: 20,
-        fontWeight: '700',
-        color: '#0b2340',
-        marginBottom: 8,
-    },
-    badgeContainer: {
-        backgroundColor: '#0f6319',
-        paddingHorizontal: 12,
-        paddingVertical: 4,
-        borderRadius: 20,
-        marginTop: 4,
-    },
-    badgeText: {
-        color: '#fff',
-        fontSize: 12,
-        fontWeight: '600',
-    },
+
     searchContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#f7f7f7',
-        margin: 16,
+        marginHorizontal: 16,
         marginTop: 12,
         marginBottom: 12,
         paddingHorizontal: 12,
@@ -339,7 +262,9 @@ const styles = StyleSheet.create({
         marginLeft: 8,
         fontSize: 15,
         color: '#333',
+        paddingVertical: 12,
     },
+
     tabsContainer: {
         flexDirection: 'row',
         marginHorizontal: 16,
@@ -387,6 +312,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         textAlign: 'center',
     },
+
     listContainer: {
         flex: 1,
         marginHorizontal: 16,
@@ -405,6 +331,10 @@ const styles = StyleSheet.create({
         flex: 1,
         gap: 12,
     },
+    userTextBlock: {
+        flex: 1,
+    },
+
     avatar: {
         width: 40,
         height: 40,
@@ -418,6 +348,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: '#0f6319',
     },
+
     departmentIcon: {
         width: 40,
         height: 40,
@@ -425,19 +356,19 @@ const styles = StyleSheet.create({
         backgroundColor: '#e8f5e9',
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 12,
     },
+
     itemName: {
         fontSize: 16,
         fontWeight: '500',
         color: '#333',
-        flex: 1,
     },
     itemEmail: {
         fontSize: 12,
         color: '#9ca3af',
         marginTop: 2,
     },
+
     checkbox: {
         width: 22,
         height: 22,
@@ -446,26 +377,27 @@ const styles = StyleSheet.create({
         borderColor: '#d1d5db',
         justifyContent: 'center',
         alignItems: 'center',
+        marginLeft: 12,
     },
     checkboxChecked: {
         backgroundColor: '#0f6319',
         borderColor: '#0f6319',
     },
+
     emptyText: {
         textAlign: 'center',
         color: '#9ca3af',
         padding: 40,
     },
+
     actionsContainer: {
         flexDirection: 'row',
         gap: 12,
-        padding: 8,
-        borderTopWidth: 1,
-        borderTopColor: '#f0f0f0',
+        paddingTop: 8,
     },
     actionButton: {
         flex: 1,
-        paddingVertical: 8,
+        paddingVertical: 12,
         borderRadius: 10,
         alignItems: 'center',
     },

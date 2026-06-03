@@ -94,6 +94,7 @@ export const useFileManagerPresenter = () => {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const xhrRef = useRef<XMLHttpRequest | null>(null);
+    const [uploadError, setUploadError] = useState(null);
 
     // Функция для построения плоской карты каталогов для быстрого поиска
     const buildCatalogMap = (catalogs: CatalogItem[], map: Map<string, CatalogItem> = new Map()): Map<string, CatalogItem> => {

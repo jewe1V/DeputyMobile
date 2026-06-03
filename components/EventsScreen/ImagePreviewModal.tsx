@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Modal, View, TouchableOpacity, Image, Text, Platform } from 'react-native';
 import { X, Download } from 'lucide-react-native';
 import { AuthManager } from "@/api/auth";
-import { apiUrl, xAppSecret } from '@/api/api';
+import { apiUrl } from '@/api/api';
+import {xAppSecret} from '@/api/auth';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface ImagePreviewModalProps {

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Dimensions, Platform } from 'react-native';
 import { ToastConfig } from 'react-native-toast-message';
-import { CheckCircle2, AlertCircle, Info, XCircle, Calendar, Bell } from "lucide-react-native";
+import { CheckCircle2, Info, XCircle, Calendar, Bell } from "lucide-react-native";
 import { useTheme } from '@/context/ThemeContext';
 
 const { width } = Dimensions.get('window');

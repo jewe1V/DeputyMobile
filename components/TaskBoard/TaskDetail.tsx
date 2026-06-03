@@ -29,7 +29,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from "@expo/vector-icons";
 
 import { taskService } from '@/api/taskService';
-import { Task, priorityMap } from '@/models/TaskBoardModel';
+import { priorityMap } from '@/models/TaskBoardModel';
 import { styles } from './task-detail-style';
 import { AuthManager } from "@/api/auth";
 import {SkeletonItem} from "@/components/ui/Shared/SkeletonLoader";
