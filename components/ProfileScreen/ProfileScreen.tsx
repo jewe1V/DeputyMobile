@@ -262,8 +262,8 @@ export function ProfileScreen() {
                             style={styles.actionItem}
                             onPress={() => router.push({pathname: '/EventsScreen', params: {isMine: "true"}})}
                         >
-                            <View style={[styles.actionIcon, { backgroundColor: colors.actionIcon.events }]}>
-                                <Calendar size={20} color={colors.actionIconColor.events} />
+                            <View style={[styles.actionIcon, { backgroundColor: colors.iconBox }]}>
+                                <Calendar size={20} color={colors.actionIconColor.tasks} />
                             </View>
                             <View style={styles.actionContent}>
                                 <Text style={[styles.actionTitle, { color: colors.text }]}>События</Text>
@@ -285,7 +285,7 @@ export function ProfileScreen() {
                             style={styles.actionItem}
                             onPress={() => router.push({pathname: '/TaskBoardScreen', params: {isMine: "true"}})}
                         >
-                            <View style={[styles.actionIcon, { backgroundColor: colors.actionIcon.tasks }]}>
+                            <View style={[styles.actionIcon, { backgroundColor: colors.iconBox }]}>
                                 <ListTodo size={20} color={colors.actionIconColor.tasks} />
                             </View>
                             <View style={styles.actionContent}>
@@ -304,12 +304,12 @@ export function ProfileScreen() {
 
                         <View style={[styles.actionDivider, { backgroundColor: colors.divider }]} />
                     </View>
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Активность</Text>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Настройки</Text>
                     <View style={[styles.card, { padding: 0, overflow: 'hidden', backgroundColor: colors.card }]}>
                         {/* Кнопка переключения темы */}
                         <TouchableOpacity style={styles.actionItem} onPress={toggleTheme}>
-                            <View style={[styles.actionIcon, { backgroundColor: colors.actionIcon.theme || (isDark ? '#374151' : '#e0e7ff') }]}>
-                                {isDark ? <Sun size={20} color={colors.actionIconColor.theme || '#f59e0b'} /> : <Moon size={20} color={colors.actionIconColor.theme || '#6366f1'} />}
+                            <View style={[styles.actionIcon, { backgroundColor: colors.iconBox }]}>
+                                {isDark ? <Sun size={20} color={'#f59e0b'} /> : <Moon size={20} color={'#6366f1'} />}
                             </View>
                             <View style={styles.actionContent}>
                                 <Text style={[styles.actionTitle, { color: colors.text }]}>
@@ -536,11 +536,7 @@ const styles = StyleSheet.create({
         color: '#64748b',
         marginTop: 2,
     },
-    actionDivider: {
-        height: 1,
-        backgroundColor: '#f1f5f9',
-        marginLeft: 70, // Линия начинается после иконки
-    },
+
     departmentCard: {
         flexDirection: 'row',
         alignItems: 'center',

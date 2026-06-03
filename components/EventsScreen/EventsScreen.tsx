@@ -254,8 +254,8 @@ const EventsScreen: React.FC = () => {
                                 const formattedDate = formatDate(date);
                                 return (
                                     <View style={styles.groupBlock}>
-                                        <View style={[styles.dateBadge, { backgroundColor: isDark ? colors.primary + '20' : '#e6ecff' }]}>
-                                            <Text style={[styles.dateBadgeText, { color: isDark ? colors.roleText : '#0f6119' }]}>{formattedDate}</Text>
+                                        <View style={[styles.dateBadge, { backgroundColor: isDark ? '#334155' : '#f1f5f9', borderWidth: 1, borderColor: isDark ? '#475569' : '#e2e8f0' }]}>
+                                            <Text style={[styles.dateBadgeText, { color: isDark ? '#cbd5e1' : '#475569' }]}>{formattedDate}</Text>
                                         </View>
                                         {dayEvents.map(ev => (
                                             <EventCard

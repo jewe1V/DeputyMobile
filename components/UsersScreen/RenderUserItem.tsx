@@ -6,36 +6,27 @@ import { styles } from "./UsersListScreen";
 import {router} from "expo-router";
 import { useTheme } from "@/context/ThemeContext";
 
-const getRoleStyles = (roles: string[] | null, isDark: boolean) => {
+const getRoleLabel = (roles: string[] | null) => {
     const role = roles?.[0];
-    if (isDark) {
-        switch (role) {
-            case 'Admin': return { bg: '#7f1d1d', text: '#fecaca', label: 'Админ' };
-            case 'Deputy': return { bg: '#064e3b', text: '#dcfce7', label: 'Депутат' };
-            case 'Helper': return { bg: '#0c4a6e', text: '#e0f2fe', label: 'Помощник' };
-            default: return { bg: '#334155', text: '#cbd5e1', label: 'Сотрудник' };
-        }
-    }
     switch (role) {
-        case 'Admin': return { bg: '#fee2e2', text: '#ef4444', label: 'Админ' };
-        case 'Deputy': return { bg: '#dcfce7', text: '#166534', label: 'Депутат' };
-        case 'Helper': return { bg: '#e0f2fe', text: '#0369a1', label: 'Помощник' };
-        default: return { bg: '#f1f5f9', text: '#64748b', label: 'Сотрудник' };
+        case 'Admin': return 'Админ';
+        case 'Deputy': return 'Депутат';
+        case 'Helper': return 'Помощник';
+        default: return 'Сотрудник';
     }
 };
 
 export const UserItem = ({ item }: { item: Profile }) => {
     const { colors, isDark } = useTheme();
-    // @ts-ignore
-    const roleStyle = getRoleStyles(item.roles, isDark);
+    const roleLabel = getRoleLabel(item.roles);
 
     return (
         <TouchableOpacity
             style={[styles.userCard, { backgroundColor: colors.card, borderColor: colors.border }]}
             onPress={() => router.push({ pathname: '/(screens)/ProfileScreen', params: { id: item.id } })}
         >
-            <View style={[styles.avatar, { backgroundColor: isDark ? colors.primary + '40' : '#dcfce7' }]}>
-                <Text style={[styles.avatarText, { color: isDark ? colors.roleText : '#166534' }]}>
+            <View style={[styles.avatar, { backgroundColor: isDark ? '#334155' : '#f1f5f9' }]}>
+                <Text style={[styles.avatarText, { color: isDark ? '#f1f5f9' : '#475569' }]}>
                     {(item.full_name || item.email || '?').charAt(0).toUpperCase()}
                 </Text>
             </View>
@@ -49,9 +40,9 @@ export const UserItem = ({ item }: { item: Profile }) => {
                 </Text>
             </View>
 
-            <View style={[styles.roleBadge, { backgroundColor: roleStyle.bg }]}>
-                <Text style={[styles.roleBadgeText, { color: roleStyle.text }]}>
-                    {roleStyle.label}
+            <View style={[styles.roleBadge, { backgroundColor: isDark ? '#1e293b' : '#f8fafc', borderWidth: 1, borderColor: isDark ? '#334155' : '#e2e8f0' }]}>
+                <Text style={[styles.roleBadgeText, { color: colors.subtext }]}>
+                    {roleLabel}
                 </Text>
             </View>
 

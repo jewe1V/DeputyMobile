@@ -21,7 +21,7 @@ export const themeColors = {
         },
         actionIconColor: {
             events: '#7c3aed',
-            tasks: '#16a34a',
+            tasks: '#087530',
         }
     },
     dark: {
