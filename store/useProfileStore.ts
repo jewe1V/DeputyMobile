@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiClient } from '@/api/api';
-import NetInfo from '@react-native-community/netinfo';
 import Toast from 'react-native-toast-message';
 import { Profile } from "@/models/ProfileModel";
 
@@ -27,21 +26,6 @@ export const useProfileStore = create<ProfileState>()(
                 // Если id совпадает с текущим пользователем или не указан, используем ключ 'current'
                 const isCurrent = !id || id === userId;
                 const key = isCurrent ? 'current' : id!;
-
-                const netInfoState = await NetInfo.fetch();
-
-                if (!netInfoState.isConnected) {
-                    if (get().profiles[key]) {
-                        Toast.show({
-                            type: 'info',
-                            text1: 'Отсутствует интернет',
-                            text2: 'Отображаются сохраненные данные',
-                        });
-                    } else {
-                        set({ error: 'Нет подключения к интернету' });
-                    }
-                    return;
-                }
 
                 try {
                     if (!get().profiles[key]) {

@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { taskService } from '@/api/taskService';
-import NetInfo from '@react-native-community/netinfo';
 import Toast from 'react-native-toast-message';
 import { Task } from '@/models/TaskBoardModel';
 
@@ -33,21 +32,6 @@ export const useTaskStore = create<TaskState>()(
             },
 
             fetchTasks: async (taskMode, userRole, isRefresh = false) => {
-                const netInfoState = await NetInfo.fetch();
-
-                if (!netInfoState.isConnected) {
-                    if (get().tasks.length > 0) {
-                        Toast.show({
-                            type: 'info',
-                            text1: 'Отсутствует интернет',
-                            text2: 'Отображаются сохраненные данные',
-                        });
-                    } else {
-                        set({ error: 'Нет подключения к интернету' });
-                    }
-                    return;
-                }
-
                 try {
                     if (!isRefresh && get().tasks.length === 0) {
                         set({ isLoading: true });

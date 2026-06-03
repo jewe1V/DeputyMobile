@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiClient } from '@/api/api';
-import NetInfo from '@react-native-community/netinfo';
 import Toast from 'react-native-toast-message';
 import { Event } from '@/models/EventModel';
 import { Task } from '@/models/TaskBoardModel';
@@ -42,25 +41,6 @@ export const useDashboardStore = create<DashboardState>()(
             lastUpdated: null,
 
             fetchDashboardData: async (isRefresh = false) => {
-                const netInfoState = await NetInfo.fetch();
-
-                if (!netInfoState.isConnected) {
-                    if (get().data) {
-                        Toast.show({
-                            type: 'info',
-                            text1: 'Отсутствует интернет',
-                            text2: 'Отображаются сохраненные данные',
-                        });
-                        set({ isLoading: false });
-                    } else {
-                        set({
-                            error: 'Нет подключения к интернету. Проверьте сеть.',
-                            isLoading: false
-                        });
-                    }
-                    return;
-                }
-
                 try {
                     if (!isRefresh && !get().data) {
                         set({ isLoading: true });

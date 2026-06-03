@@ -3,7 +3,6 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CatalogItem, catalogService } from '@/api/catalogService';
 import { Document, documentService } from '@/api/documentService';
-import NetInfo from '@react-native-community/netinfo';
 import Toast from 'react-native-toast-message';
 
 interface FileManagerStore {
@@ -30,16 +29,6 @@ export const useFileManagerStore = create<FileManagerStore>()(
             error: null,
 
             fetchRootCatalogs: async (type) => {
-                const netInfo = await NetInfo.fetch();
-                if (!netInfo.isConnected) {
-                    if (get().rootCatalogs[type]) {
-                        Toast.show({ type: 'info', text1: 'Оффлайн', text2: 'Показаны сохраненные каталоги' });
-                        return get().rootCatalogs[type];
-                    }
-                    set({ error: 'Нет интернета' });
-                    return [];
-                }
-
                 try {
                     set({ isLoading: true, error: null });
                     let catalogs: CatalogItem[] = [];
@@ -59,15 +48,6 @@ export const useFileManagerStore = create<FileManagerStore>()(
             },
 
             fetchDocuments: async (catalogId, isRefresh = false) => {
-                const netInfo = await NetInfo.fetch();
-                if (!netInfo.isConnected) {
-                    if (get().documentsCache[catalogId]) {
-                        Toast.show({ type: 'info', text1: 'Оффлайн', text2: 'Показаны сохраненные файлы' });
-                        return get().documentsCache[catalogId];
-                    }
-                    return [];
-                }
-
                 try {
                     if (!isRefresh && !get().documentsCache[catalogId]) {
                         set({ isLoading: true });
