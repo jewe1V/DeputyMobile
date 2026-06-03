@@ -1,17 +1,15 @@
 import React from 'react';
 import {
-    Modal,
     View,
     Text,
     TextInput,
     TouchableOpacity,
     ActivityIndicator,
-    KeyboardAvoidingView,
     Keyboard,
     TouchableWithoutFeedback,
 } from 'react-native';
 import { styles } from './file-manager-screen';
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { BottomSheetModal as ModalBottomSheet } from '@/components/ui/BottomSheetModal/BottomSheetModal';
 
 interface CreateCatalogModalProps {
     visible: boolean;
@@ -32,65 +30,64 @@ export function CreateCatalogModal({
                                        onNameChange,
                                        onCreate
                                    }: CreateCatalogModalProps) {
-    const insets = useSafeAreaInsets();
-
     return (
-        <Modal
+        <ModalBottomSheet
             visible={visible}
-            transparent
-            animationType="fade"
-            onRequestClose={onClose}
+            onClose={onClose}
+            title="Создать каталог"
+            heightFraction={0.38}
+            scrollEnabled={false}
+            keyboardAvoiding
+            contentContainerStyle={localStyles.contentContainer}
+            renderFooter={() => (
+                <View style={styles.modalButtonsContainer}>
+                    <TouchableOpacity
+                        style={[styles.modalButton, styles.modalButtonCancel]}
+                        onPress={onClose}
+                        disabled={creatingCatalog}
+                    >
+                        <Text style={styles.modalButtonCancelText}>Отмена</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[styles.modalButton, styles.modalButtonCreate]}
+                        onPress={onCreate}
+                        disabled={creatingCatalog}
+                    >
+                        {creatingCatalog ? (
+                            <ActivityIndicator size="small" color="#ffffff" />
+                        ) : (
+                            <Text style={styles.modalButtonCreateText}>Создать</Text>
+                        )}
+                    </TouchableOpacity>
+                </View>
+            )}
         >
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                <View style={styles.modalOverlay}>
-                    <KeyboardAvoidingView
-                        behavior={'padding'}
-                        style={styles.keyboardView}
-                    >
-                        <View style={[styles.modalContent, { paddingBottom: insets.bottom }]}>
-                            <Text style={styles.modalTitle}>Создать каталог</Text>
+                <View>
+                    <TextInput
+                        style={styles.modalInput}
+                        placeholder="Название каталога"
+                        value={catalogName}
+                        onChangeText={onNameChange}
+                        placeholderTextColor="#9ca3af"
+                        editable={!creatingCatalog}
+                        autoFocus={visible}
+                        returnKeyType="done"
+                        onSubmitEditing={onCreate}
+                    />
 
-                            <TextInput
-                                style={styles.modalInput}
-                                placeholder="Название каталога"
-                                value={catalogName}
-                                onChangeText={onNameChange}
-                                placeholderTextColor="#9ca3af"
-                                editable={!creatingCatalog}
-                                autoFocus={visible}
-                                returnKeyType="done"
-                                onSubmitEditing={onCreate}
-                            />
-
-                            {createError && (
-                                <Text style={styles.modalError}>{createError}</Text>
-                            )}
-
-                            <View style={styles.modalButtonsContainer}>
-                                <TouchableOpacity
-                                    style={[styles.modalButton, styles.modalButtonCancel]}
-                                    onPress={onClose}
-                                    disabled={creatingCatalog}
-                                >
-                                    <Text style={styles.modalButtonCancelText}>Отмена</Text>
-                                </TouchableOpacity>
-
-                                <TouchableOpacity
-                                    style={[styles.modalButton, styles.modalButtonCreate]}
-                                    onPress={onCreate}
-                                    disabled={creatingCatalog}
-                                >
-                                    {creatingCatalog ? (
-                                        <ActivityIndicator size="small" color="#ffffff" />
-                                    ) : (
-                                        <Text style={styles.modalButtonCreateText}>Создать</Text>
-                                    )}
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                    </KeyboardAvoidingView>
+                    {createError && (
+                        <Text style={styles.modalError}>{createError}</Text>
+                    )}
                 </View>
             </TouchableWithoutFeedback>
-        </Modal>
+        </ModalBottomSheet>
     );
 }
+
+const localStyles = {
+    contentContainer: {
+        paddingTop: 8,
+    },
+};
