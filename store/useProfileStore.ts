@@ -6,8 +6,10 @@ import NetInfo from '@react-native-community/netinfo';
 import Toast from 'react-native-toast-message';
 import { Profile } from "@/models/ProfileModel";
 
+import { AuthManager } from '@/components/LoginScreen/LoginScreen';
+
 interface ProfileState {
-    profiles: Record<string, Profile>; // key is id or 'current'
+    profiles: Record<string, Profile>;
     isLoading: boolean;
     error: string | null;
     fetchProfile: (id?: string) => Promise<void>;
@@ -21,7 +23,11 @@ export const useProfileStore = create<ProfileState>()(
             error: null,
 
             fetchProfile: async (id) => {
-                const key = id || 'current';
+                const userId = AuthManager.getUserId();
+                // Если id совпадает с текущим пользователем или не указан, используем ключ 'current'
+                const isCurrent = !id || id === userId;
+                const key = isCurrent ? 'current' : id!;
+
                 const netInfoState = await NetInfo.fetch();
 
                 if (!netInfoState.isConnected) {
@@ -43,13 +49,28 @@ export const useProfileStore = create<ProfileState>()(
                     }
                     set({ error: null });
 
-                    const url = id ? `/api/Auth/${id}` : '/api/Auth/current';
+                    // Если запрашиваем себя, идем на /current
+                    const url = isCurrent ? '/api/Auth/current' : `/api/Auth/${id}`;
                     const { data } = await apiClient.get(url);
 
-                    set((state) => ({
-                        profiles: { ...state.profiles, [key]: data },
-                        isLoading: false
-                    }));
+                    set((state) => {
+                        const newProfiles = { ...state.profiles, [key]: data };
+
+                        // Если мы получили данные по конкретному ID, который является текущим пользователем,
+                        // или получили данные по /current, синхронизируем оба ключа для надежности.
+                        if (isCurrent) {
+                            newProfiles['current'] = data;
+                            if (userId) newProfiles[userId] = data;
+                        } else if (data.id === userId) {
+                            newProfiles['current'] = data;
+                            newProfiles[data.id] = data;
+                        }
+
+                        return {
+                            profiles: newProfiles,
+                            isLoading: false
+                        };
+                    });
                 } catch (error: any) {
                     console.error('Profile fetch error:', error);
                     const errorMessage = 'Не удалось загрузить профиль';

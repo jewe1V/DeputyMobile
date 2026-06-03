@@ -9,6 +9,9 @@ import { AuthManager } from "@/components/LoginScreen/LoginScreen";
 import {ImagePreviewModal} from "@/components/EventsScreen/ImagePreviewModal";
 import { useTheme } from '@/context/ThemeContext';
 
+import { useFileManagerStore } from '@/store/useFileManagerStore';
+import { CheckCircle2 } from 'lucide-react-native';
+
 interface DocumentCardProps {
     document: Document;
     getFileIcon: (item: CatalogItem) => JSX.Element;
@@ -19,6 +22,9 @@ interface DocumentCardProps {
 
 export function DocumentCard({ document, getFileIcon, getFileSize, onInfoPress, onDownloadPress }: DocumentCardProps) {
     const { colors, isDark } = useTheme();
+    const { downloadedFiles } = useFileManagerStore();
+    const isDownloaded = downloadedFiles.includes(document.id);
+
     const imageExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp', '.svg'];
     const isImage = imageExtensions.includes(document.content_type?.toLowerCase());
     const token = AuthManager.getToken();
@@ -110,9 +116,14 @@ export function DocumentCard({ document, getFileIcon, getFileSize, onInfoPress, 
                     </View>
 
                     <View style={styles.documentInfo}>
-                        <Text style={[styles.documentName, { color: colors.text }]} numberOfLines={1}>
-                            {document.file_name}{document.content_type}
-                        </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                            <Text style={[styles.documentName, { color: colors.text, flex: 1 }]} numberOfLines={1}>
+                                {document.file_name}{document.content_type}
+                            </Text>
+                            {isDownloaded && (
+                                <CheckCircle2 size={14} color={colors.primary} />
+                            )}
+                        </View>
                         <View style={styles.documentMeta}>
                             <Text style={[styles.documentMetaText, { color: colors.subtext }]}>
                                 Размер: {getFileSize(document.file_size)}

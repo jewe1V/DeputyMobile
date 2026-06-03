@@ -1,3 +1,4 @@
+import "@/store/netinfo-config";
 import { Stack } from "expo-router"
 import Toast from "react-native-toast-message";
 import {toastConfig} from "@/components/Toast/toastConfig";

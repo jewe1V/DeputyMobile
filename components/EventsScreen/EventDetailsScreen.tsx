@@ -56,6 +56,8 @@ interface EventData {
     attendees: Attendee[];
 }
 
+import { useFileManagerStore } from '@/store/useFileManagerStore';
+
 interface AttachmentItemProps {
     file: Attachment;
     onImagePress: (file: Attachment) => void;
@@ -63,13 +65,24 @@ interface AttachmentItemProps {
 
 const AttachmentItem: React.FC<AttachmentItemProps> = ({ file, onImagePress }) => {
     const { colors, isDark } = useTheme();
+    const { downloadedFiles } = useFileManagerStore();
+    const isDownloaded = downloadedFiles.includes(file.document_id || file.id);
+
     const [downloadProgress, setDownloadProgress] = useState(0);
     const [isDownloading, setIsDownloading] = useState(false);
     const { handlers } = useFileManagerPresenter();
-    const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(file.url);
+    const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(file.file_name);
 
     const handleDownload = React.useCallback(() => {
-        handlers.handleDownloadDocument(file);
+        // Приводим объект вложения к формату документа для корректной работы загрузки и кэширования
+        const docCompatible = {
+            id: file.document_id || file.id,
+            file_name: file.file_name,
+            content_type: file.file_name.split('.').pop() || 'dat',
+            ...file
+        };
+        // @ts-ignore
+        handlers.handleDownloadDocument(docCompatible);
     }, [handlers, file]);
 
     return (
@@ -98,6 +111,9 @@ const AttachmentItem: React.FC<AttachmentItemProps> = ({ file, onImagePress }) =
                     <Text style={[styles.fileName, { color: colors.text }]} numberOfLines={1} ellipsizeMode="middle">
                         {file.file_name}
                     </Text>
+                    {isDownloaded && !isDownloading && (
+                        <CheckCircle2 size={16} color={colors.primary} style={{ marginRight: 8 }} />
+                    )}
                     {isDownloading ? (
                         <Text style={[styles.progressText, { color: colors.primary }]}>
                             {Math.round(downloadProgress * 100)}%
@@ -161,11 +177,15 @@ const ImagePreviewThumbnail: React.FC<{ file: Attachment }> = ({ file }) => {
     );
 };
 
+import { useEventDetailsStore } from "@/store/useEventDetailsStore";
+
 export const EventDetailsScreen: React.FC = () => {
     const { colors, isDark } = useTheme();
     const { id } = useLocalSearchParams<{ id: string }>();
-    const [loading, setLoading] = useState(true);
-    const [event, setEvent] = useState<EventData | null>(null);
+
+    const { events, isLoading: storeLoading, fetchEventDetails } = useEventDetailsStore();
+    const event = events[id || ''] as EventData | undefined;
+
     const [refreshing, setRefreshing] = useState(false);
     const insets = useSafeAreaInsets();
     const [showUploader, setShowUploader] = useState(false);
@@ -186,7 +206,14 @@ export const EventDetailsScreen: React.FC = () => {
 
     const handleDownloadFromPreview = () => {
         if (selectedAttachment) {
-            handlers.handleDownloadDocument(selectedAttachment);
+            const docCompatible = {
+                id: selectedAttachment.document_id || selectedAttachment.id,
+                file_name: selectedAttachment.file_name,
+                content_type: selectedAttachment.file_name.split('.').pop() || 'dat',
+                ...selectedAttachment
+            };
+            // @ts-ignore
+            handlers.handleDownloadDocument(docCompatible);
         }
     };
 
@@ -198,16 +225,10 @@ export const EventDetailsScreen: React.FC = () => {
     };
 
     const loadEvent = useCallback(async (isRefresh = false) => {
-        try {
-            const { data } = await apiClient.get<EventData>(`/api/Events/${id}`);
-            setEvent(data);
-        } catch (e) {
-            console.error('Ошибка при загрузке события:', e);
-        } finally {
-            setLoading(false);
-            setRefreshing(false);
-        }
-    }, [id]);
+        if (!id) return;
+        await fetchEventDetails(id, isRefresh);
+        setRefreshing(false);
+    }, [id, fetchEventDetails]);
 
     useEffect(() => {
         loadEvent();
@@ -217,6 +238,8 @@ export const EventDetailsScreen: React.FC = () => {
         setRefreshing(true);
         loadEvent(true);
     }, [loadEvent]);
+
+    const loading = storeLoading && !event;
 
     // Функция для построения ссылки на карты
     const getMapLink = (locationString: string): string => {

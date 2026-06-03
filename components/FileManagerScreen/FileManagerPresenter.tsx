@@ -60,7 +60,20 @@ export interface FileManagerComputed {
     filteredDocuments: Document[];
 }
 
+import { useFileManagerStore } from '@/store/useFileManagerStore';
+
 export const useFileManagerPresenter = () => {
+    const {
+        rootCatalogs,
+        documentsCache,
+        fetchRootCatalogs,
+        fetchDocuments,
+        markAsDownloaded,
+        removeFromDownloaded,
+        invalidateCache,
+        downloadedFiles
+    } = useFileManagerStore();
+
     const [currentCatalog, setCurrentCatalog] = useState<CatalogItem | null>(null);
     const [currentCatalogLabel, setCurrentCatalogLabel] = useState<string>('');
     const [searchQuery, setSearchQuery] = useState('');
@@ -74,11 +87,9 @@ export const useFileManagerPresenter = () => {
     const [breadcrumbPath, setBreadcrumbPath] = useState<{ id: string; name: string }[]>([]);
     const [currentRootCatalog, setCurrentRootCatalog] = useState<CatalogItem | null>(null);
     const [catalogHierarchy, setCatalogHierarchy] = useState<Map<string, CatalogItem>>(new Map());
-    const [uploading, setUploading] = useState(false);
-    const [uploadError, setUploadError] = useState<string | null>(null);
-    const [documentsCache, setDocumentsCache] = useState<Map<string, Document[]>>(new Map());
     const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
     const [showDocumentDetailModal, setShowDocumentDetailModal] = useState(false);
+    const [uploading, setUploading] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const xhrRef = useRef<XMLHttpRequest | null>(null);
@@ -94,33 +105,12 @@ export const useFileManagerPresenter = () => {
         return map;
     };
 
-    const loadDocumentsWithCache = async (catalogId: string): Promise<Document[]> => {
-        if (documentsCache.has(catalogId)) {
-            return documentsCache.get(catalogId) || [];
-        }
-        const docs = await documentService.getDocumentsByCatalog(catalogId);
-
-        const newCache = new Map(documentsCache);
-        newCache.set(catalogId, docs);
-        setDocumentsCache(newCache);
-
-        return docs;
-    };
-
     const handleOpenCatalog = async (type: 'public' | 'mine' | 'deputy', label: string) => {
         setLoading(true);
         setError(null);
         setDocuments([]);
         try {
-            let catalogs: CatalogItem[];
-
-            if (type === 'public') {
-                catalogs = await catalogService.getPublicCatalogs();
-            } else if (type === 'mine') {
-                catalogs = await catalogService.getMysCatalogs();
-            } else {
-                catalogs = await catalogService.getDeputyCatalogs();
-            }
+            const catalogs = await fetchRootCatalogs(type);
 
             if (catalogs.length > 0) {
                 const rootCatalog: CatalogItem = {
@@ -193,7 +183,7 @@ export const useFileManagerPresenter = () => {
                 setCurrentCatalog(catalogInHierarchy);
                 setLoading(true);
                 try {
-                    const cachedDocs = await loadDocumentsWithCache(catalogInHierarchy.id);
+                    const cachedDocs = await fetchDocuments(catalogInHierarchy.id);
                     setDocuments(cachedDocs);
                 } catch (err: any) {
                     console.error('[FileManager] Ошибка при загрузке документов:', err);
@@ -213,7 +203,7 @@ export const useFileManagerPresenter = () => {
         setError(null);
 
         try {
-            const docs = await loadDocumentsWithCache(selectedPath.id);
+            const docs = await fetchDocuments(selectedPath.id);
             setDocuments(docs);
             setCurrentCatalog({
                 id: selectedPath.id,
@@ -233,7 +223,7 @@ export const useFileManagerPresenter = () => {
         setLoading(true);
         setError(null);
         try {
-            const docs = await loadDocumentsWithCache(catalog.id);
+            const docs = await fetchDocuments(catalog.id);
             setDocuments(docs);
             setCurrentCatalog(catalog);
             setBreadcrumbPath([...breadcrumbPath, { id: catalog.id, name: catalog.name }]);
@@ -327,17 +317,9 @@ export const useFileManagerPresenter = () => {
                         const updatedCatalog = hierarchy.get(currentCatalogId);
                         if (updatedCatalog) {
                             setCurrentCatalog(updatedCatalog);
-                            // Инвалидируем кэш для текущего каталога
-                            const newCache = new Map(documentsCache);
-                            newCache.delete(currentCatalogId);
-                            setDocumentsCache(newCache);
                             // Загружаем обновленный список документов
-                            const docs = await documentService.getDocumentsByCatalog(currentCatalogId);
+                            const docs = await fetchDocuments(currentCatalogId, true);
                             setDocuments(docs);
-                            // Добавляем в кэш
-                            const updatedCache = new Map(newCache);
-                            updatedCache.set(currentCatalogId, docs);
-                            setDocumentsCache(updatedCache);
                         }
                     }
 
@@ -409,21 +391,8 @@ export const useFileManagerPresenter = () => {
 
             // 3. Обновляем документы для текущей папки (если это не корень)
             if (currentCatalog && !currentCatalog.id.startsWith('root-') && currentCatalog.id !== 'empty') {
-                const currentId = currentCatalog.id;
-
-                // Удаляем старые данные из кэша
-                const newCache = new Map(documentsCache);
-                newCache.delete(currentId);
-                setDocumentsCache(newCache);
-
-                // Загружаем свежие документы
-                const freshDocs = await documentService.getDocumentsByCatalog(currentId);
+                const freshDocs = await fetchDocuments(currentCatalog.id, true);
                 setDocuments(freshDocs);
-
-                // Сохраняем свежие документы в кэш
-                const updatedCache = new Map(newCache);
-                updatedCache.set(currentId, freshDocs);
-                setDocumentsCache(updatedCache);
             }
 
         } catch (err: any) {
@@ -615,14 +584,9 @@ export const useFileManagerPresenter = () => {
                 setUploadProgress(0);
                 Toast.show({ type: 'success', text1: 'Успех', text2: 'Файл успешно загружен' });
 
-                const newCache = new Map(documentsCache);
-                newCache.delete(currentCatalogId);
-                setDocumentsCache(newCache);
-                const docs = await documentService.getDocumentsByCatalog(currentCatalogId);
+                await fetchDocuments(currentCatalogId, true);
+                const docs = await fetchDocuments(currentCatalogId);
                 setDocuments(docs);
-                const updatedCache = new Map(newCache);
-                updatedCache.set(currentCatalogId, docs);
-                setDocumentsCache(updatedCache);
 
             } catch (error: any) {
                 console.error('[FileManager] Ошибка:', error);
@@ -747,6 +711,7 @@ export const useFileManagerPresenter = () => {
             if (downloadResult.status !== 200) throw new Error('Download failed');
 
             await FileSystem.moveAsync({ from: tempUri, to: fileUri });
+            markAsDownloaded(doc.id);
             await openFileWithFallback(fileUri, doc.content_type, localFileName);
 
         } catch (error) {
@@ -804,11 +769,10 @@ export const useFileManagerPresenter = () => {
             const updatedDocuments = documents.filter(doc => doc.id !== documentId);
             setDocuments(updatedDocuments);
 
-            // Инвалидируем кэш для текущего каталога
+            // Удаляем из списка загруженных и инвалидируем кэш
+            removeFromDownloaded(documentId);
             if (currentCatalog) {
-                const newCache = new Map(documentsCache);
-                newCache.delete(currentCatalog.id);
-                setDocumentsCache(newCache);
+                invalidateCache(currentCatalog.id);
             }
 
             console.log('[FileManager] Документ успешно удален');

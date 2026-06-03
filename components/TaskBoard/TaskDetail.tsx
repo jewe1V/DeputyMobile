@@ -81,16 +81,25 @@ export interface Task {
     [key: string]: any;
 }
 
+import { useTaskDetailsStore } from "@/store/useTaskDetailsStore";
+
 export function TaskDetail() {
     const { colors, isDark } = useTheme();
     const { id } = useLocalSearchParams<{ id: string }>();
     const insets = useSafeAreaInsets();
 
-    const [task, setTask] = useState<Task | null>(null);
+    const { tasks, isLoading: storeLoading, fetchTaskDetails } = useTaskDetailsStore();
+    const taskFromStore = tasks[id || ''] as Task | undefined;
+
+    // Используем локальное состояние для оптимистичных обновлений
+    const [localTask, setLocalTask] = useState<Task | null>(null);
     const [statuses, setStatuses] = useState<TaskStatusServer[]>([]);
-    const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [isStatusSelectOpen, setIsStatusSelectOpen] = useState(false);
+
+    // Объединяем данные из стора и локальные изменения
+    const task = localTask || taskFromStore || null;
+    const loading = storeLoading && !task;
 
     const [isAddUserModalVisible, setIsAddUserModalVisible] = useState(false);
     const [allUsers, setAllUsers] = useState<ApiUser[]>([]);
@@ -99,41 +108,40 @@ export function TaskDetail() {
     const [addingUserId, setAddingUserId] = useState<string | null>(null);
     const [removingUserId, setRemovingUserId] = useState<string | null>(null);
     const [isCompleting, setIsCompleting] = useState(false);
+
     const [comments, setComments] = useState<TaskComment[]>([]);
     const [sendingComment, setSendingComment] = useState(false);
     const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
     const userRole = AuthManager.getRole();
     const userId = AuthManager.getUserId();
 
-    const loadData = useCallback(() => {
+    const loadData = useCallback(async (isRefresh = false) => {
         if (!id) return;
-        taskService.getTaskById(id)
-            .then(taskData => {
-                // @ts-ignore
-                setTask(taskData);
-                // @ts-ignore
-                setComments(taskData.comments || []);
-                setLoading(false);
-            })
-            .catch(error => {
-                Toast.show({ type: 'error', text1: 'Ошибка', text2: 'Не удалось загрузить задачу' });
-                setLoading(false);
-            })
-            .finally(() => {
-                setRefreshing(false);
-            });
+
+        await fetchTaskDetails(id, isRefresh);
+        setRefreshing(false);
+
         taskService.getStatuses()
             .then(statusesData => {
                 setStatuses(statusesData);
             })
             .catch(error => console.error("Ошибка загрузки статусов", error));
-    }, [id]);
+    }, [id, fetchTaskDetails]);
 
-    useEffect(() => { loadData(); }, [loadData]);
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
+
+    // Синхронизируем комментарии при изменении задачи в сторе
+    useEffect(() => {
+        if (taskFromStore?.comments) {
+            setComments(taskFromStore.comments);
+        }
+    }, [taskFromStore]);
 
     const onRefresh = () => {
         setRefreshing(true);
-        loadData();
+        loadData(true);
     };
 
     const fetchAllUsers = async () => {
@@ -221,15 +229,19 @@ export function TaskDetail() {
                 headers: { 'accept': '*/*' }
             });
 
-            setTask(prev => prev ? {
-                ...prev,
-                users: [...(prev.users || []), {
-                    id: selectedUser.id,
-                    email: selectedUser.email,
-                    full_name: selectedUser.full_name,
-                    job_title: selectedUser.job_title
-                } as any]
-            } : null);
+            setLocalTask(prev => {
+                const updated = prev || taskFromStore;
+                if (!updated) return null;
+                return {
+                    ...updated,
+                    users: [...(updated.users || []), {
+                        id: selectedUser.id,
+                        email: selectedUser.email,
+                        full_name: selectedUser.full_name,
+                        job_title: selectedUser.job_title
+                    } as any]
+                };
+            });
 
             Toast.show({ type: 'success', text1: 'Успешно', text2: `${selectedUser.full_name || selectedUser.email} добавлен в задачу` });
             setIsAddUserModalVisible(false);
@@ -287,10 +299,14 @@ export function TaskDetail() {
                 headers: { 'accept': 'application/json' }
             });
 
-            setTask(prev => prev ? {
-                ...prev,
-                users: prev.users?.filter(u => u.id !== targetUserId)
-            } : null);
+            setLocalTask(prev => {
+                const updated = prev || taskFromStore;
+                if (!updated) return null;
+                return {
+                    ...updated,
+                    users: updated.users?.filter(u => u.id !== targetUserId)
+                };
+            });
 
             Toast.show({ type: 'success', text1: 'Успешно', text2: 'Исполнитель удален' });
         } catch (error) {
@@ -345,7 +361,11 @@ export function TaskDetail() {
 
             await taskService.updateTask(id as string, updatePayload);
 
-            setTask(prev => prev ? { ...prev, status: newStatusName } : null);
+            setLocalTask(prev => {
+                const updated = prev || taskFromStore;
+                if (!updated) return null;
+                return { ...updated, status: newStatusName };
+            });
 
             Toast.show({
                 type: 'success',
