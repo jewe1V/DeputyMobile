@@ -32,23 +32,15 @@ const LoginScreen = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [isAuthReady, setIsAuthReady] = useState(false);
 
-    // Состояния фокуса для инпутов
     const [isEmailFocused, setIsEmailFocused] = useState(false);
     const [isPasswordFocused, setIsPasswordFocused] = useState(false);
 
-    // Анимации
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const slideAnim = useRef(new Animated.Value(40)).current;
     const formFadeAnim = useRef(new Animated.Value(0)).current;
 
-    // Инициализация AuthManager при монтировании
     useEffect(() => {
-        const initAuth = async () => {
-            await AuthManager.ensureInitialized();
-            setIsAuthReady(true);
-        };
-
-        initAuth();
+        setIsAuthReady(true);
     }, []);
 
     useEffect(() => {

@@ -35,11 +35,7 @@ export function FileManager() {
     const [userRole, setUserRole] = useState(AuthManager.getRole());
 
     useEffect(() => {
-        const updateRole = async () => {
-            await AuthManager.ensureInitialized();
-            setUserRole(AuthManager.getRole());
-        };
-        updateRole();
+        setUserRole(AuthManager.getRole());
 
         return AuthManager.addListener(() => {
             setUserRole(AuthManager.getRole());

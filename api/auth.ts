@@ -47,27 +47,21 @@ export class AuthManager {
     private static listeners: ((token: string | null) => void)[] = [];
     private static initPromise: Promise<void> | null = null;
 
-    static async ensureInitialized() {
-        if (this.initPromise) return this.initPromise;
-
-        this.initPromise = (async () => {
-            try {
-                const [token, rToken, role, userId] = await Promise.all([
-                    StorageAdapter.getItem('authToken'),
-                    StorageAdapter.getItem('refreshToken'),
-                    StorageAdapter.getItem('userRole'),
-                    StorageAdapter.getItem('userId')
-                ]);
-                this.token = token;
-                this.refreshToken = rToken;
-                this.role = role;
-                this.userId = userId;
-            } catch (e) {
-                console.error('Auth initialization error:', e);
-            }
-        })();
-
-        return this.initPromise;
+    static async loadTokensFromStorage() {
+        try {
+            const [token, rToken, role, userId] = await Promise.all([
+                StorageAdapter.getItem('authToken'),
+                StorageAdapter.getItem('refreshToken'),
+                StorageAdapter.getItem('userRole'),
+                StorageAdapter.getItem('userId')
+            ]);
+            this.token = token;
+            this.refreshToken = rToken;
+            this.role = role;
+            this.userId = userId;
+        } catch (e) {
+            console.error('Auth initialization error:', e);
+        }
     }
 
     static getToken() { return this.token; }
@@ -80,7 +74,7 @@ export class AuthManager {
     }
 
     static async initialize() {
-        return this.ensureInitialized();
+        return this.loadTokensFromStorage();
     }
 
     static addListener(listener: (token: string | null) => void) {
@@ -139,7 +133,6 @@ export class AuthManager {
             return data.token;
         } catch (error) {
             console.error('Token refresh network error:', error);
-            // Возвращаем null, но НЕ вызываем clearAuth, чтобы не разлогинивать при сбое сети
             return null;
         }
     }

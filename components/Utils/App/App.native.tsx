@@ -31,7 +31,7 @@ const AppNative: React.FC = () => {
         YamapInstance.init(process.env.EXPO_PUBLIC_YAMAP_API_KEY!);
 
         const init = async () => {
-            await AuthManager.ensureInitialized();
+            await AuthManager.loadTokensFromStorage();
             setIsAuthenticated(!!AuthManager.getToken());
         };
         init();

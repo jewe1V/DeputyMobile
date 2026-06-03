@@ -35,20 +35,12 @@ export function CreateCatalogModal({
             visible={visible}
             onClose={onClose}
             title="Создать каталог"
-            heightFraction={0.38}
+            heightFraction={0.8}
             scrollEnabled={false}
             keyboardAvoiding
             contentContainerStyle={localStyles.contentContainer}
             renderFooter={() => (
                 <View style={styles.modalButtonsContainer}>
-                    <TouchableOpacity
-                        style={[styles.modalButton, styles.modalButtonCancel]}
-                        onPress={onClose}
-                        disabled={creatingCatalog}
-                    >
-                        <Text style={styles.modalButtonCancelText}>Отмена</Text>
-                    </TouchableOpacity>
-
                     <TouchableOpacity
                         style={[styles.modalButton, styles.modalButtonCreate]}
                         onPress={onCreate}

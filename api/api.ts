@@ -1,6 +1,7 @@
 import axios, { AxiosInstance } from "axios";
 import { AuthManager, xAppSecret } from "./auth";
 import Toast from "react-native-toast-message";
+import {router} from "expo-router";
 
 export const apiUrl = process.env.EXPO_PUBLIC_API_URL || "https://ddc.egd.ru";
 
@@ -13,10 +14,7 @@ export const apiClient: AxiosInstance = axios.create({
 });
 
 apiClient.interceptors.request.use(
-    async (config) => {
-        // Ждем, пока AuthManager загрузит токены из хранилища
-        await AuthManager.ensureInitialized();
-
+    (config) => {
         const token = AuthManager.getToken();
 
         if (token) {
@@ -25,9 +23,7 @@ apiClient.interceptors.request.use(
 
         return config;
     },
-    (error) => {
-        return Promise.reject(error);
-    }
+    (error) => Promise.reject(error)
 );
 
 let isRefreshing = false;

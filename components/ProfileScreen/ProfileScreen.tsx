@@ -12,7 +12,6 @@ import {
     Alert, Platform
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
     UserX,
@@ -68,7 +67,6 @@ export function ProfileScreen() {
     const [userRole, setUserRole] = useState<string | null>(null);
 
     const loadProfile = useCallback(async () => {
-        await AuthManager.ensureInitialized();
         setUserId(AuthManager.getUserId());
         setUserRole(AuthManager.getRole());
         setIsReady(true);

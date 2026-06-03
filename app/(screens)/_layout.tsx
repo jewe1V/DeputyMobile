@@ -10,7 +10,7 @@ export default function AppLayout() {
 
     useEffect(() => {
         const updateRole = async () => {
-            await AuthManager.ensureInitialized();
+            await AuthManager.loadTokensFromStorage();
             setRole(AuthManager.getRole());
         };
         updateRole();

@@ -11,6 +11,7 @@ export const styles = StyleSheet.create({
         borderBottomRightRadius: 24,
         paddingBottom: 32,
         paddingHorizontal: 16,
+        zIndex: 10,
     },
     headerContent: {
         flexDirection: 'row',
@@ -47,7 +48,8 @@ export const styles = StyleSheet.create({
         marginTop: -24,
         borderRadius: 20,
         marginHorizontal: 15,
-        backgroundColor: "transparent"
+        backgroundColor: "transparent",
+        zIndex: 10,
     },
     filtersHeader: {
         flexDirection: 'row',
@@ -102,6 +104,7 @@ export const styles = StyleSheet.create({
     },
     listContent: {
         paddingBottom: 125,
+
     },
     notificationItem: {
         paddingVertical: 16,

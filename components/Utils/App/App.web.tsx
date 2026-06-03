@@ -22,7 +22,7 @@ const AppWeb: React.FC = () => {
 
     useEffect(() => {
         const init = async () => {
-            await AuthManager.ensureInitialized();
+            await AuthManager.loadTokensFromStorage();
             setIsAuthenticated(!!AuthManager.getToken());
         };
         init();
