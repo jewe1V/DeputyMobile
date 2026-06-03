@@ -132,7 +132,6 @@ export function TaskDetail() {
         loadData();
     }, [loadData]);
 
-    // Синхронизируем комментарии при изменении задачи в сторе
     useEffect(() => {
         if (taskFromStore?.comments) {
             setComments(taskFromStore.comments);
@@ -661,7 +660,7 @@ export function TaskDetail() {
                             <Text style={[styles.cardTitle, { color: colors.text }]}>Исполнители</Text>
                             {(userRole === "Admin" || userId === task.author_id) && (
                                 <TouchableOpacity onPress={handleOpenAddUserModal}>
-                                    <Ionicons name="add-circle" size={24} color={colors.text} />
+                                    <Ionicons name="add-circle" size={24} color={isDark ? colors.subtext : colors.text} />
                                 </TouchableOpacity>
                             )}
                         </View>
@@ -699,11 +698,11 @@ export function TaskDetail() {
 
                     {/* Комментарии */}
                     <View style={[styles.card, { padding: 0, overflow: 'hidden', backgroundColor: colors.card, shadowOpacity: isDark ? 0 : 0.05 }]}>
-                        <View style={[styles.commentsHeader, { backgroundColor: isDark ? colors.iconBox : '#f8fafc', borderBottomColor: colors.divider }]}>
+                        <View style={[styles.commentsHeader]}>
                             <View style={styles.commentsHeaderLeft}>
                                 <Text style={[styles.cardTitle, { color: colors.text }]}>Комментарии</Text>
                                 <View style={[styles.commentsCountBadge, { backgroundColor: colors.primary }]}>
-                                    <Text style={styles.commentsCountText}>{comments.length}</Text>
+                                    <Text style={[styles.commentsCountText, { color: "#fff" }]}>{comments.length}</Text>
                                 </View>
                             </View>
                         </View>

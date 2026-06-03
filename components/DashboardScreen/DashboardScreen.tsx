@@ -10,8 +10,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import {
     CheckCircle2,
     Bell,
-    AlertCircle,
-    RefreshCw, Phone
+    AlertCircle, Phone
 } from 'lucide-react-native';
 import { styles } from './style';
 import Animated, { FadeInDown} from 'react-native-reanimated';

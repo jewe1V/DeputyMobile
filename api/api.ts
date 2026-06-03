@@ -53,6 +53,16 @@ apiClient.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
 
+        // Если нет ответа от сервера, значит возникла ошибка сети
+        if (!error.response) {
+            Toast.show({
+                type: 'error',
+                text1: 'Ошибка сети',
+                text2: 'Проверьте подключение к интернету'
+            });
+            return Promise.reject(error);
+        }
+
         if (error.response?.status === 401 && !originalRequest._retry) {
             if (isRefreshing) {
                 return new Promise((resolve, reject) => {

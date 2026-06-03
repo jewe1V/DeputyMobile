@@ -34,7 +34,7 @@ export const styles = StyleSheet.create({
     statusGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
     statusButton: { paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb', backgroundColor: '#fff' },
     statusButtonText: { fontSize: 13, fontWeight: '500', color: '#64748b' },
-    cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, borderBottomWidth: 1, borderBottomColor: '#f1f5f9', paddingBottom: 8 },
+    cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, borderBottomColor: '#f1f5f9', paddingBottom: 8 },
     cardTitle: { fontSize: 14, fontWeight: '700', color: '#1e293b', marginLeft: 8},
     emptyText: { fontSize: 14, color: '#94a3b8', fontStyle: 'italic', textAlign: 'center', paddingVertical: 10 },
     selectWrapper: { marginBottom: 20, position: 'relative' },
@@ -178,7 +178,6 @@ export const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         padding: 16,
-        backgroundColor: '#ffffff',
     },
     commentsHeaderLeft: {
         flexDirection: 'row',
