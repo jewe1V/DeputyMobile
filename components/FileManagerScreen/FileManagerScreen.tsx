@@ -126,7 +126,7 @@ export function FileManager() {
                             onPress={() => handlers.handleBreadcrumbClick(-1)}
                         >
                             <View pointerEvents="none">
-                            <Home size={20} color={colors.primary} />
+                            <Home size={20} color={colors.actionIconColor.tasks} />
                             </View>
                         </TouchableOpacity>
 

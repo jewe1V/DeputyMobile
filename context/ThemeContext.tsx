@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useColorScheme } from 'react-native';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import { useColorScheme, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const themeColors = {
@@ -47,42 +47,97 @@ export const themeColors = {
     }
 };
 
-type ThemeType = 'light' | 'dark';
+type ThemeMode = 'light' | 'dark' | 'system';
+type ResolvedTheme = 'light' | 'dark';
 
 interface ThemeContextType {
-    theme: ThemeType;
+    mode: ThemeMode;
+    theme: ResolvedTheme;
     colors: typeof themeColors.light;
     isDark: boolean;
-    toggleTheme: () => void;
+    setThemeMode: (mode: ThemeMode) => Promise<void>;
+    toggleTheme: () => Promise<void>;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
+const STORAGE_KEY = 'user-theme-mode';
+
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const systemColorScheme = useColorScheme();
-    const [theme, setTheme] = useState<ThemeType>(systemColorScheme || 'light');
+    const [mode, setMode] = useState<ThemeMode>('system');
+    const [isLoaded, setIsLoaded] = useState(false);
 
     useEffect(() => {
-        const loadTheme = async () => {
-            const savedTheme = await AsyncStorage.getItem('user-theme');
-            if (savedTheme) {
-                setTheme(savedTheme as ThemeType);
+        const loadThemeMode = async () => {
+            try {
+                const savedMode = await AsyncStorage.getItem(STORAGE_KEY);
+                if (
+                    savedMode === 'light' ||
+                    savedMode === 'dark' ||
+                    savedMode === 'system'
+                ) {
+                    setMode(savedMode);
+                }
+            } catch (e) {
+                console.error('Ошибка загрузки темы:', e);
+            } finally {
+                setIsLoaded(true);
             }
         };
-        loadTheme();
+
+        loadThemeMode();
     }, []);
 
-    const toggleTheme = async () => {
-        const newTheme = theme === 'light' ? 'dark' : 'light';
-        setTheme(newTheme);
-        await AsyncStorage.setItem('user-theme', newTheme);
+    const resolvedTheme: ResolvedTheme = useMemo(() => {
+        if (mode === 'system') {
+            return systemColorScheme === 'dark' ? 'dark' : 'light';
+        }
+        return mode;
+    }, [mode, systemColorScheme]);
+
+    const setThemeMode = async (newMode: ThemeMode) => {
+        try {
+            setMode(newMode);
+            await AsyncStorage.setItem(STORAGE_KEY, newMode);
+        } catch (e) {
+            console.error('Ошибка сохранения темы:', e);
+        }
     };
 
-    const colors = themeColors[theme];
-    const isDark = theme === 'dark';
+    const toggleTheme = async () => {
+        const newMode: ThemeMode = resolvedTheme === 'light' ? 'dark' : 'light';
+        await setThemeMode(newMode);
+    };
+
+    const colors = themeColors[resolvedTheme];
+    const isDark = resolvedTheme === 'dark';
+
+    // Необязательно, но полезно для web:
+    // синхронизируем фон body/html, чтобы не было белых краёв
+    useEffect(() => {
+        if (Platform.OS === 'web' && typeof document !== 'undefined') {
+            document.documentElement.style.backgroundColor = colors.background;
+            document.body.style.backgroundColor = colors.background;
+            document.documentElement.setAttribute('data-theme', resolvedTheme);
+        }
+    }, [resolvedTheme, colors.background]);
+
+    if (!isLoaded) {
+        return null;
+    }
 
     return (
-        <ThemeContext.Provider value={{ theme, colors, isDark, toggleTheme }}>
+        <ThemeContext.Provider
+            value={{
+                mode,
+                theme: resolvedTheme,
+                colors,
+                isDark,
+                setThemeMode,
+                toggleTheme,
+            }}
+        >
             {children}
         </ThemeContext.Provider>
     );

@@ -25,12 +25,13 @@ import {
     Building2,
     Edit,
     Moon,
+    Check,
+    Monitor,
     Sun
 } from 'lucide-react-native';
-import {Profile} from "@/models/ProfileModel";
 import {declOfNum} from "@/utils";
 import { useFocusEffect } from '@react-navigation/native';
-import {apiClient} from "@/api/api";
+import { BottomSheetModal } from '@/components/ui/BottomSheetModal/BottomSheetModal';
 import { useTheme } from '@/context/ThemeContext';
 
 
@@ -54,14 +55,14 @@ import { useProfileStore } from '@/store/useProfileStore';
 
 export function ProfileScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
-    const navigation = useNavigation();
     const router = useRouter();
     const insets = useSafeAreaInsets();
 
     const { profiles, isLoading: loading, fetchProfile } = useProfileStore();
     const [refreshing, setRefreshing] = useState(false);
     const [isReady, setIsReady] = useState(false);
-    const { colors, isDark, toggleTheme } = useTheme();
+    const { colors, isDark, mode, theme, setThemeMode } = useTheme();
+    const [isThemeSheetVisible, setThemeSheetVisible] = useState(false);
 
     const [userId, setUserId] = useState<string | null>(null);
     const [userRole, setUserRole] = useState<string | null>(null);
@@ -112,6 +113,18 @@ export function ProfileScreen() {
                 },
             ]);
         }
+    };
+
+    const getThemeModeLabel = () => {
+        if (mode === 'system') {
+            return `Как в системе (${theme === 'dark' ? 'тёмная' : 'светлая'})`;
+        }
+        return mode === 'dark' ? 'Тёмная' : 'Светлая';
+    };
+
+    const handleSelectThemeMode = async (nextMode: 'light' | 'dark' | 'system') => {
+        await setThemeMode(nextMode);
+        setThemeSheetVisible(false);
     };
 
     if (loading || !isReady) {
@@ -279,8 +292,6 @@ export function ProfileScreen() {
                             <ChevronRight size={20} color={colors.subtext} />
                         </TouchableOpacity>
 
-                        <View style={[styles.actionDivider, { backgroundColor: colors.divider }]} />
-
                         <TouchableOpacity
                             style={styles.actionItem}
                             onPress={() => router.push({pathname: '/TaskBoardScreen', params: {isMine: "true"}})}
@@ -302,28 +313,113 @@ export function ProfileScreen() {
                             <ChevronRight size={20} color={colors.subtext} />
                         </TouchableOpacity>
 
-                        <View style={[styles.actionDivider, { backgroundColor: colors.divider }]} />
                     </View>
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Настройки</Text>
-                    <View style={[styles.card, { padding: 0, overflow: 'hidden', backgroundColor: colors.card }]}>
-                        {/* Кнопка переключения темы */}
-                        <TouchableOpacity style={styles.actionItem} onPress={toggleTheme}>
-                            <View style={[styles.actionIcon, { backgroundColor: colors.iconBox }]}>
-                                {isDark ? <Sun size={20} color={'#f59e0b'} /> : <Moon size={20} color={'#6366f1'} />}
-                            </View>
-                            <View style={styles.actionContent}>
-                                <Text style={[styles.actionTitle, { color: colors.text }]}>
-                                    {isDark ? 'Дневной режим' : 'Ночной режим'}
-                                </Text>
-                                <Text style={[styles.actionSubtitle, { color: colors.subtext }]}>
-                                    {isDark ? 'Переключиться на светлую тему' : 'Переключиться на тёмную тему'}
-                                </Text>
-                            </View>
-                            <ChevronRight size={20} color={colors.subtext} />
-                        </TouchableOpacity>
-                    </View>
+                    {!id && <>
+                        <Text style={[styles.sectionTitle, {color: colors.text}]}>Настройки</Text>
+                        <View style={[styles.card, {padding: 0, overflow: 'hidden', backgroundColor: colors.card}]}>
+                    {/* Кнопка переключения темы */}
+                    <TouchableOpacity
+                        style={styles.actionItem}
+                        onPress={() => setThemeSheetVisible(true)}
+                    >
+                        <View style={[styles.actionIcon, {backgroundColor: colors.iconBox}]}>
+                            {mode === 'system' ? (
+                                <Monitor size={20} color={colors.actionIconColor.tasks}/>
+                            ) : isDark ? (
+                                <Moon size={20} color="#6366f1"/>
+                            ) : (
+                                <Sun size={20} color="#f59e0b"/>
+                            )}
+                        </View>
+                        <View style={styles.actionContent}>
+                            <Text style={[styles.actionTitle, {color: colors.text}]}>
+                                Тема приложения
+                            </Text>
+                            <Text style={[styles.actionSubtitle, {color: colors.subtext}]}>
+                                {getThemeModeLabel()}
+                            </Text>
+                        </View>
+                        <ChevronRight size={20} color={colors.subtext}/>
+                    </TouchableOpacity>
+                </View>
+                    </>}
                 </View>
             </ScrollView>
+            <BottomSheetModal
+                visible={isThemeSheetVisible}
+                onClose={() => setThemeSheetVisible(false)}
+                title="Тема приложения"
+                heightFraction={0.42}
+                scrollEnabled={false}
+            >
+                <TouchableOpacity
+                    style={[
+                        styles.themeOption,
+                        { borderBottomColor: colors.border },
+                        mode === 'system' && [styles.themeOptionActive, { backgroundColor: colors.iconBox }]
+                    ]}
+                    onPress={() => handleSelectThemeMode('system')}
+                >
+                    <View style={styles.themeOptionLeft}>
+                        <View style={[styles.themeOptionIcon, { backgroundColor: colors.iconBox }]}>
+                            <Monitor size={18} color={colors.actionIconColor.tasks} />
+                        </View>
+                        <View style={styles.themeOptionContent}>
+                            <Text style={[styles.themeOptionTitle, { color: colors.text }]}>
+                                Как в системе
+                            </Text>
+                            <Text style={[styles.themeOptionSubtitle, { color: colors.subtext }]}>
+                                Определять тему автоматически
+                            </Text>
+                        </View>
+                    </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={[
+                        styles.themeOption,
+                        { borderBottomColor: colors.border },
+                        mode === 'light' && [styles.themeOptionActive, { backgroundColor: colors.iconBox }]
+                    ]}
+                    onPress={() => handleSelectThemeMode('light')}
+                >
+                    <View style={styles.themeOptionLeft}>
+                        <View style={[styles.themeOptionIcon, { backgroundColor: colors.iconBox }]}>
+                            <Sun size={18} color="#f59e0b" />
+                        </View>
+                        <View style={styles.themeOptionContent}>
+                            <Text style={[styles.themeOptionTitle, { color: colors.text }]}>
+                                Дневной режим
+                            </Text>
+                            <Text style={[styles.themeOptionSubtitle, { color: colors.subtext }]}>
+                                Всегда использовать светлую тему
+                            </Text>
+                        </View>
+                    </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={[
+                        styles.themeOption,
+                        mode === 'dark' && [styles.themeOptionActive, { backgroundColor: colors.iconBox }]
+                    ]}
+                    onPress={() => handleSelectThemeMode('dark')}
+                >
+                    <View style={styles.themeOptionLeft}>
+                        <View style={[styles.themeOptionIcon, { backgroundColor: colors.iconBox }]}>
+                            <Moon size={18} color="#6366f1" />
+                        </View>
+                        <View style={styles.themeOptionContent}>
+                            <Text style={[styles.themeOptionTitle, { color: colors.text }]}>
+                                Ночной режим
+                            </Text>
+                            <Text style={[styles.themeOptionSubtitle, { color: colors.subtext }]}>
+                                Всегда использовать тёмную тему
+                            </Text>
+                        </View>
+                    </View>
+                </TouchableOpacity>
+            </BottomSheetModal>
         </View>
     );
 }
@@ -563,5 +659,40 @@ const styles = StyleSheet.create({
     departmentId: {
         fontSize: 13,
         color: '#94a3b8',
+    },
+    themeOption: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingVertical: 16,
+        paddingHorizontal: 4,
+        borderRadius: 14,
+    },
+    themeOptionActive: {
+        paddingHorizontal: 12,
+    },
+    themeOptionLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+    },
+    themeOptionIcon: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
+    },
+    themeOptionContent: {
+        flex: 1,
+    },
+    themeOptionTitle: {
+        fontSize: 15,
+        fontWeight: '600',
+    },
+    themeOptionSubtitle: {
+        fontSize: 13,
+        marginTop: 2,
     },
 });

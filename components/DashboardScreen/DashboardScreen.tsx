@@ -26,6 +26,7 @@ import {HeaderSkeleton} from "@/components/DashboardScreen/HeaderSkeleton";
 import {apiClient} from "@/api/api";
 import {useDashboardStore} from '@/store/useDashboardStore';
 import {useTheme} from '@/context/ThemeContext';
+import {SkeletonItem} from "@/components/ui/Shared/SkeletonLoader";
 
 export function Dashboard() {
     const insets = useSafeAreaInsets();
