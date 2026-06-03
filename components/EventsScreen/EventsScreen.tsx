@@ -238,7 +238,13 @@ const EventsScreen: React.FC = () => {
                 // Список выводится ТОЛЬКО в режиме 'list'
                 <View style={[styles.contentSection, { marginTop: 16 }]}>
                     {loading && !refreshing ? (
-                        <SkeletonLoader count={5} itemHeight={90} itemMargin={12} />
+                        <ScrollView
+                            refreshControl={
+                                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />
+                            }
+                        >
+                            <SkeletonLoader count={5} itemHeight={90} itemMargin={12} />
+                        </ScrollView>
                     ) : (
                         <FlatList
                             data={grouped}

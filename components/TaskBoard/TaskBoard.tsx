@@ -181,7 +181,12 @@ export function TaskBoard() {
             )}
 
             {error ? (
-                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 }}>
+                <ScrollView
+                    contentContainerStyle={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 }}
+                    refreshControl={
+                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />
+                    }
+                >
                     <AlertCircle size={48} color={isDark ? "#f87171" : "#EF4444"} style={{ marginBottom: 16 }} />
                     <Text style={{ fontSize: 16, fontWeight: '600', textAlign: 'center', color: colors.text }}>Ошибка загрузки</Text>
                     <Text style={{ fontSize: 14, color: colors.subtext, textAlign: 'center', marginVertical: 8 }}>{error}</Text>
@@ -191,19 +196,24 @@ export function TaskBoard() {
                             backgroundColor: colors.primary,
                             paddingHorizontal: 20,
                             paddingVertical: 10,
-                            borderRadius: 8,
+                            borderRadius: 12,
                             flexDirection: 'row',
-                            alignItems: 'center'
+                            alignItems: 'center',
+                            marginTop: 8
                         }}
                     >
                         <RotateCcw size={16} color="#fff" />
                         <Text style={{ color: '#fff', fontWeight: '600', marginLeft: 8 }}>Повторить</Text>
                     </TouchableOpacity>
-                </View>
+                </ScrollView>
             ) : loading && !refreshing ? (
-                <View style={{ flex: 1, marginTop: -10}}>
+                <ScrollView
+                    refreshControl={
+                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />
+                    }
+                >
                     <SkeletonLoader count={5} itemHeight={96} itemMargin={12} />
-                </View>
+                </ScrollView>
             ) : (
                 <FlatList
                     data={filteredTasks}

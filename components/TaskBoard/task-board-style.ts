@@ -204,7 +204,6 @@ export const styles = StyleSheet.create({
     emptyIcon: {
         width: 64,
         height: 64,
-        backgroundColor: '#F3F4F6',
         borderRadius: 32,
         alignItems: 'center',
         justifyContent: 'center',

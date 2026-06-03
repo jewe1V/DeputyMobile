@@ -182,7 +182,13 @@ const DepartmentsListScreen = () => {
             />
 
             {loading && !refreshing ? (
-                <SkeletonLoader count={6} itemHeight={70} itemMargin={12} />
+                <ScrollView
+                    refreshControl={
+                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />
+                    }
+                >
+                    <SkeletonLoader count={6} itemHeight={70} itemMargin={12} />
+                </ScrollView>
             ) : (
                 <FlatList
                     data={filteredDepartments}

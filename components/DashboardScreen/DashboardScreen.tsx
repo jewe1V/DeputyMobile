@@ -70,19 +70,14 @@ export function Dashboard() {
         }
     };
 
-    if (isLoading) {
+    if (isLoading && !refreshing) {
         return (
             <View style={{ flex: 1, backgroundColor: colors.background }}>
                 <HeaderSkeleton insetsTop={insets.top}/>
                 <ScrollView
                     showsVerticalScrollIndicator={false}
                     refreshControl={
-                        <RefreshControl
-                            refreshing={refreshing}
-                            onRefresh={onRefresh}
-                            colors={[colors.primary]}
-                            tintColor={colors.primary}
-                        />
+                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />
                     }
                 >
                     <View style={{ padding: 16 }}>
